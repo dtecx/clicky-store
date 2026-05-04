@@ -19,11 +19,15 @@ type contextKey string
 const userContextKey contextKey = "user"
 
 type Handler struct {
-	service *service.Service
+	service      *service.Service
+	loginLimiter *loginRateLimiter
 }
 
 func NewHandler(service *service.Service) *Handler {
-	return &Handler{service: service}
+	return &Handler{
+		service:      service,
+		loginLimiter: newLoginRateLimiter(loginRateLimitMaxFailures, loginRateLimitWindow),
+	}
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -163,9 +167,17 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, token, err := h.service.Login(req.Email, req.Password)
+	email := domains.NormalizeEmail(req.Email)
+	limitKey := loginRateLimitKey(r, email)
+	if h.loginLimiter.blocked(limitKey) {
+		web.WriteError(w, http.StatusTooManyRequests, "too many login attempts; try again later")
+		return
+	}
+
+	user, token, err := h.service.Login(email, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
+			h.loginLimiter.recordFailure(limitKey)
 			web.WriteError(w, http.StatusUnauthorized, "invalid email or password")
 			return
 		}
@@ -173,6 +185,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.loginLimiter.reset(limitKey)
 	web.WriteJSON(w, http.StatusOK, map[string]any{"user": user, "token": token})
 }
 

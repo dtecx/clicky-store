@@ -162,6 +162,27 @@ func TestRegisterLoginAndProfile(t *testing.T) {
 	}
 }
 
+func TestLoginRateLimiting(t *testing.T) {
+	server := newAPITestServer(t)
+	const maxFailedAttempts = 5
+
+	body := map[string]any{
+		"email":    "limited@example.com",
+		"password": "wrong-password",
+	}
+	for range maxFailedAttempts {
+		res := server.request(http.MethodPost, "/api/v1/auth/login", body, "")
+		assertStatus(t, res, http.StatusUnauthorized)
+	}
+
+	limitedRes := server.request(http.MethodPost, "/api/v1/auth/login", body, "")
+	assertStatus(t, limitedRes, http.StatusTooManyRequests)
+	errBody := decodeResponse[errorResponse](t, limitedRes)
+	if errBody.Error == "" {
+		t.Fatal("expected rate limit error response")
+	}
+}
+
 func TestProductCartAndOrderFlow(t *testing.T) {
 	server := newAPITestServer(t)
 

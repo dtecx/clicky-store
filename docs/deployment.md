@@ -54,13 +54,14 @@ Implemented:
 - Legacy prototype password-hash verification for older local data.
 - HMAC-signed bearer tokens.
 - Admin-only endpoint checks.
+- Basic in-process login rate limiting.
 - Escaped frontend template output for user-controlled data.
 - Consistent JSON error responses.
 
 Still recommended before production use:
 
 - Review token format and rotation strategy.
-- Add login rate limiting.
+- Add edge/proxy-level request rate limits for broader abuse protection.
 - Review CSRF assumptions if the frontend is served from a different origin.
 - Review CORS policy for the final deployment origin.
 - Add request-size limits at the reverse proxy.

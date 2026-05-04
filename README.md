@@ -16,6 +16,7 @@ Implemented backend features:
 - Public product listing and product details
 - Customer registration and login
 - HMAC-signed bearer tokens
+- Basic login rate limiting
 - Authenticated profile endpoint
 - Authenticated cart operations
 - Authenticated order creation with pending simulated payment status

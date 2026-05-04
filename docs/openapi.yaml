@@ -44,6 +44,8 @@ paths:
                 $ref: "#/components/schemas/AuthResponse"
         "401":
           $ref: "#/components/responses/Error"
+        "429":
+          $ref: "#/components/responses/Error"
   /me:
     get:
       summary: Get the authenticated user
