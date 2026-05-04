@@ -12,3 +12,8 @@ plan/
 *.pdf
 *.doc
 *.docx
+
+# Build and test output
+bin/
+tmp/
+coverage.out
