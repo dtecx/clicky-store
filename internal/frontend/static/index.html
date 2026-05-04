@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clicky-Store</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="Clicky-Store home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Clicky-Store</span>
+      </a>
+
+      <nav class="top-nav" aria-label="Primary">
+        <button class="nav-button is-active" type="button" data-view="store">Store</button>
+        <button class="nav-button" type="button" data-view="cart">Cart <span id="cartCount" class="count">0</span></button>
+        <button class="nav-button" type="button" data-view="orders">Orders</button>
+        <button id="adminNav" class="nav-button is-hidden" type="button" data-view="admin">Admin</button>
+      </nav>
+
+      <div class="account-bar">
+        <span id="accountName" class="account-name">Guest</span>
+        <button id="loginButton" class="button button-secondary" type="button">Log in</button>
+        <button id="logoutButton" class="icon-button is-hidden" type="button" aria-label="Log out" title="Log out">x</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="storeView" class="view">
+        <div class="store-layout">
+          <section class="product-panel" aria-labelledby="productsTitle">
+            <div class="view-heading">
+              <div>
+                <p class="eyebrow">Mice for play and work</p>
+                <h1 id="productsTitle">Products</h1>
+              </div>
+              <div class="toolbar">
+                <label class="search-field">
+                  <span class="sr-only">Search products</span>
+                  <input id="searchInput" type="search" placeholder="Search products" autocomplete="off" />
+                </label>
+                <div class="segmented" aria-label="Product category">
+                  <button class="segment is-active" type="button" data-category="">All</button>
+                  <button class="segment" type="button" data-category="gaming">Gaming</button>
+                  <button class="segment" type="button" data-category="office">Office</button>
+                </div>
+              </div>
+            </div>
+            <div id="productGrid" class="product-grid" aria-live="polite"></div>
+          </section>
+
+          <aside id="productDetail" class="detail-panel" aria-live="polite"></aside>
+        </div>
+      </section>
+
+      <section id="cartView" class="view is-hidden" aria-labelledby="cartTitle">
+        <div class="single-column">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">Checkout</p>
+              <h1 id="cartTitle">Cart</h1>
+            </div>
+          </div>
+          <div id="cartContent"></div>
+        </div>
+      </section>
+
+      <section id="ordersView" class="view is-hidden" aria-labelledby="ordersTitle">
+        <div class="single-column">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">History</p>
+              <h1 id="ordersTitle">Orders</h1>
+            </div>
+          </div>
+          <div id="ordersContent" class="record-list"></div>
+        </div>
+      </section>
+
+      <section id="adminView" class="view is-hidden" aria-labelledby="adminTitle">
+        <div class="admin-layout">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">Management</p>
+              <h1 id="adminTitle">Admin</h1>
+            </div>
+            <div class="segmented" aria-label="Admin section">
+              <button class="segment is-active" type="button" data-admin-tab="products">Products</button>
+              <button class="segment" type="button" data-admin-tab="orders">Orders</button>
+              <button class="segment" type="button" data-admin-tab="users">Users</button>
+            </div>
+          </div>
+
+          <section id="adminProductsPanel" class="admin-panel">
+            <form id="productForm" class="admin-form" autocomplete="off">
+              <input id="productId" type="hidden" />
+              <div class="form-row">
+                <label>Name <input id="productName" required /></label>
+                <label>Slug <input id="productSlug" required /></label>
+              </div>
+              <label>Description <textarea id="productDescription" required rows="3"></textarea></label>
+              <div class="form-row">
+                <label>Category
+                  <select id="productCategory" required>
+                    <option value="gaming">Gaming</option>
+                    <option value="office">Office</option>
+                  </select>
+                </label>
+                <label>Price <input id="productPrice" required type="number" min="1" step="1" /></label>
+                <label>DPI <input id="productDpi" required type="number" min="1" step="100" /></label>
+                <label>Stock <input id="productStock" required type="number" min="0" step="1" /></label>
+              </div>
+              <div class="form-row">
+                <label>Currency <input id="productCurrency" maxlength="3" value="PLN" required /></label>
+                <label>Image URL <input id="productImageUrl" placeholder="/assets/products/item.jpg" /></label>
+              </div>
+              <div class="check-row">
+                <label><input id="productWireless" type="checkbox" /> Wireless</label>
+                <label><input id="productErgonomic" type="checkbox" /> Ergonomic</label>
+              </div>
+              <div class="form-actions">
+                <button class="button" type="submit">Save product</button>
+                <button id="clearProductForm" class="button button-secondary" type="button">Clear</button>
+              </div>
+            </form>
+            <div id="adminProductsTable" class="table-wrap"></div>
+          </section>
+
+          <section id="adminOrdersPanel" class="admin-panel is-hidden">
+            <div id="adminOrdersTable" class="table-wrap"></div>
+          </section>
+
+          <section id="adminUsersPanel" class="admin-panel is-hidden">
+            <div id="adminUsersTable" class="table-wrap"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="authDialog" class="auth-dialog">
+      <form id="authForm" method="dialog">
+        <div class="dialog-heading">
+          <h2 id="authTitle">Log in</h2>
+          <button id="closeAuth" class="icon-button" type="button" aria-label="Close" title="Close">x</button>
+        </div>
+        <div class="segmented auth-toggle" aria-label="Authentication mode">
+          <button class="segment is-active" type="button" data-auth-mode="login">Log in</button>
+          <button class="segment" type="button" data-auth-mode="register">Register</button>
+        </div>
+        <label id="nameField" class="is-hidden">Name <input id="authName" autocomplete="name" /></label>
+        <label>Email <input id="authEmail" type="email" autocomplete="email" required /></label>
+        <label>Password <input id="authPassword" type="password" autocomplete="current-password" minlength="8" required /></label>
+        <button class="button" type="submit">Continue</button>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

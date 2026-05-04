@@ -10,6 +10,7 @@ import (
 
 	"clicky-store/internal/adapters/db"
 	httpv1 "clicky-store/internal/adapters/http/v1"
+	"clicky-store/internal/frontend"
 	"clicky-store/internal/service"
 	"clicky-store/internal/web"
 )
@@ -25,8 +26,14 @@ func main() {
 	}
 
 	api := httpv1.NewHandler(appService)
+	mux := http.NewServeMux()
+	apiRoutes := api.Routes()
+	mux.Handle("/api/v1/", apiRoutes)
+	mux.Handle("/healthz", apiRoutes)
+	mux.Handle("/", frontend.Handler())
+
 	handler := web.Chain(
-		api.Routes(),
+		mux,
 		web.CORS(env("FRONTEND_ORIGIN", "*")),
 		web.Logging(logger),
 	)

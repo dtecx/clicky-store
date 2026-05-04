@@ -22,6 +22,7 @@ Implemented backend features:
 - Admin product management
 - Admin order listing
 - Admin user listing, inspection, and role updates
+- Embedded responsive storefront for browsing, auth, cart, checkout, orders, and admin screens
 - Health check endpoint
 - Dockerfile and `compose.yaml`
 
@@ -37,6 +38,12 @@ The API listens on:
 
 ```txt
 http://localhost:8080
+```
+
+Open the storefront at:
+
+```txt
+http://localhost:8080/
 ```
 
 Health check:
@@ -142,9 +149,7 @@ curl -X POST http://localhost:8080/api/v1/orders \
 - Add PostgreSQL persistence for users, products, carts, and orders
 - Replace development password hashing/token handling with production-grade libraries
 - Expand backend tests around edge cases and store behavior
-- Build the HTML/CSS/JavaScript frontend
-- Add responsive product listing, details, cart, auth, and checkout views
-- Add admin screens for products, users, and orders
+- Expand frontend polish around loading states, validation, and admin filtering
 - Add payment provider simulation or integration boundary
 
 ## Project Structure
@@ -155,6 +160,7 @@ internal/adapters/db/     Current in-memory database adapter
 internal/adapters/http/v1 REST API v1 handlers and request DTOs
 internal/core/domains/    Domain models and shared domain errors
 internal/core/ports/      Storage interfaces
+internal/frontend/        Embedded HTML/CSS/JavaScript storefront
 internal/service/         Application use cases and prototype auth
 internal/web/             Shared HTTP JSON and middleware helpers
 compose.yaml              Local API and database services
