@@ -31,6 +31,12 @@ The API uses PostgreSQL when `DATABASE_URL` is configured. If `DATABASE_URL` is 
 
 ## Run With Docker Compose
 
+Optional local configuration can start from:
+
+```sh
+cp .env.example .env
+```
+
 ```sh
 docker compose up --build
 ```
@@ -67,6 +73,8 @@ Set a stronger local secret before serious testing:
 ```sh
 AUTH_SECRET="replace-me" docker compose up --build
 ```
+
+`DATABASE_URL` defaults to the PostgreSQL service in `compose.yaml`. Leave it empty only when you intentionally want the server to use the in-memory development store.
 
 ## API Overview
 
