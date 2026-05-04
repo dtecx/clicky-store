@@ -92,6 +92,8 @@ func ValidateProduct(product Product) error {
 		strings.TrimSpace(product.Slug) == "" ||
 		strings.TrimSpace(product.Description) == "" ||
 		strings.TrimSpace(product.Category) == "" ||
+		!validSlug(product.Slug) ||
+		!validCurrency(product.Currency) ||
 		product.PriceCents <= 0 ||
 		product.DPI <= 0 ||
 		product.Stock < 0 {
@@ -99,4 +101,43 @@ func ValidateProduct(product Product) error {
 	}
 
 	return nil
+}
+
+func validSlug(slug string) bool {
+	if slug == "" || slug[0] == '-' || slug[len(slug)-1] == '-' {
+		return false
+	}
+
+	previousHyphen := false
+	for _, r := range slug {
+		switch {
+		case r >= 'a' && r <= 'z':
+			previousHyphen = false
+		case r >= '0' && r <= '9':
+			previousHyphen = false
+		case r == '-':
+			if previousHyphen {
+				return false
+			}
+			previousHyphen = true
+		default:
+			return false
+		}
+	}
+
+	return true
+}
+
+func validCurrency(currency string) bool {
+	if len(currency) != 3 {
+		return false
+	}
+
+	for _, r := range currency {
+		if r < 'A' || r > 'Z' {
+			return false
+		}
+	}
+
+	return true
 }

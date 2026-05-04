@@ -56,3 +56,31 @@ func TestNormalizeAndValidateProduct(t *testing.T) {
 		t.Fatalf("ValidateProduct invalid error = %v, want ErrInvalid", err)
 	}
 }
+
+func TestValidateProductRejectsInvalidSlugAndCurrency(t *testing.T) {
+	product := Product{
+		Name:        "Test Mouse",
+		Slug:        "test-mouse",
+		Description: "A valid test mouse.",
+		Category:    "gaming",
+		PriceCents:  1000,
+		Currency:    "PLN",
+		DPI:         1000,
+		Stock:       2,
+	}
+
+	for _, slug := range []string{"Test-Mouse", "-test-mouse", "test-mouse-", "test--mouse", "test mouse"} {
+		product.Slug = slug
+		if err := ValidateProduct(product); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("ValidateProduct slug %q error = %v, want ErrInvalid", slug, err)
+		}
+	}
+
+	product.Slug = "test-mouse"
+	for _, currency := range []string{"PL", "pln", "PLN1"} {
+		product.Currency = currency
+		if err := ValidateProduct(product); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("ValidateProduct currency %q error = %v, want ErrInvalid", currency, err)
+		}
+	}
+}

@@ -348,6 +348,41 @@ func TestAdminProductManagementRequiresAdmin(t *testing.T) {
 	assertStatus(t, adminOrdersRes, http.StatusOK)
 }
 
+func TestAdminProductValidation(t *testing.T) {
+	server := newAPITestServer(t)
+
+	adminLoginRes := server.request(http.MethodPost, "/api/v1/auth/login", map[string]any{
+		"email":    "admin@clicky.local",
+		"password": "admin12345",
+	}, "")
+	assertStatus(t, adminLoginRes, http.StatusOK)
+	admin := decodeResponse[authResponse](t, adminLoginRes)
+
+	invalidSlugRes := server.request(http.MethodPost, "/api/v1/admin/products", map[string]any{
+		"name":        "Invalid Slug Mouse",
+		"slug":        "Invalid Slug",
+		"description": "A product with an invalid slug.",
+		"category":    "gaming",
+		"priceCents":  15900,
+		"currency":    "PLN",
+		"dpi":         8000,
+		"stock":       7,
+	}, admin.Token)
+	assertStatus(t, invalidSlugRes, http.StatusBadRequest)
+
+	invalidPriceRes := server.request(http.MethodPost, "/api/v1/admin/products", map[string]any{
+		"name":        "Invalid Price Mouse",
+		"slug":        "invalid-price-mouse",
+		"description": "A product with an invalid price.",
+		"category":    "gaming",
+		"priceCents":  0,
+		"currency":    "PLN",
+		"dpi":         8000,
+		"stock":       7,
+	}, admin.Token)
+	assertStatus(t, invalidPriceRes, http.StatusBadRequest)
+}
+
 func TestAdminUserManagementRequiresAdmin(t *testing.T) {
 	server := newAPITestServer(t)
 
