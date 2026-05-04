@@ -17,3 +17,8 @@ plan/
 bin/
 tmp/
 coverage.out
+
+# Database files
+data/
+
+

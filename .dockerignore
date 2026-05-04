@@ -1,11 +1,15 @@
 .git
 .gitignore
 .DS_Store
+
 .env
 .env.*
+
 plan/
-README.md
-AGENTS.md
+*.pdf
+*.doc
+*.docx
+
 bin/
 tmp/
 coverage.out
