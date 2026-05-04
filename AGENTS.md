@@ -1,576 +1,1343 @@
 # AGENTS.md
 
-Guidance for coding agents working on Clicky-Store.
+Guidance for coding agents working on **Clicky-Store**.
+
+This file is the source of truth for future AI/code-agent work in this repository. Keep it accurate when the project structure, stack, or implementation plan changes.
+
+---
 
 ## Project Intent
 
-Clicky-Store is an educational e-commerce web app for gaming and office mice. The project must satisfy the brief in `plan/plan.pdf`: REST API, product browsing, user registration/login, cart, orders, payment simulation or integration, admin management, responsive frontend, security basics, testing, and documentation.
+Clicky-Store is an educational e-commerce web application for gaming and office mice.
 
-Treat the current application as a backend-first MVP that already has the main flows implemented. The next work should make it durable, testable, documented, and easier to maintain.
+The project should satisfy the expected online-shop requirements:
 
-## Plan Brief Requirements
+- Client-server web application.
+- REST API.
+- User registration and login.
+- Product browsing.
+- Dedicated product detail pages.
+- Shopping cart.
+- Order placement.
+- Simulated payment flow.
+- Admin product, order, and user management.
+- PostgreSQL-backed persistence.
+- Responsive UI.
+- Basic security practices.
+- Tests and documentation.
+- Docker-based local/deployment workflow.
 
-Use this summary before opening `plan/plan.pdf`; only inspect the PDF when exact wording or academic formatting is needed.
+The backend is already more than a skeleton. Treat the current repository as a working MVP with persistence, auth, customer flows, admin flows, docs, CI, and an embedded static frontend.
 
-- Build a modern client-server e-commerce web system for selling products online.
-- Provide an intuitive UI, secure transaction flow, and a structure that can scale.
-- Core customer features: registration, login, product browsing, product detail views, cart management, order placement, and online payment handling by simulation or payment API integration.
-- Core admin features: product management, order management, and user management.
-- Technical requirements: REST API, database-backed persistence for products/users/orders, authorization/authentication, responsive frontend (RWD), and protection of user data.
-- Business logic requirements: purchase flow handling, data validation, order processing, payment preparation, error handling, and edge-case handling.
-- Frontend scope: product list, product details, cart, login form, and registration form, adapted to mobile devices.
-- Testing and quality scope: API testing, functional/end-to-end testing, user behavior simulation, performance review, database query optimization, app load-time optimization, final refactor, launch instructions, and project documentation.
-- Security topics from the brief: SSL/TLS in deployment, JWT/OAuth-style auth, and protection against XSS/CSRF-style attacks.
+The next major direction is to turn the UI into a real e-shop frontend using:
 
-## Stack
+```text
+React + Vite + TypeScript + Tailwind CSS
+```
 
-- Backend: Go
-- Frontend: plain HTML/CSS/JavaScript
-- Local runtime: Docker Compose
-- Database target: PostgreSQL
+Do not continue the old Bootstrap-only plan unless the user explicitly reverses this decision.
 
-Prefer standard library Go unless a dependency gives clear value. If adding dependencies, document why and keep them small.
+---
 
-Do not migrate the frontend to React/Vue/Svelte unless the user explicitly changes the stack. The current project scope is better served by a clean plain JavaScript frontend with reusable helpers, templates, and shared rendering functions.
+## Current Verified State
+
+The repository currently has:
+
+- Go backend using `net/http`.
+- REST API under `internal/adapters/http/v1`.
+- Domain models under `internal/core/domains`.
+- Store interfaces under `internal/core/ports`.
+- Application logic under `internal/service`.
+- PostgreSQL adapter under `internal/adapters/db/postgres`.
+- In-memory store fallback when `DATABASE_URL` is empty.
+- Embedded PostgreSQL migrations.
+- Docker Compose with API and PostgreSQL services.
+- `internal/config` for environment loading and production secret validation.
+- Bcrypt password hashing through `golang.org/x/crypto`.
+- `pgx` PostgreSQL driver.
+- Public product listing and product details.
+- Customer registration and login.
+- HMAC-signed bearer-token style auth.
+- Login failure rate limiting.
+- Authenticated profile, cart, order, and payment simulation flows.
+- Admin product, order, and user management.
+- API, development, and deployment documentation.
+- GitHub Actions CI for formatting, tests, vet, and Docker build.
+- Embedded frontend served from `internal/frontend/static`.
+- Seed/demo product images currently stored as embedded SVG assets.
+
+Important frontend limitation:
+
+The current frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. It has product cards and a selected product detail area, but it does not yet behave like a real e-shop frontend with dedicated reloadable product routes, image galleries, uploaded product images, reusable React components, or a modern app layout.
+
+---
+
+## Non-Negotiable Development Rules
+
+- Keep commits small, focused, and meaningful.
+- Prefer one feature branch per large work area.
+- Do not mix database migrations, API changes, UI migration, docs, and Docker changes in one giant commit.
+- Keep the repository buildable and testable after every meaningful step.
+- Run `gofmt` on Go files before committing.
+- Run `go test ./...` before finalizing backend changes.
+- Run `go vet ./...` before finalizing backend changes when Go tooling is available.
+- Run frontend build/type/lint checks once the React frontend exists.
+- Do not commit `.env`, generated build output, secrets, `data/`, uploaded product images, database files, or files under `plan/`.
+- Do not commit `frontend/dist/` unless the repository intentionally changes to committed static assets. Prefer Docker/CI builds.
+- Keep handlers independent from PostgreSQL details.
+- Keep service code dependent on interfaces from `internal/core/ports`.
+- Preserve the existing REST API shape unless a deliberate versioned change is required.
+- Return consistent JSON errors shaped as `{"error":"message"}`.
+- Escape or safely render all user-controlled frontend content.
+- Do not store uploaded files inside `internal/frontend/static/assets/products`; that directory is only for seed/demo embedded assets.
+- New product images must be uploaded through the admin UI/API and stored in a runtime upload directory.
+- Do not add Next.js. The backend is Go and the frontend should be a Vite SPA unless the user explicitly requests otherwise.
+- Do not rewrite backend and frontend at the same time.
+- Do not delete the old static frontend until the React frontend has working replacements for the customer and admin flows.
+
+---
+
+## Frontend Direction
+
+Use:
+
+```text
+React + Vite + TypeScript + Tailwind CSS
+```
+
+Recommended supporting frontend libraries:
+
+```text
+react-router-dom
+lucide-react
+clsx
+```
+
+Optional later libraries:
+
+```text
+react-hook-form
+zod
+zustand
+```
+
+Avoid adding optional libraries until they solve a real problem. Plain React state and typed API helpers are enough for the first migration phase.
+
+### Why React Now
+
+The project is already complex enough that plain JavaScript plus Bootstrap would still leave too much manual DOM/state management.
+
+The frontend now needs:
+
+- Dedicated product pages.
+- Product image galleries.
+- Admin image upload with drag-and-drop and previews.
+- Auth state.
+- Cart state.
+- Checkout state.
+- Payment simulation state.
+- Admin product forms.
+- Admin user/order tables.
+- Loading/error/empty states.
+- Route-based pages.
+- Reusable layouts and UI parts.
+
+Bootstrap mainly solves styling. React solves structure, state, routing, and reusable UI.
+
+### Tailwind Usage Rules
+
+Use Tailwind as the main styling layer.
+
+Do:
+
+- Use Tailwind utility classes for layout and components.
+- Keep shared UI as React components.
+- Use small helper functions for class composition where useful.
+- Keep global CSS minimal.
+- Use responsive utilities deliberately.
+
+Do not:
+
+- Recreate a huge handwritten CSS design system.
+- Scatter repeated long class strings everywhere if a component would be cleaner.
+- Use Bootstrap and Tailwind together as competing layout systems.
+- Add a large component library unless the user asks.
+
+---
+
+## Target Architecture
+
+Current backend should remain Go.
+
+Target frontend should live outside `internal/frontend/static`:
+
+```text
+frontend/
+  package.json
+  package-lock.json
+  tsconfig.json
+  vite.config.ts
+  index.html
+  src/
+    main.tsx
+    App.tsx
+    api/
+      client.ts
+      auth.ts
+      products.ts
+      cart.ts
+      orders.ts
+      admin.ts
+      uploads.ts
+    components/
+      layout/
+        Header.tsx
+        Footer.tsx
+        PageShell.tsx
+        ProtectedRoute.tsx
+        AdminRoute.tsx
+      ui/
+        Button.tsx
+        Card.tsx
+        Badge.tsx
+        Input.tsx
+        Select.tsx
+        Modal.tsx
+        Toast.tsx
+        EmptyState.tsx
+        LoadingState.tsx
+        ErrorState.tsx
+      product/
+        ProductCard.tsx
+        ProductGrid.tsx
+        ProductGallery.tsx
+        ProductSpecs.tsx
+        ProductPrice.tsx
+        ProductStockBadge.tsx
+      cart/
+        CartLine.tsx
+        CartSummary.tsx
+      checkout/
+        CheckoutSummary.tsx
+      forms/
+        FormField.tsx
+        ImageUploader.tsx
+      admin/
+        AdminLayout.tsx
+        ProductEditor.tsx
+        ProductTable.tsx
+        ProductImageManager.tsx
+        OrderTable.tsx
+        UserTable.tsx
+    pages/
+      HomePage.tsx
+      ProductPage.tsx
+      CartPage.tsx
+      CheckoutPage.tsx
+      OrdersPage.tsx
+      LoginPage.tsx
+      RegisterPage.tsx
+      AdminDashboardPage.tsx
+      AdminProductsPage.tsx
+      AdminOrdersPage.tsx
+      AdminUsersPage.tsx
+      NotFoundPage.tsx
+    state/
+      authStore.tsx
+      cartStore.tsx
+    types/
+      api.ts
+      product.ts
+      order.ts
+      user.ts
+    utils/
+      money.ts
+      dates.ts
+      slugs.ts
+      errors.ts
+```
+
+The Go server should eventually serve the React build output.
+
+Recommended final static serving direction:
+
+```text
+frontend/dist/             generated by Vite
+internal/frontend/dist/    optional copy target during Docker build
+```
+
+Do not keep long-term application code inside one giant `app.js`.
+
+---
 
 ## Current Architecture
 
-- `cmd/server/main.go` is the composition root: environment, logger, store adapter, service, HTTP handler, middleware, and server startup.
-- `internal/core/domains` contains domain models and shared domain errors.
-- `internal/core/ports` contains storage interfaces that service code depends on.
-- `internal/service` contains application use cases, auth token handling, and password hashing for the prototype.
-- `internal/adapters/db` contains the current in-memory database adapter. PostgreSQL should replace or sit beside this adapter.
-- `internal/adapters/http/v1` contains REST v1 routing, auth middleware, request DTOs, and handlers.
-- `internal/web` contains shared HTTP helpers such as JSON responses and middleware.
-- `internal/frontend` contains the embedded frontend.
-- `compose.yaml` runs the API and a PostgreSQL service. The API must be wired to PostgreSQL in the next major backend step.
-
-## Development Rules
-
-- Keep commits small and meaningful.
-- Prefer branch-per-feature work.
-- Run `gofmt` on Go files before committing when Go tooling is available.
-- Run `go test ./...` before finalizing backend changes when Go tooling is available.
-- Do not commit local `.env` files, generated build output, secrets, or files under `plan/`.
-- Preserve the existing REST shape unless a change is required by the project brief.
-- Use JSON responses consistently, including error responses shaped as `{"error":"message"}`.
-- Keep frontend work in plain HTML/CSS/JavaScript unless the user explicitly changes the stack.
-- Prefer incremental refactors over rewrites.
-- After every meaningful step, leave the repository in a buildable and testable state.
-
-## Git Workflow
-
-Use focused branches and commits. Recommended branch order:
-
-1. `feature/postgres-persistence`
-2. `feature/auth-hardening`
-3. `feature/payment-simulation`
-4. `test/store-and-api-coverage`
-5. `docs/api-documentation`
-6. `refactor/frontend-templates`
-7. `ci/basic-checks`
-8. `chore/deployment-polish`
-
-Example workflow:
-
-```bash
-git switch -c feature/postgres-persistence
-go test ./...
-git status
-git add .
-git commit -m "feat: add postgres persistence"
+```text
+cmd/server/                         Go HTTP server composition root
+internal/config/                    Environment loading and validation
+internal/core/domains/              Domain models, constants, validation, shared domain errors
+internal/core/ports/                Store interfaces
+internal/service/                   Application use cases, auth, password hashing
+internal/adapters/db/               In-memory store and store contract tests
+internal/adapters/db/postgres/      PostgreSQL store, helpers, migrations
+internal/adapters/http/v1/          REST API v1 handlers, requests, auth middleware, rate limiting
+internal/frontend/                  Embedded frontend handler and static files
+internal/frontend/static/           Current legacy HTML/CSS/JS and embedded demo assets
+internal/web/                       Shared HTTP JSON, CORS, logging, middleware helpers
+docs/                               API, development, and deployment documentation
+compose.yaml                        Local API and PostgreSQL services
+Dockerfile                          Production-style Go API image
+.github/workflows/ci.yml            CI checks
 ```
 
-Avoid large mixed commits that combine database work, UI redesign, tests, and documentation at the same time.
+Target architecture after React migration:
 
-## Updated Implementation Roadmap
+```text
+frontend/                           React + Vite + TypeScript + Tailwind source app
+internal/frontend/                  Go static frontend serving adapter
+internal/frontend/static/           Temporary legacy frontend until removed
+internal/frontend/dist/             Optional copied React build output
+```
 
-### 1. PostgreSQL Persistence
+---
 
-Status: implemented.
+## Current Implemented Feature Baseline
 
-PostgreSQL persistence is now available when `DATABASE_URL` is configured. The memory store remains useful for lightweight local development and tests. Future database work should focus on migration safety, persistence tests, rollback behavior, and query cleanup rather than reimplementing the adapter.
+Customer-facing features:
 
-Add or update:
+- Browse products.
+- Filter/search products.
+- View basic product details.
+- Register and log in.
+- View current profile/session.
+- Manage cart.
+- Place order from cart.
+- Simulate order payment success or failure.
+- View own orders.
 
-- `internal/adapters/db/postgres.go`
-- `internal/adapters/db/migrations/`
-- `internal/adapters/db/postgres_test.go`
-- `cmd/server/main.go`
-- `compose.yaml`
-- `README.md`
+Admin-facing features:
 
-Recommended tables:
+- Create, update, and delete products.
+- List orders.
+- List users.
+- Inspect and update user roles.
+- Use seeded local admin account in development.
 
-- `users`
-- `products`
-- `carts`
-- `cart_items`
-- `orders`
-- `order_items`
+Backend/platform features:
 
-Important persistence rules:
+- PostgreSQL persistence for users, products, carts, and orders when `DATABASE_URL` is configured.
+- In-memory fallback for lightweight development/tests.
+- Transactional checkout behavior in store implementations.
+- Store contract tests.
+- Bcrypt password hashing.
+- Config validation for non-development secrets.
+- Login rate limiting.
+- Docker Compose local environment.
+- CI for Go formatting, tests, vet, and Docker image build.
 
-- User accounts must survive server restart.
-- Products and stock must survive server restart.
-- Cart contents must survive server restart.
-- Orders and order items must survive server restart.
-- Order items should store a snapshot of product name and unit price, not only product IDs.
-- Checkout must be transactional.
-- Checkout must reduce stock exactly once.
-- Checkout must fail cleanly when stock is insufficient.
-- Cart clearing after checkout must happen in the same transaction as order creation.
+---
 
-`CreateOrderFromCart` must use a database transaction:
+## Known Gaps and Technical Debt
 
-1. Start transaction.
-2. Load cart items.
-3. Lock product rows for the selected products.
-4. Validate stock.
-5. Insert order.
-6. Insert order items.
-7. Decrease product stock.
-8. Clear cart.
-9. Commit.
+Address these before adding unrelated features:
 
-If any step fails, rollback.
+1. Product media is still based around a single `imageUrl` field.
+2. Demo product images are embedded SVG files under static assets.
+3. There is no admin drag-and-drop/select image upload flow.
+4. There is no runtime upload directory or uploaded file serving.
+5. There is no product image gallery model.
+6. There is no limit of up to 10 images per product.
+7. Product detail UI exists, but not as a real dedicated e-shop product page with a reloadable URL.
+8. Product URLs should be slug-based, for example `/products/viper-x1-gaming-mouse`.
+9. The current layout should be redesigned into a real e-shop layout.
+10. The frontend should be migrated to reusable React components.
+11. The frontend should use Tailwind instead of large handwritten CSS.
+12. Product specs are too limited for a real mouse shop.
+13. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
 
-Use `DATABASE_URL` for configuration.
+---
 
-### 2. Store Interface and Adapter Boundaries
+## Target E-Shop UX
 
-Keep handlers and service code independent from storage details.
+The storefront should feel like an actual online shop, not only an API demo.
 
-Rules:
+Required customer UI areas:
 
-- HTTP handlers must not import PostgreSQL-specific code.
-- Service code should depend on interfaces from `internal/core/ports`.
-- The PostgreSQL adapter should satisfy the same store behavior as the memory adapter.
-- Shared behavior should be tested through store contract tests where practical.
+- Header/navbar with logo, search, cart badge, account/login state, and admin link for admins.
+- Home/store page with hero section.
+- Product category/filter/sorting controls.
+- Product grid with cards.
+- Product cards with main image, price, stock badge, short specs, and quick add-to-cart.
+- Dedicated product detail page for every mouse.
+- Product gallery with main image and thumbnails.
+- Product description and specs table.
+- Add-to-cart controls with disabled/out-of-stock behavior.
+- Cart page with image thumbnails, quantity controls, totals, and checkout action.
+- Checkout page with order summary.
+- Orders page with order cards and payment simulation action for pending orders.
+- Responsive mobile/tablet/desktop layout.
+- Loading, empty, and error states for every page.
 
-Suggested files:
+Required admin UI areas:
 
-- `internal/core/ports/store.go`
-- `internal/adapters/db/store_contract_test.go`
-- `internal/adapters/db/memory.go`
-- `internal/adapters/db/postgres.go`
+- Admin layout/sidebar or clearly separated admin dashboard.
+- Product table/cards with search/filter.
+- Product create/edit form.
+- Drag-and-drop/select image uploader for product images.
+- Product image preview gallery with delete/reorder/primary-image behavior.
+- Orders table with status badges and filtering.
+- Users table with role filtering and safe role updates.
+- Clear destructive action confirmations.
 
-### 3. Auth and Security Hardening
+---
 
-The current auth implementation is acceptable only as a project prototype.
+## Dedicated Product Page Requirements
 
-Before presenting the project as production-style, replace or harden:
+Every mouse must have its own dedicated product page.
 
-- Password hashing
-- Token generation/validation
-- Auth secret handling
-- Seeded admin configuration
-- Login error behavior
-- CORS/CSRF assumptions
+Preferred frontend route:
 
-Recommended changes:
+```text
+/products/:slug
+```
 
-- Use a vetted password hashing library such as bcrypt or Argon2id.
-- Require `AUTH_SECRET` from environment.
-- Do not silently use weak default secrets in production mode.
-- Move seeded admin credentials to environment variables.
-- Add clear local-development defaults only for `APP_ENV=development`.
-- Add basic login rate limiting if time allows.
-- Keep authorization checks explicit for admin-only endpoints.
+Implementation notes:
 
-Recommended environment variables:
+- Use `react-router-dom`.
+- Update the Go frontend handler so product routes can reload and still serve the React `index.html`.
+- Keep `/api/v1/...`, `/healthz`, `/assets/...`, and `/uploads/...` separate from frontend route fallback.
+- Add product lookup by slug or ensure the frontend can load product detail directly without downloading all products first.
+- Keep product ID stable for API mutations.
+- Use slug for customer-facing URLs.
+
+Minimum product page content:
+
+- Breadcrumbs: Home / Category / Product name.
+- Image gallery: main image plus thumbnails.
+- Product title.
+- Price and currency.
+- Stock status.
+- Add-to-cart button.
+- Quantity selector.
+- Short selling points.
+- Full description.
+- Specs table.
+- Similar/related products if practical.
+- Admin edit shortcut for admin users.
+
+---
+
+## Product Image Upload Requirements
+
+Build an admin-only image upload feature so the user does not need to manually copy mouse image files into `assets`.
+
+Functional rules:
+
+- Admin can drag and drop images.
+- Admin can also use a normal file picker.
+- Accept only JPEG and PNG.
+- Reject SVG, WebP, GIF, PDF, executable files, and unknown MIME types for uploaded product media.
+- Maximum 10 images per product.
+- Recommended max file size: 4 MiB per image.
+- Recommended max multipart request size: 48 MiB.
+- Use both extension checks and MIME/content sniffing.
+- Decode image headers/config server-side to confirm the file is a real image.
+- Generate server-side filenames.
+- Never trust original filenames.
+- Store only safe metadata in the database.
+- Store files outside embedded frontend assets, for example `./data/uploads/products`.
+- Serve uploaded files under a public URL prefix, for example `/uploads/products/...`.
+- Do not allow path traversal.
+- Do not expose local filesystem paths in API responses.
+- Make upload validation errors clear in the UI.
+- Keep old images unless explicitly deleted.
+- Deleting a product should either delete its image metadata and files or clearly document orphan cleanup behavior.
+
+Suggested environment variables:
+
+```text
+UPLOAD_DIR=./data/uploads
+UPLOAD_URL_PREFIX=/uploads
+MAX_PRODUCT_IMAGES=10
+MAX_PRODUCT_IMAGE_BYTES=4194304
+MAX_PRODUCT_UPLOAD_BYTES=50331648
+```
+
+Suggested Docker/Compose volume:
 
 ```yaml
-APP_ENV: development
-DATABASE_URL: postgres://clicky:clicky_dev_password@db:5432/clicky_store?sslmode=disable
-AUTH_SECRET: change-me-for-local-development
-ADMIN_EMAIL: admin@clicky.local
-ADMIN_PASSWORD: admin12345
-ADMIN_NAME: Clicky Admin
+${UPLOAD_DATA_PATH:-./data/uploads}:/app/data/uploads
 ```
 
-### 4. Payment Simulation Flow
+The server should create the upload directory on startup if it does not exist.
 
-The project brief allows payment simulation or real payment integration. Implement a clean simulation boundary instead of treating checkout as instantly paid.
+---
 
-Recommended flow:
+## Product Image Data Model
 
-- Creating an order should create an order with pending payment.
-- A separate payment simulation endpoint should mark payment as paid or failed.
-- Order status should reflect payment state.
+Add product image support without breaking existing products.
 
-Suggested endpoints:
+Suggested Go domain model:
 
-```text
-POST /api/v1/orders
-POST /api/v1/orders/{orderId}/payment/simulate
-```
-
-Suggested states:
-
-```text
-order.status: pending | confirmed | cancelled | payment_failed
-order.paymentStatus: pending | paid | failed
-```
-
-Rules:
-
-- Do not integrate a real payment provider unless explicitly requested.
-- Keep payment simulation isolated so a real provider can replace it later.
-- Document clearly that payment is simulated for educational purposes.
-
-### 5. Backend Validation and Error Handling
-
-Improve request validation before adding many new features.
-
-Add validation for:
-
-- Product name
-- Product slug
-- Price
-- Stock
-- Cart quantity
-- Email
-- Password length
-- Role value
-- Order/payment state transitions
-
-Rules:
-
-- Return consistent JSON errors.
-- Do not expose internal database errors to users.
-- Use domain errors for expected failure cases.
-- Keep error responses shaped as:
-
-```json
-{"error":"message"}
-```
-
-### 6. Tests and Quality Coverage
-
-The project already has some tests. Expand coverage around edge cases and persistence.
-
-Required test areas:
-
-Auth:
-
-- Register valid user
-- Duplicate email
-- Weak password
-- Login success
-- Login failure
-- Invalid token
-- Non-admin blocked from admin endpoints
-
-Products:
-
-- Product list
-- Product details
-- Unknown product
-- Admin create/update/delete product
-- Invalid product payload
-
-Cart:
-
-- Add product
-- Update quantity
-- Quantity below 1
-- Quantity above stock
-- Unknown product
-- Clear cart
-
-Orders:
-
-- Empty cart checkout
-- Successful checkout
-- Stock reduction
-- Insufficient stock
-- User can see own orders
-- User cannot see another user's orders
-- Admin can list orders
-
-Payment:
-
-- Pending order payment simulation success
-- Pending order payment simulation failure
-- Invalid payment transition blocked
-
-Database:
-
-- PostgreSQL migrations apply cleanly
-- Store behavior matches memory store behavior where possible
-- Checkout transaction rolls back on failure
-
-Run before finalizing backend changes:
-
-```bash
-gofmt -w .
-go test ./...
-go vet ./...
-```
-
-### 7. Frontend Refactor: Unified Parts and Templates
-
-The frontend must not keep rewriting the same DOM code over and over again.
-
-Before adding more screens, create shared frontend utilities and reusable rendering patterns.
-
-Goals:
-
-- Unify repeated card rendering.
-- Unify repeated table rendering.
-- Unify repeated form handling.
-- Unify API fetch/error handling.
-- Unify loading, empty, and error states.
-- Reuse templates for product cards, order rows, cart rows, admin rows, and status badges.
-- Avoid copy-pasted HTML strings scattered across many unrelated functions.
-
-Recommended frontend structure:
-
-```text
-internal/frontend/static/
-  index.html
-  styles.css
-  app.js
-  js/
-    api.js
-    auth.js
-    state.js
-    templates.js
-    render.js
-    forms.js
-    admin.js
-    cart.js
-    orders.js
-    products.js
-```
-
-If keeping a single `app.js`, still split the code into clear sections:
-
-- API client helpers
-- State helpers
-- Template helpers
-- Rendering helpers
-- Product UI
-- Cart UI
-- Order UI
-- Admin UI
-- Event binding
-
-Frontend rules:
-
-- Use one API helper for all requests.
-- Use one auth header helper.
-- Use one error display helper.
-- Use one money formatting helper.
-- Use one status badge helper.
-- Use template functions instead of duplicating large HTML strings.
-- Use event delegation where it simplifies repeated buttons.
-- Keep CSS class names consistent.
-- Keep responsive behavior simple and testable.
-- Do not introduce a frontend framework unless explicitly requested.
-
-Example template direction:
-
-```js
-function productCardTemplate(product) {
-  return `
-    <article class="card product-card" data-product-id="${escapeHtml(product.id)}">
-      <img src="${escapeAttr(product.imageUrl)}" alt="${escapeAttr(product.name)}">
-      <h3>${escapeHtml(product.name)}</h3>
-      <p>${formatMoney(product.priceCents, product.currency)}</p>
-      ${stockBadgeTemplate(product.stock)}
-      <button data-action="add-to-cart" data-product-id="${escapeAttr(product.id)}">
-        Add to cart
-      </button>
-    </article>
-  `;
+```go
+type ProductImage struct {
+    ID        string    `json:"id"`
+    ProductID string    `json:"productId"`
+    URL       string    `json:"url"`
+    AltText   string    `json:"altText"`
+    SortOrder int       `json:"sortOrder"`
+    IsPrimary bool      `json:"isPrimary"`
+    CreatedAt time.Time `json:"createdAt"`
 }
 ```
 
-All template helpers must escape user-controlled content.
+Suggested product model direction:
 
-### 8. Frontend UX Polish
+```go
+type Product struct {
+    ID          string         `json:"id"`
+    Name        string         `json:"name"`
+    Slug        string         `json:"slug"`
+    Description string         `json:"description"`
+    Category    string         `json:"category"`
+    PriceCents  int            `json:"priceCents"`
+    Currency    string         `json:"currency"`
+    DPI         int            `json:"dpi"`
+    Wireless    bool           `json:"wireless"`
+    Ergonomic   bool           `json:"ergonomic"`
+    Stock       int            `json:"stock"`
+    ImageURL    string         `json:"imageUrl"` // temporary compatibility fallback
+    Images      []ProductImage `json:"images"`
+    CreatedAt   time.Time      `json:"createdAt"`
+    UpdatedAt   time.Time      `json:"updatedAt"`
+}
+```
 
-After the frontend is refactored into reusable helpers/templates, improve UX.
+Keep `ImageURL` temporarily as a compatibility/fallback field. Prefer `Images` for new React UI code. Remove `ImageURL` only after UI, API docs, tests, and seed data no longer depend on it.
 
-Customer-facing improvements:
-
-- Product detail section or product detail page.
-- Better empty states.
-- Stock badges.
-- Disabled add-to-cart button for out-of-stock products.
-- Cart quantity validation.
-- Checkout summary.
-- Order detail view.
-- Payment status feedback.
-- Mobile layout review.
-
-Admin improvements:
-
-- Product search/filter.
-- Order filtering by status.
-- User filtering by role/search.
-- Safer delete confirmation.
-- Clear admin-only navigation.
-- Better validation messages in admin forms.
-
-Do not prioritize visual polish before persistence, auth hardening, and tests.
-
-### 9. API Documentation
-
-Add documentation that makes the project easy to evaluate.
-
-Recommended files:
-
-- `docs/openapi.yaml`
-- `docs/api-examples.md`
-- `docs/development.md`
-- `docs/deployment.md`
-
-Document:
-
-- Auth endpoints
-- Product endpoints
-- Cart endpoints
-- Order endpoints
-- Payment simulation endpoint
-- Admin endpoints
-- Error format
-- Required environment variables
-- Local development commands
-- Test commands
-- Docker Compose startup
-- Seeded admin behavior
-
-### 10. CI and Automation
-
-Add GitHub Actions after the main persistence and test work.
-
-Recommended file:
+Suggested migration:
 
 ```text
-.github/workflows/ci.yml
+internal/adapters/db/postgres/migrations/000002_product_images.up.sql
+internal/adapters/db/postgres/migrations/000002_product_images.down.sql
 ```
 
-CI should run:
+Suggested table shape:
 
-- `gofmt` check
-- `go test ./...`
-- `go vet ./...`
-- Docker build
+```sql
+CREATE TABLE product_images (
+    id TEXT PRIMARY KEY,
+    product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    url TEXT NOT NULL,
+    alt_text TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
-Example local equivalent:
+CREATE INDEX product_images_product_id_sort_idx
+    ON product_images (product_id, sort_order, created_at);
+```
 
-```bash
-test -z "$(gofmt -l .)"
+Optional migration behavior:
+
+- Convert existing `products.image_url` into one `product_images` row per product.
+- Keep `products.image_url` synced to the primary image until compatibility cleanup is done.
+
+---
+
+## Suggested API Additions
+
+Keep existing API endpoints stable.
+
+Add these endpoints:
+
+```text
+GET    /api/v1/products/slug/{slug}
+POST   /api/v1/admin/products/{productId}/images
+PATCH  /api/v1/admin/products/{productId}/images/order
+PATCH  /api/v1/admin/products/{productId}/images/{imageId}
+DELETE /api/v1/admin/products/{productId}/images/{imageId}
+```
+
+Upload endpoint:
+
+```text
+POST /api/v1/admin/products/{productId}/images
+Content-Type: multipart/form-data
+field name: images
+```
+
+Recommended response:
+
+```json
+{
+  "images": [
+    {
+      "id": "img_...",
+      "productId": "prod_...",
+      "url": "/uploads/products/...",
+      "altText": "Viper X1 Gaming Mouse",
+      "sortOrder": 0,
+      "isPrimary": true,
+      "createdAt": "..."
+    }
+  ]
+}
+```
+
+Validation rules:
+
+- Non-admin users receive `403`.
+- Unauthenticated users receive `401`.
+- Unknown product receives `404`.
+- More than 10 total product images receives `400`.
+- Invalid file type receives `400`.
+- Oversized file receives `400`.
+- Internal storage/database failure receives `500` with a safe error message.
+
+---
+
+## React Frontend Implementation Rules
+
+- Use TypeScript.
+- Define API response types in `frontend/src/types`.
+- Keep one small API client wrapper in `frontend/src/api/client.ts`.
+- Keep auth token handling in one place.
+- Use React Router for pages.
+- Use reusable layout components.
+- Use reusable UI components.
+- Use feature-specific components for product/cart/order/admin areas.
+- Avoid repeated API fetch logic across pages.
+- Avoid repeated product card/order row/cart line markup.
+- Keep forms readable and typed.
+- Show loading, error, and empty states explicitly.
+- Do not put business rules only in the frontend; backend remains authoritative.
+- Keep frontend validation user-friendly but duplicate critical checks on the backend.
+- Do not use `dangerouslySetInnerHTML` unless there is a very strong reason.
+- Use Tailwind for layout and styling.
+- Keep `src/index.css` small and mostly for Tailwind directives/global defaults.
+
+Suggested initial frontend commands:
+
+```sh
+npm create vite@latest frontend -- --template react-ts
+cd frontend
+npm install
+npm install react-router-dom lucide-react clsx
+npm install -D tailwindcss @tailwindcss/vite
+```
+
+Use the current Tailwind/Vite setup recommended by the installed Tailwind version. Do not copy outdated Tailwind configuration blindly.
+
+---
+
+## React Frontend Environment
+
+Recommended frontend environment variable:
+
+```text
+VITE_API_BASE_URL=/api/v1
+```
+
+For local dev with Vite proxy, configure `frontend/vite.config.ts` so API calls can proxy to the Go server.
+
+Suggested dev flow:
+
+```text
+Terminal 1: docker compose up db
+Terminal 2: go run ./cmd/server
+Terminal 3: cd frontend && npm run dev
+```
+
+Suggested final production flow:
+
+```text
+Docker builds React frontend.
+Docker builds Go backend.
+React dist is copied into the final Go image.
+Go serves the React app and API from one container.
+```
+
+---
+
+## Dockerfile Direction
+
+Current Dockerfile should be converted into a multi-stage build when React is added.
+
+Recommended stages:
+
+```text
+frontend-build:
+  node:22-alpine
+  workdir /src/frontend
+  npm ci
+  npm run build
+
+backend-build:
+  golang image
+  go test optional only in CI, not necessarily in Docker build
+  go build ./cmd/server
+
+runtime:
+  copy Go binary
+  copy frontend dist to a path served by internal/frontend
+```
+
+Do not rely on a globally installed Node or Vite inside the Go image.
+
+---
+
+## Implementation Roadmap
+
+### Phase 0: Sanity Check Current Repo
+
+Goal: verify baseline before rewriting UI or adding image uploads.
+
+Run:
+
+```sh
+git status --short
 go test ./...
 go vet ./...
-docker build -t clicky-store:test .
+docker compose config
 ```
 
-### 11. Docker and Deployment Polish
+Commit only if files change.
 
-Improve Docker Compose and runtime configuration after PostgreSQL is wired in.
+---
 
-Recommended Compose improvements:
+### Phase 1: Rewrite `AGENTS.md`
 
-- PostgreSQL healthcheck.
-- API waits for database health.
-- `DATABASE_URL` configured for the server.
-- `AUTH_SECRET` configured through environment.
-- Local dev defaults are documented.
-- No secrets are committed.
-- Optional `.env.example`.
+Goal: document the React direction and remove the old Bootstrap-first plan.
 
-Recommended files:
+Suggested commit:
 
-- `.env.example`
-- `docs/deployment.md`
+```sh
+git add AGENTS.md
+git commit -m "docs: switch frontend roadmap to react"
+```
 
-Deployment notes should mention:
+---
 
-- HTTPS/TLS should be used in real deployment.
-- Reverse proxy can terminate TLS.
-- Production secrets must be changed.
-- Database volume must be backed up.
-- Admin password must not use the local demo value.
+### Phase 2: Add React App Skeleton
 
-## Backend Priorities
+Goal: add Vite React TypeScript app without replacing the old frontend yet.
 
-Immediate backend work should focus on:
+Suggested changes:
 
-1. PostgreSQL persistence for users, products, carts, and orders.
-2. Transactional checkout.
-3. Store contract tests.
-4. Safer password hashing and token handling.
-5. Payment simulation endpoint.
-6. Request validation helpers.
-7. Clearer domain errors.
-8. API documentation.
+- Add `frontend/`.
+- Add React + TypeScript + Vite.
+- Add Tailwind.
+- Add React Router.
+- Add basic app shell.
+- Add placeholder pages.
+- Add `npm` scripts.
+- Update `.gitignore`.
+- Update CI to build frontend.
+- Do not remove `internal/frontend/static` yet.
 
-## Frontend Priorities
+Suggested commit:
 
-Immediate frontend work should focus on:
+```sh
+git add frontend .gitignore .github/workflows/ci.yml
+git commit -m "feat: add react frontend skeleton"
+```
 
-1. Reusable API client helper.
-2. Reusable template/render helpers.
-3. Shared form handling.
-4. Shared status badge rendering.
-5. Shared loading/error/empty states.
-6. Product detail UI.
-7. Cart/order UX polish.
-8. Admin filtering and safer admin forms.
-9. Responsive layout review.
+---
 
-Frontend code must be treated as application code, not as a pile of one-off scripts. If a UI pattern appears more than once, extract it into a helper or template.
+### Phase 3: Add Typed API Client
+
+Goal: connect React to existing API without changing backend behavior.
+
+Suggested changes:
+
+- Add `frontend/src/api/client.ts`.
+- Add typed auth/products/cart/orders/admin API modules.
+- Add shared error normalization.
+- Add API response types.
+- Use `VITE_API_BASE_URL`.
+- Add loading/error helpers.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "feat: add typed frontend api client"
+```
+
+---
+
+### Phase 4: Rebuild Auth and Layout
+
+Goal: make login/register/session state work in React.
+
+Suggested changes:
+
+- Add `AuthProvider`.
+- Add login page.
+- Add register page.
+- Add logout.
+- Add protected route helper.
+- Add admin route helper.
+- Add header/navbar with account/cart/admin state.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "feat: rebuild auth flow in react"
+```
+
+---
+
+### Phase 5: Rebuild Product Listing
+
+Goal: replace product browsing UI in React.
+
+Suggested changes:
+
+- Add home/store page.
+- Add product grid.
+- Add reusable product cards.
+- Add search/filter/sort UI.
+- Add stock and price badges.
+- Add quick add-to-cart.
+- Add loading/empty/error states.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "feat: rebuild product listing in react"
+```
+
+---
+
+### Phase 6: Add Product Slug Routes
+
+Goal: every mouse gets a dedicated reloadable page.
+
+Suggested backend changes:
+
+- Add slug field if missing.
+- Add slug generation/validation.
+- Add store lookup by slug or API support for lookup by slug.
+- Add `GET /api/v1/products/slug/{slug}`.
+- Add tests for slug lookup and not-found behavior.
+- Update frontend fallback so direct reload of `/products/{slug}` serves React `index.html`.
+
+Suggested frontend changes:
+
+- Add `/products/:slug` route.
+- Link product cards to product pages.
+- Add product detail page shell.
+
+Suggested commit:
+
+```sh
+git add internal frontend docs
+git commit -m "feat: add product slug routes"
+```
+
+---
+
+### Phase 7: Build Product Detail Page
+
+Goal: make product pages look like actual e-shop pages.
+
+Suggested changes:
+
+- Product gallery area with fallback image.
+- Product title, price, stock, quantity, add-to-cart.
+- Specs table.
+- Description section.
+- Related products if practical.
+- Admin edit shortcut for admin users.
+- Responsive layout.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "feat: build react product detail page"
+```
+
+---
+
+### Phase 8: Rebuild Cart, Checkout, and Orders
+
+Goal: make the full customer purchase flow work in React.
+
+Suggested changes:
+
+- Cart page.
+- Quantity update controls.
+- Remove item control.
+- Cart summary.
+- Checkout page.
+- Order creation flow.
+- Orders page.
+- Payment simulation button for pending orders.
+- Status badges.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "feat: rebuild cart checkout and orders in react"
+```
+
+---
+
+### Phase 9: Rebuild Admin UI
+
+Goal: rebuild current admin functionality before adding image features.
+
+Suggested changes:
+
+- Admin dashboard shell.
+- Admin products page.
+- Product create/edit form.
+- Product delete confirmation.
+- Admin orders page.
+- Admin users page.
+- Role update controls.
+- Table/card responsive layouts.
+- Search/filter controls.
+- Status badges.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "feat: rebuild admin dashboard in react"
+```
+
+---
+
+### Phase 10: Serve React Build from Go
+
+Goal: make production use the new React frontend.
+
+Suggested changes:
+
+- Update Go frontend serving adapter.
+- Serve React `index.html` for frontend routes.
+- Keep `/api/v1`, `/healthz`, `/assets`, and `/uploads` separate.
+- Update Dockerfile to build frontend and copy `dist`.
+- Update compose if needed.
+- Keep old static frontend temporarily or remove only after React coverage is complete.
+
+Suggested commit:
+
+```sh
+git add Dockerfile internal/frontend compose.yaml docs
+git commit -m "chore: serve react frontend from go"
+```
+
+---
+
+### Phase 11: Add Product Image Persistence Model
+
+Goal: support multiple images per product in memory and PostgreSQL.
+
+Suggested changes:
+
+- Add `ProductImage` domain model.
+- Add `Images []ProductImage` to `Product`.
+- Add product image methods to store interface.
+- Add memory store image support.
+- Add PostgreSQL migration/table.
+- Add PostgreSQL image methods.
+- Keep existing `ImageURL` compatibility fallback.
+- Add contract tests.
+
+Suggested commit:
+
+```sh
+git add internal
+git commit -m "feat: persist product image galleries"
+```
+
+---
+
+### Phase 12: Add Upload Storage Service
+
+Goal: validate and store admin-uploaded JPG/PNG images safely.
+
+Suggested changes:
+
+- Add upload config to `internal/config`.
+- Add upload storage package, for example `internal/adapters/uploads`.
+- Create upload directory on startup.
+- Generate safe filenames.
+- Validate file size, extension, MIME, and image header.
+- Serve uploaded files under `/uploads/`.
+- Add upload volume to Compose.
+- Add `.env.example` entries.
+
+Suggested commit:
+
+```sh
+git add internal compose.yaml .env.example docs
+git commit -m "feat: add product image upload storage"
+```
+
+---
+
+### Phase 13: Add Admin Image Upload API
+
+Goal: admin can upload, delete, reorder, and mark product images.
+
+Suggested changes:
+
+- Add multipart upload handler.
+- Add delete image handler.
+- Add reorder image handler.
+- Add primary image handler.
+- Add tests for auth, validation, invalid MIME, max count, oversized files, and success.
+
+Suggested commit:
+
+```sh
+git add internal docs
+git commit -m "feat: add admin product image api"
+```
+
+---
+
+### Phase 14: Add React Drag-and-Drop Image UI
+
+Goal: admin can manage product images from the browser.
+
+Suggested changes:
+
+- Add reusable `ImageUploader` component.
+- Drag-and-drop zone.
+- File input fallback.
+- Preview selected images before upload.
+- Show uploaded image gallery.
+- Delete/reorder/primary controls.
+- Clear errors for rejected file types/sizes.
+- Enforce max 10 images in UI.
+- Keep backend as final authority.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "feat: add react product image uploader"
+```
+
+---
+
+### Phase 15: Use Galleries Across Storefront
+
+Goal: customer UI uses uploaded product images everywhere.
+
+Suggested changes:
+
+- Product cards use primary image.
+- Product page uses gallery.
+- Cart lines use primary image.
+- Admin product list uses primary image.
+- Fallback to `ImageURL` or generic asset when no uploaded image exists.
+
+Suggested commit:
+
+```sh
+git add frontend/src internal docs
+git commit -m "feat: display product image galleries"
+```
+
+---
+
+### Phase 16: Remove Legacy Static Frontend
+
+Goal: remove old custom HTML/CSS/JS only after React fully replaces it.
+
+Requirements before deletion:
+
+- Login/register works in React.
+- Product listing works in React.
+- Product detail pages work in React.
+- Cart works in React.
+- Checkout works in React.
+- Orders/payment simulation work in React.
+- Admin products/users/orders work in React.
+- React build is served by Go.
+- Docker build works.
+- CI frontend checks pass.
+
+Suggested commit:
+
+```sh
+git rm -r internal/frontend/static
+git add internal/frontend Dockerfile docs
+git commit -m "chore: remove legacy static frontend"
+```
+
+If Go needs an embedded directory, replace legacy static files with copied/generated React dist handling rather than deleting the whole serving adapter.
+
+---
+
+### Phase 17: Full E-Shop Layout Polish
+
+Goal: make the UI match a real shop.
+
+Suggested changes:
+
+- Home hero.
+- Category/filter sidebar.
+- Sorting controls.
+- Better product cards.
+- Better product page spacing.
+- Cart and checkout polish.
+- Orders and account polish.
+- Admin dashboard polish.
+- Responsive review at mobile/tablet/desktop widths.
+- Better empty/loading/error states.
+- Consistent status colors.
+- Consistent buttons and forms.
+
+Suggested commit:
+
+```sh
+git add frontend/src
+git commit -m "refactor: polish react storefront experience"
+```
+
+---
+
+### Phase 18: Documentation and Final Checks
+
+Goal: update docs and verify everything.
+
+Suggested changes:
+
+- Update README current status.
+- Update `docs/development.md`.
+- Update `docs/deployment.md`.
+- Update `docs/openapi.yaml`.
+- Document frontend dev workflow.
+- Document React build workflow.
+- Document upload env vars and storage volume.
+- Document image validation rules.
+- Document product page behavior.
+- Update `AGENTS.md` progress if phases are completed.
+
+Suggested checks:
+
+```sh
+gofmt -w .
+go test ./...
+go vet ./...
+docker compose config
+docker build -t clicky-store:test .
+cd frontend && npm ci && npm run build
+```
+
+Suggested commit:
+
+```sh
+git add README.md docs .env.example compose.yaml Dockerfile AGENTS.md frontend
+git commit -m "docs: document react storefront and image uploads"
+```
+
+---
+
+## Backend Testing Priorities
+
+Add or update tests for:
+
+- Product slug lookup.
+- Product image model validation.
+- Memory store product image behavior.
+- PostgreSQL product image behavior.
+- Migration application.
+- Product images returned with product list/detail.
+- Upload endpoint requires admin.
+- Upload endpoint rejects unauthenticated users.
+- Upload endpoint rejects non-admin users.
+- Upload endpoint rejects non-JPG/PNG files.
+- Upload endpoint rejects oversized files.
+- Upload endpoint rejects more than 10 images per product.
+- Upload endpoint creates safe URL metadata.
+- Delete image removes metadata and, if implemented, file.
+- Reorder images persists sort order.
+- Primary image behavior.
+- Product delete cascades image metadata.
+- Existing cart/order/payment/admin tests still pass.
+
+---
+
+## Frontend Testing Priorities
+
+Once React exists, add at least lightweight checks.
+
+Recommended minimum:
+
+```text
+npm run build
+npm run typecheck
+npm run lint
+```
+
+Optional later:
+
+```text
+vitest
+@testing-library/react
+playwright
+```
+
+High-value frontend test areas:
+
+- Auth state.
+- Product card rendering.
+- Product detail route rendering.
+- Cart state/actions.
+- Admin image uploader validation.
+- API error rendering.
+- Protected/admin route behavior.
+
+Do not overbuild frontend tests before the UI stabilizes.
+
+---
+
+## Frontend Manual Test Checklist
+
+Before calling the React UI done, manually verify:
+
+- Store page loads on desktop and mobile widths.
+- Product search/filter/sort works.
+- Product card links open dedicated product pages.
+- Direct reload of `/products/{slug}` works.
+- Product page image gallery works.
+- Add-to-cart works from product card and product page.
+- Cart quantity controls work.
+- Checkout creates pending order.
+- Payment simulation works.
+- Login/logout state updates correctly.
+- Register works.
+- Admin product create/edit/delete works.
+- Admin drag-and-drop upload accepts JPG/PNG.
+- Admin file picker accepts JPG/PNG.
+- Invalid file type shows a clear error.
+- More than 10 images is blocked.
+- Uploaded images appear on product card, product page, cart, and admin list.
+- Admin orders page works.
+- Admin users page works.
+- No user-controlled text is inserted unsafely.
+
+---
 
 ## Security Notes
 
-The current auth implementation is for a project prototype. Before production-style usage:
+Current auth and storage are acceptable for an educational project, but keep these rules:
 
-- Replace custom password derivation with a vetted password hashing library.
-- Replace or harden custom token handling.
-- Rotate `AUTH_SECRET`.
-- Require HTTPS/TLS in deployment.
-- Review CORS behavior.
-- Review CSRF behavior for the frontend host.
-- Escape all frontend template output.
-- Avoid storing secrets in source code.
-- Avoid leaking internal errors in API responses.
+- Keep bcrypt password hashing.
+- Keep production `AUTH_SECRET` validation.
+- Do not log passwords or bearer tokens.
+- Do not expose internal errors to API users.
+- Use HTTPS/TLS in any real deployment.
+- Review CORS before deployment.
+- Review CSRF assumptions if cookies are introduced later.
+- Uploaded files must be validated and stored with generated names.
+- Never serve arbitrary filesystem paths.
+- Never allow upload paths from request data.
+- Keep upload limits strict.
+- Do not allow SVG uploads as product images because SVG can contain script-like content.
+- Do not trust browser-provided MIME types alone.
+- Keep admin upload endpoints protected server-side.
+- Keep frontend route protection as UX only; backend auth remains authoritative.
+
+---
 
 ## Definition of Done
 
-A feature is not done until:
+A feature is done only when:
 
-- It has clear backend behavior.
-- It has validation and error handling.
-- It has tests where practical.
-- It does not break existing REST flows.
-- It keeps storage details outside handlers.
-- It keeps frontend duplication under control.
-- It is documented if it changes setup, API behavior, or user-visible behavior.
-- `go test ./...` passes when Go tooling is available.
-- The app still starts with Docker Compose when Docker tooling is available.
+- It is implemented incrementally with focused commits.
+- Backend behavior is clear.
+- API errors are consistent.
+- Data validation exists.
+- Storage behavior works in memory and PostgreSQL where relevant.
+- Tests are added or updated where practical.
+- React components are reused instead of duplicating page markup.
+- Frontend output safely renders user-controlled data.
+- Tailwind is used instead of large custom boilerplate CSS.
+- Documentation is updated when setup/API/user-visible behavior changes.
+- `go test ./...` passes.
+- `go vet ./...` passes when available.
+- `npm run build` passes once React exists.
+- Docker Compose config remains valid.
+- The app still starts with Docker Compose.
+
+---
+
+## Recommended Next Branch
+
+Use:
+
+```sh
+git switch main
+git pull --ff-only origin main
+git switch -c feature/react-storefront
+```
+
+Then start with the `AGENTS.md` update and continue through the phases above.
+
+---
+
+## Recommended Immediate Commit Sequence
+
+Use this sequence to avoid one giant rewrite:
+
+```text
+1. docs: switch frontend roadmap to react
+2. feat: add react frontend skeleton
+3. feat: add typed frontend api client
+4. feat: rebuild auth flow in react
+5. feat: rebuild product listing in react
+6. feat: add product slug routes
+7. feat: build react product detail page
+8. feat: rebuild cart checkout and orders in react
+9. feat: rebuild admin dashboard in react
+10. chore: serve react frontend from go
+11. feat: persist product image galleries
+12. feat: add product image upload storage
+13. feat: add admin product image api
+14. feat: add react product image uploader
+15. feat: display product image galleries
+16. chore: remove legacy static frontend
+17. refactor: polish react storefront experience
+18. docs: document react storefront and image uploads
+```
+
+---
 
 ## Recommended Final Project Checklist
 
 Before final submission or presentation:
 
 - PostgreSQL persistence works.
-- Server restart does not erase users/products/carts/orders.
+- Server restart does not erase users, products, carts, orders, or product image metadata.
+- Uploaded image files persist through container restart when the upload volume is mounted.
 - Register/login works.
 - Customer can browse products.
-- Customer can view product details.
+- Customer can open dedicated product pages.
 - Customer can manage cart.
-- Customer can place order.
+- Customer can place an order.
 - Payment simulation works.
 - Admin can manage products.
+- Admin can upload up to 10 JPG/PNG images per product.
 - Admin can manage orders.
 - Admin can manage users.
 - Responsive frontend works on mobile width.
+- UI looks like an actual e-shop.
 - Tests pass.
-- API documentation exists.
-- README explains setup and usage.
+- README and docs explain setup and usage.
 - Docker Compose starts the full system.
 - Security limitations are honestly documented.
