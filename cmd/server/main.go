@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -8,8 +9,10 @@ import (
 	"time"
 
 	"clicky-store/internal/adapters/db"
+	dbpostgres "clicky-store/internal/adapters/db/postgres"
 	httpv1 "clicky-store/internal/adapters/http/v1"
 	"clicky-store/internal/config"
+	"clicky-store/internal/core/ports"
 	"clicky-store/internal/frontend"
 	"clicky-store/internal/service"
 	"clicky-store/internal/web"
@@ -19,7 +22,22 @@ func main() {
 	cfg := config.Load()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	store := db.NewMemoryStore()
+	var store ports.Store
+	if cfg.DatabaseURL == "" {
+		logger.Warn("DATABASE_URL is not set; using in-memory store")
+		store = db.NewMemoryStore()
+	} else {
+		postgresStore, err := dbpostgres.New(context.Background(), cfg.DatabaseURL)
+		if err != nil {
+			logger.Error("postgres store initialization failed", "error", err)
+			os.Exit(1)
+		}
+		defer postgresStore.Close()
+
+		logger.Info("using postgres store")
+		store = postgresStore
+	}
+
 	appService := service.New(store, cfg.AuthSecret)
 
 	if err := appService.SeedAdmin(cfg.AdminName, cfg.AdminEmail, cfg.AdminPassword); err != nil {

@@ -12,10 +12,6 @@ services:
       PORT: ${PORT:-8080}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
       AUTH_SECRET: ${AUTH_SECRET:-change-me-for-local-development}
-
-      # Forward-compatible variables for the next backend iteration.
-      # The current Go server still uses the in-memory store until PostgreSQL
-      # persistence is implemented in code.
       DATABASE_URL: ${DATABASE_URL:-postgres://clicky:clicky_dev_password@db:5432/clicky_store?sslmode=disable}
       ADMIN_NAME: ${ADMIN_NAME:-Clicky Admin}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@clicky.local}

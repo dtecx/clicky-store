@@ -7,7 +7,7 @@ This repository is starting with the backend and container foundation using:
 - Go for the HTTP API
 - Docker Compose for local services
 - HTML/CSS/JavaScript for the future frontend
-- PostgreSQL in Compose for the upcoming persistence layer
+- PostgreSQL in Compose for durable persistence
 
 ## Current Status
 
@@ -25,8 +25,9 @@ Implemented backend features:
 - Embedded responsive storefront for browsing, auth, cart, checkout, orders, and admin screens
 - Health check endpoint
 - Dockerfile and `compose.yaml`
+- PostgreSQL persistence for users, products, carts, and orders when `DATABASE_URL` is set
 
-The API currently uses an in-memory store with seeded products and a seeded admin user. The Compose PostgreSQL service is included so the next backend iteration can add real persistence without changing the local workflow.
+The API uses PostgreSQL when `DATABASE_URL` is configured. If `DATABASE_URL` is empty, the server falls back to the in-memory store for lightweight local development and tests.
 
 ## Run With Docker Compose
 
@@ -146,7 +147,7 @@ curl -X POST http://localhost:8080/api/v1/orders \
 
 ## Planned Next Steps
 
-- Add PostgreSQL persistence for users, products, carts, and orders
+- Add store contract tests around memory and PostgreSQL behavior
 - Replace development password hashing/token handling with production-grade libraries
 - Expand backend tests around edge cases and store behavior
 - Expand frontend polish around loading states, validation, and admin filtering
@@ -157,6 +158,7 @@ curl -X POST http://localhost:8080/api/v1/orders \
 ```txt
 cmd/server/               Go HTTP server composition root
 internal/adapters/db/     Current in-memory database adapter
+internal/adapters/db/postgres PostgreSQL adapter and embedded migrations
 internal/adapters/http/v1 REST API v1 handlers and request DTOs
 internal/core/domains/    Domain models and shared domain errors
 internal/core/ports/      Storage interfaces
