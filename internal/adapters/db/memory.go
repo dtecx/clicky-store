@@ -107,7 +107,8 @@ func (s *MemoryStore) CreateUser(user domains.User) (domains.User, error) {
 	defer s.mu.Unlock()
 
 	email := normalizeEmail(user.Email)
-	if email == "" {
+	role := normalizeRole(user.Role)
+	if email == "" || role == "" {
 		return domains.User{}, domains.ErrInvalid
 	}
 	if _, exists := s.emailIndex[email]; exists {
@@ -116,15 +117,42 @@ func (s *MemoryStore) CreateUser(user domains.User) (domains.User, error) {
 
 	user.ID = s.newIDLocked("usr")
 	user.Email = email
-	if user.Role == "" {
-		user.Role = "customer"
-	}
+	user.Role = role
 	user.CreatedAt = time.Now().UTC()
 
 	s.users[user.ID] = user
 	s.emailIndex[email] = user.ID
 
 	return user, nil
+}
+
+func (s *MemoryStore) ListUsers(filter domains.UserFilter) []domains.User {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	role := strings.ToLower(strings.TrimSpace(filter.Role))
+	query := strings.ToLower(strings.TrimSpace(filter.Query))
+	users := make([]domains.User, 0, len(s.users))
+
+	if role != "" && normalizeRole(role) == "" {
+		return users
+	}
+
+	for _, user := range s.users {
+		if role != "" && user.Role != role {
+			continue
+		}
+		if query != "" && !strings.Contains(strings.ToLower(user.Name+" "+user.Email+" "+user.ID), query) {
+			continue
+		}
+		users = append(users, user)
+	}
+
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].Email < users[j].Email
+	})
+
+	return users
 }
 
 func (s *MemoryStore) UserByEmail(email string) (domains.User, error) {
@@ -147,6 +175,26 @@ func (s *MemoryStore) UserByID(id string) (domains.User, error) {
 	if !ok {
 		return domains.User{}, domains.ErrNotFound
 	}
+
+	return user, nil
+}
+
+func (s *MemoryStore) UpdateUserRole(id, role string) (domains.User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	user, ok := s.users[id]
+	if !ok {
+		return domains.User{}, domains.ErrNotFound
+	}
+
+	role = normalizeRole(role)
+	if role == "" {
+		return domains.User{}, domains.ErrInvalid
+	}
+
+	user.Role = role
+	s.users[id] = user
 
 	return user, nil
 }
@@ -485,6 +533,19 @@ func normalizeCurrency(currency string) string {
 		return "PLN"
 	}
 	return currency
+}
+
+func normalizeRole(role string) string {
+	role = strings.ToLower(strings.TrimSpace(role))
+	if role == "" {
+		return "customer"
+	}
+	switch role {
+	case "admin", "customer":
+		return role
+	default:
+		return ""
+	}
 }
 
 func normalizePaymentMethod(method string) string {

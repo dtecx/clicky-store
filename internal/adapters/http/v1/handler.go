@@ -43,6 +43,8 @@ func (h *Handler) Routes() http.Handler {
 	mux.Handle(apiPrefix+"/admin/products", h.requireAdmin(http.HandlerFunc(h.handleAdminProducts)))
 	mux.Handle(apiPrefix+"/admin/products/", h.requireAdmin(http.HandlerFunc(h.handleAdminProduct)))
 	mux.Handle(apiPrefix+"/admin/orders", h.requireAdmin(http.HandlerFunc(h.handleAdminOrders)))
+	mux.Handle(apiPrefix+"/admin/users", h.requireAdmin(http.HandlerFunc(h.handleAdminUsers)))
+	mux.Handle(apiPrefix+"/admin/users/", h.requireAdmin(http.HandlerFunc(h.handleAdminUser)))
 
 	return mux
 }
@@ -341,6 +343,53 @@ func (h *Handler) handleAdminOrders(w http.ResponseWriter, r *http.Request) {
 
 	orders := h.service.ListOrders()
 	web.WriteJSON(w, http.StatusOK, map[string]any{"orders": orders})
+}
+
+func (h *Handler) handleAdminUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	users := h.service.ListUsers(domains.UserFilter{
+		Role:  r.URL.Query().Get("role"),
+		Query: r.URL.Query().Get("q"),
+	})
+	web.WriteJSON(w, http.StatusOK, map[string]any{"users": users})
+}
+
+func (h *Handler) handleAdminUser(w http.ResponseWriter, r *http.Request) {
+	userID := strings.TrimPrefix(r.URL.Path, apiPrefix+"/admin/users/")
+	if userID == "" || strings.Contains(userID, "/") {
+		web.WriteError(w, http.StatusNotFound, "user not found")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		user, err := h.service.GetUser(userID)
+		if err != nil {
+			writeDomainError(w, err, "user not found")
+			return
+		}
+		web.WriteJSON(w, http.StatusOK, map[string]any{"user": user})
+	case http.MethodPatch:
+		var req struct {
+			Role string `json:"role"`
+		}
+		if err := web.ReadJSON(r, &req); err != nil {
+			web.WriteError(w, http.StatusBadRequest, "invalid json body")
+			return
+		}
+		user, err := h.service.UpdateUserRole(userID, req.Role)
+		if err != nil {
+			writeDomainError(w, err, "could not update user")
+			return
+		}
+		web.WriteJSON(w, http.StatusOK, map[string]any{"user": user})
+	default:
+		web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+	}
 }
 
 func (h *Handler) requireAuth(next http.Handler) http.Handler {

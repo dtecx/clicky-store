@@ -43,6 +43,14 @@ type ordersResponse struct {
 	Orders []domains.Order `json:"orders"`
 }
 
+type usersResponse struct {
+	Users []domains.User `json:"users"`
+}
+
+type userResponse struct {
+	User domains.User `json:"user"`
+}
+
 type errorResponse struct {
 	Error string `json:"error"`
 }
@@ -300,4 +308,68 @@ func TestAdminProductManagementRequiresAdmin(t *testing.T) {
 
 	adminOrdersRes := server.request(http.MethodGet, "/api/v1/admin/orders", nil, admin.Token)
 	assertStatus(t, adminOrdersRes, http.StatusOK)
+}
+
+func TestAdminUserManagementRequiresAdmin(t *testing.T) {
+	server := newAPITestServer(t)
+
+	registerRes := server.request(http.MethodPost, "/api/v1/auth/register", map[string]any{
+		"name":     "Role Customer",
+		"email":    "role@example.com",
+		"password": "password123",
+	}, "")
+	assertStatus(t, registerRes, http.StatusCreated)
+	customer := decodeResponse[authResponse](t, registerRes)
+
+	forbiddenRes := server.request(http.MethodGet, "/api/v1/admin/users", nil, customer.Token)
+	assertStatus(t, forbiddenRes, http.StatusForbidden)
+
+	adminLoginRes := server.request(http.MethodPost, "/api/v1/auth/login", map[string]any{
+		"email":    "admin@clicky.local",
+		"password": "admin12345",
+	}, "")
+	assertStatus(t, adminLoginRes, http.StatusOK)
+	admin := decodeResponse[authResponse](t, adminLoginRes)
+
+	usersRes := server.request(http.MethodGet, "/api/v1/admin/users", nil, admin.Token)
+	assertStatus(t, usersRes, http.StatusOK)
+	users := decodeResponse[usersResponse](t, usersRes)
+	if len(users.Users) != 2 {
+		t.Fatalf("users count = %d, want seeded admin and customer", len(users.Users))
+	}
+
+	filteredRes := server.request(http.MethodGet, "/api/v1/admin/users?role=customer&q=role", nil, admin.Token)
+	assertStatus(t, filteredRes, http.StatusOK)
+	filtered := decodeResponse[usersResponse](t, filteredRes)
+	if len(filtered.Users) != 1 || filtered.Users[0].ID != customer.User.ID {
+		t.Fatalf("filtered users = %+v, want role customer", filtered.Users)
+	}
+
+	detailRes := server.request(http.MethodGet, "/api/v1/admin/users/"+customer.User.ID, nil, admin.Token)
+	assertStatus(t, detailRes, http.StatusOK)
+	detail := decodeResponse[userResponse](t, detailRes)
+	if detail.User.Email != "role@example.com" {
+		t.Fatalf("user detail email = %q, want role@example.com", detail.User.Email)
+	}
+
+	updateRes := server.request(http.MethodPatch, "/api/v1/admin/users/"+customer.User.ID, map[string]any{
+		"role": "admin",
+	}, admin.Token)
+	assertStatus(t, updateRes, http.StatusOK)
+	updated := decodeResponse[userResponse](t, updateRes)
+	if updated.User.Role != "admin" {
+		t.Fatalf("updated role = %q, want admin", updated.User.Role)
+	}
+
+	// Role changes are picked up from the store on each authenticated request.
+	promotedRes := server.request(http.MethodGet, "/api/v1/admin/orders", nil, customer.Token)
+	assertStatus(t, promotedRes, http.StatusOK)
+
+	invalidRoleRes := server.request(http.MethodPatch, "/api/v1/admin/users/"+customer.User.ID, map[string]any{
+		"role": "manager",
+	}, admin.Token)
+	assertStatus(t, invalidRoleRes, http.StatusBadRequest)
+
+	missingUserRes := server.request(http.MethodGet, "/api/v1/admin/users/usr_missing", nil, admin.Token)
+	assertStatus(t, missingUserRes, http.StatusNotFound)
 }

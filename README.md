@@ -21,6 +21,7 @@ Implemented backend features:
 - Authenticated order creation with simulated payment status
 - Admin product management
 - Admin order listing
+- Admin user listing, inspection, and role updates
 - Health check endpoint
 - Dockerfile and `compose.yaml`
 
@@ -91,6 +92,9 @@ POST   /api/v1/admin/products
 PATCH  /api/v1/admin/products/{productId}
 DELETE /api/v1/admin/products/{productId}
 GET    /api/v1/admin/orders
+GET    /api/v1/admin/users
+GET    /api/v1/admin/users/{userId}
+PATCH  /api/v1/admin/users/{userId}
 ```
 
 Use the token from login/register as:
@@ -137,7 +141,7 @@ curl -X POST http://localhost:8080/api/v1/orders \
 
 - Add PostgreSQL persistence for users, products, carts, and orders
 - Replace development password hashing/token handling with production-grade libraries
-- Add backend tests for handlers and store behavior
+- Expand backend tests around edge cases and store behavior
 - Build the HTML/CSS/JavaScript frontend
 - Add responsive product listing, details, cart, auth, and checkout views
 - Add admin screens for products, users, and orders

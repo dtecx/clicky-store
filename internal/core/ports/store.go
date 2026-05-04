@@ -4,8 +4,10 @@ import "clicky-store/internal/core/domains"
 
 type UserStore interface {
 	CreateUser(user domains.User) (domains.User, error)
+	ListUsers(filter domains.UserFilter) []domains.User
 	UserByEmail(email string) (domains.User, error)
 	UserByID(id string) (domains.User, error)
+	UpdateUserRole(id, role string) (domains.User, error)
 }
 
 type ProductStore interface {

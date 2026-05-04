@@ -48,6 +48,11 @@ type User struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
+type UserFilter struct {
+	Role  string
+	Query string
+}
+
 type CartItem struct {
 	ProductID string `json:"productId"`
 	Quantity  int    `json:"quantity"`

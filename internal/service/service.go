@@ -108,6 +108,23 @@ func (s *Service) UserFromToken(token string) (domains.User, error) {
 	return s.store.UserByID(claims.UserID)
 }
 
+func (s *Service) ListUsers(filter domains.UserFilter) []domains.User {
+	return s.store.ListUsers(filter)
+}
+
+func (s *Service) GetUser(id string) (domains.User, error) {
+	return s.store.UserByID(id)
+}
+
+func (s *Service) UpdateUserRole(id, role string) (domains.User, error) {
+	role = strings.ToLower(strings.TrimSpace(role))
+	if role != "admin" && role != "customer" {
+		return domains.User{}, domains.ErrInvalid
+	}
+
+	return s.store.UpdateUserRole(id, role)
+}
+
 func (s *Service) ListProducts(filter domains.ProductFilter) []domains.Product {
 	return s.store.ListProducts(filter)
 }
