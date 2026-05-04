@@ -62,13 +62,14 @@ The repository currently has:
 - Authenticated profile, cart, order, and payment simulation flows.
 - Admin product, order, and user management.
 - API, development, and deployment documentation.
-- GitHub Actions CI for formatting, tests, vet, and Docker build.
+- GitHub Actions CI for formatting, tests, vet, frontend lint/build, and Docker build.
 - Embedded frontend served from `internal/frontend/static`.
+- React + Vite + TypeScript + Tailwind CSS skeleton in `frontend/`, with route placeholders and a Vite proxy to the Go backend.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
 
-The current frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. It has product cards and a selected product detail area, but it does not yet behave like a real e-shop frontend with dedicated reloadable product routes, image galleries, uploaded product images, reusable React components, or a modern app layout.
+The production-served frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. The React app exists as a skeleton, but it does not yet have typed API modules, real auth/cart/order state, backend-backed product listing, admin CRUD flows, uploaded image handling, or production serving from Go.
 
 ---
 
@@ -283,6 +284,7 @@ internal/adapters/db/postgres/      PostgreSQL store, helpers, migrations
 internal/adapters/http/v1/          REST API v1 handlers, requests, auth middleware, rate limiting
 internal/frontend/                  Embedded frontend handler and static files
 internal/frontend/static/           Current legacy HTML/CSS/JS and embedded demo assets
+frontend/                           React + Vite + TypeScript + Tailwind skeleton
 internal/web/                       Shared HTTP JSON, CORS, logging, middleware helpers
 docs/                               API, development, and deployment documentation
 compose.yaml                        Local API and PostgreSQL services

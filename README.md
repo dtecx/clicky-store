@@ -6,7 +6,8 @@ This repository is starting with the backend and container foundation using:
 
 - Go for the HTTP API
 - Docker Compose for local services
-- HTML/CSS/JavaScript for the embedded frontend
+- HTML/CSS/JavaScript for the current embedded frontend
+- React, Vite, TypeScript, and Tailwind CSS for the new frontend skeleton
 - PostgreSQL in Compose for durable persistence
 
 ## Current Status
@@ -29,6 +30,7 @@ Implemented backend features:
 - Dockerfile and `compose.yaml`
 - GitHub Actions CI for format checks, tests, vet, and Docker build
 - PostgreSQL persistence for users, products, carts, and orders when `DATABASE_URL` is set
+- React frontend skeleton in `frontend/` with route placeholders, Tailwind styling, and CI build checks
 
 The API uses PostgreSQL when `DATABASE_URL` is configured. If `DATABASE_URL` is empty, the server falls back to the in-memory store for lightweight local development and tests.
 
@@ -181,11 +183,11 @@ Use `"failure"` to mark the pending simulated payment as failed.
 
 ## Planned Next Steps
 
-- Add store contract tests around memory and PostgreSQL behavior
-- Replace development password hashing/token handling with production-grade libraries
-- Expand backend tests around edge cases and store behavior
-- Expand frontend polish around loading states, validation, and admin filtering
-- Document the payment simulation boundary in full API docs
+- Add typed React API client modules
+- Rebuild auth state, login, and registration in React
+- Rebuild product listing and dedicated product pages in React
+- Rebuild cart, checkout, orders, and admin flows in React
+- Serve the completed React build from the Go server
 
 ## Project Structure
 
@@ -196,9 +198,10 @@ internal/adapters/db/postgres PostgreSQL adapter and embedded migrations
 internal/adapters/http/v1 REST API v1 handlers and request DTOs
 internal/core/domains/    Domain models and shared domain errors
 internal/core/ports/      Storage interfaces
-internal/frontend/        Embedded HTML/CSS/JavaScript storefront
+internal/frontend/        Current embedded HTML/CSS/JavaScript storefront
 internal/service/         Application use cases and auth helpers
 internal/web/             Shared HTTP JSON and middleware helpers
+frontend/                 React + Vite + TypeScript + Tailwind source app
 compose.yaml              Local API and database services
 Dockerfile                Production-style Go API image
 plan/                     Local project brief files, ignored by git

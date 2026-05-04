@@ -3,6 +3,8 @@
 ## Requirements
 
 - Go 1.25 or newer
+- Node.js 22 or newer
+- npm
 - Docker Compose
 
 ## Local Setup
@@ -24,6 +26,16 @@ The storefront and API are served from:
 ```txt
 http://localhost:8080
 ```
+
+The React frontend is currently developed separately while the Go server still serves the legacy embedded frontend:
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+The Vite dev server proxies `/api`, `/assets`, `/uploads`, and `/healthz` to `http://localhost:8080`.
 
 The default development admin account is:
 
@@ -64,7 +76,16 @@ Build the Docker image:
 docker build -t clicky-store:test .
 ```
 
-The GitHub Actions workflow runs the formatting check, tests, vet, and Docker build on pushes to `main` and pull requests.
+Run frontend checks:
+
+```sh
+cd frontend
+npm run lint
+npm run typecheck
+npm run build
+```
+
+The GitHub Actions workflow runs the formatting check, tests, vet, frontend lint/build, and Docker build on pushes to `main` and pull requests.
 
 Render the final Compose configuration:
 
@@ -89,5 +110,6 @@ POSTGRES_DATA_PATH=/private/tmp/clicky-store-pgdata docker compose up -d db
 
 - Keep handlers independent from database details.
 - Keep service code depending on `internal/core/ports`.
-- Keep frontend code in plain HTML, CSS, and JavaScript.
-- Do not commit `.env`, generated build output, `data/`, or files under `plan/`.
+- Keep new frontend code in `frontend/` with React, Vite, TypeScript, and Tailwind CSS.
+- Keep the legacy embedded frontend until the React customer and admin flows replace it.
+- Do not commit `.env`, generated build output, `frontend/dist/`, `frontend/node_modules/`, `data/`, or files under `plan/`.
