@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: .
+    environment:
+      APP_ENV: development
+      AUTH_SECRET: change-me-for-local-development
+      FRONTEND_ORIGIN: http://localhost:5173
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: clicky_store
+      POSTGRES_USER: clicky
+      POSTGRES_PASSWORD: clicky_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - clicky-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  clicky-postgres-data:

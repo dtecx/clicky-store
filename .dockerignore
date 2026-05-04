@@ -1,0 +1,8 @@
+.git
+.gitignore
+.DS_Store
+plan/
+README.md
+AGENTS.md
+tmp/
+coverage.out
