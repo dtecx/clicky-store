@@ -58,6 +58,14 @@ Check formatting:
 test -z "$(gofmt -l .)"
 ```
 
+Build the Docker image:
+
+```sh
+docker build -t clicky-store:test .
+```
+
+The GitHub Actions workflow runs the formatting check, tests, vet, and Docker build on pushes to `main` and pull requests.
+
 Render the final Compose configuration:
 
 ```sh

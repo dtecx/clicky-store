@@ -27,6 +27,7 @@ Implemented backend features:
 - Embedded responsive storefront for browsing, auth, cart, checkout, orders, and admin screens
 - Health check endpoint
 - Dockerfile and `compose.yaml`
+- GitHub Actions CI for format checks, tests, vet, and Docker build
 - PostgreSQL persistence for users, products, carts, and orders when `DATABASE_URL` is set
 
 The API uses PostgreSQL when `DATABASE_URL` is configured. If `DATABASE_URL` is empty, the server falls back to the in-memory store for lightweight local development and tests.
