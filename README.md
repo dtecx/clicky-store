@@ -146,9 +146,14 @@ curl -X POST http://localhost:8080/api/v1/orders \
 ## Project Structure
 
 ```txt
-cmd/server/        Go HTTP server entrypoint
-internal/store/    Store models and in-memory repository
-compose.yaml       Local API and database services
-Dockerfile         Production-style Go API image
-plan/              Local project brief files, ignored by git
+cmd/server/               Go HTTP server composition root
+internal/adapters/db/     Current in-memory database adapter
+internal/adapters/http/v1 REST API v1 handlers and request DTOs
+internal/core/domains/    Domain models and shared domain errors
+internal/core/ports/      Storage interfaces
+internal/service/         Application use cases and prototype auth
+internal/web/             Shared HTTP JSON and middleware helpers
+compose.yaml              Local API and database services
+Dockerfile                Production-style Go API image
+plan/                     Local project brief files, ignored by git
 ```

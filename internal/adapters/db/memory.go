@@ -1,127 +1,36 @@
-package store
+package db
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"clicky-store/internal/core/domains"
 )
 
-var (
-	ErrNotFound   = errors.New("not found")
-	ErrConflict   = errors.New("conflict")
-	ErrInvalid    = errors.New("invalid")
-	ErrEmptyCart  = errors.New("cart is empty")
-	ErrOutOfStock = errors.New("product is out of stock")
-)
-
-type Product struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Slug        string    `json:"slug"`
-	Description string    `json:"description"`
-	Category    string    `json:"category"`
-	PriceCents  int       `json:"priceCents"`
-	Currency    string    `json:"currency"`
-	DPI         int       `json:"dpi"`
-	Wireless    bool      `json:"wireless"`
-	Ergonomic   bool      `json:"ergonomic"`
-	Stock       int       `json:"stock"`
-	ImageURL    string    `json:"imageUrl"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-}
-
-type ProductFilter struct {
-	Category string
-	Query    string
-}
-
-type ProductUpdate struct {
-	Name        *string
-	Slug        *string
-	Description *string
-	Category    *string
-	PriceCents  *int
-	Currency    *string
-	DPI         *int
-	Wireless    *bool
-	Ergonomic   *bool
-	Stock       *int
-	ImageURL    *string
-}
-
-type User struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Role         string    `json:"role"`
-	PasswordHash string    `json:"-"`
-	PasswordSalt string    `json:"-"`
-	CreatedAt    time.Time `json:"createdAt"`
-}
-
-type CartItem struct {
-	ProductID string `json:"productId"`
-	Quantity  int    `json:"quantity"`
-}
-
-type CartLine struct {
-	Product       Product `json:"product"`
-	Quantity      int     `json:"quantity"`
-	SubtotalCents int     `json:"subtotalCents"`
-}
-
-type Cart struct {
-	UserID     string     `json:"userId"`
-	Items      []CartLine `json:"items"`
-	TotalCents int        `json:"totalCents"`
-	Currency   string     `json:"currency"`
-}
-
-type OrderItem struct {
-	ProductID      string `json:"productId"`
-	Name           string `json:"name"`
-	Quantity       int    `json:"quantity"`
-	UnitPriceCents int    `json:"unitPriceCents"`
-	SubtotalCents  int    `json:"subtotalCents"`
-}
-
-type Order struct {
-	ID            string      `json:"id"`
-	UserID        string      `json:"userId"`
-	Items         []OrderItem `json:"items"`
-	TotalCents    int         `json:"totalCents"`
-	Currency      string      `json:"currency"`
-	Status        string      `json:"status"`
-	PaymentStatus string      `json:"paymentStatus"`
-	PaymentMethod string      `json:"paymentMethod"`
-	CreatedAt     time.Time   `json:"createdAt"`
-}
-
-type Store struct {
+type MemoryStore struct {
 	mu         sync.RWMutex
 	nextID     int64
-	products   map[string]Product
-	users      map[string]User
+	products   map[string]domains.Product
+	users      map[string]domains.User
 	emailIndex map[string]string
 	carts      map[string]map[string]int
-	orders     map[string]Order
+	orders     map[string]domains.Order
 }
 
-func New() *Store {
+func NewMemoryStore() *MemoryStore {
 	now := time.Now().UTC()
-	s := &Store{
-		products:   make(map[string]Product),
-		users:      make(map[string]User),
+	store := &MemoryStore{
+		products:   make(map[string]domains.Product),
+		users:      make(map[string]domains.User),
 		emailIndex: make(map[string]string),
 		carts:      make(map[string]map[string]int),
-		orders:     make(map[string]Order),
+		orders:     make(map[string]domains.Order),
 	}
 
-	for _, product := range []Product{
+	for _, product := range []domains.Product{
 		{
 			ID:          "prod-gaming-viper",
 			Name:        "Viper X1 Gaming Mouse",
@@ -187,22 +96,22 @@ func New() *Store {
 			UpdatedAt:   now,
 		},
 	} {
-		s.products[product.ID] = product
+		store.products[product.ID] = product
 	}
 
-	return s
+	return store
 }
 
-func (s *Store) CreateUser(user User) (User, error) {
+func (s *MemoryStore) CreateUser(user domains.User) (domains.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	email := normalizeEmail(user.Email)
 	if email == "" {
-		return User{}, ErrInvalid
+		return domains.User{}, domains.ErrInvalid
 	}
 	if _, exists := s.emailIndex[email]; exists {
-		return User{}, ErrConflict
+		return domains.User{}, domains.ErrConflict
 	}
 
 	user.ID = s.newIDLocked("usr")
@@ -218,37 +127,37 @@ func (s *Store) CreateUser(user User) (User, error) {
 	return user, nil
 }
 
-func (s *Store) UserByEmail(email string) (User, error) {
+func (s *MemoryStore) UserByEmail(email string) (domains.User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	id, ok := s.emailIndex[normalizeEmail(email)]
 	if !ok {
-		return User{}, ErrNotFound
+		return domains.User{}, domains.ErrNotFound
 	}
 
 	return s.users[id], nil
 }
 
-func (s *Store) UserByID(id string) (User, error) {
+func (s *MemoryStore) UserByID(id string) (domains.User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	user, ok := s.users[id]
 	if !ok {
-		return User{}, ErrNotFound
+		return domains.User{}, domains.ErrNotFound
 	}
 
 	return user, nil
 }
 
-func (s *Store) ListProducts(filter ProductFilter) []Product {
+func (s *MemoryStore) ListProducts(filter domains.ProductFilter) []domains.Product {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	category := strings.ToLower(strings.TrimSpace(filter.Category))
 	query := strings.ToLower(strings.TrimSpace(filter.Query))
-	products := make([]Product, 0, len(s.products))
+	products := make([]domains.Product, 0, len(s.products))
 
 	for _, product := range s.products {
 		if category != "" && product.Category != category {
@@ -267,24 +176,24 @@ func (s *Store) ListProducts(filter ProductFilter) []Product {
 	return products
 }
 
-func (s *Store) GetProduct(id string) (Product, error) {
+func (s *MemoryStore) GetProduct(id string) (domains.Product, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	product, ok := s.products[id]
 	if !ok {
-		return Product{}, ErrNotFound
+		return domains.Product{}, domains.ErrNotFound
 	}
 
 	return product, nil
 }
 
-func (s *Store) CreateProduct(product Product) (Product, error) {
+func (s *MemoryStore) CreateProduct(product domains.Product) (domains.Product, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if err := validateProduct(product); err != nil {
-		return Product{}, err
+		return domains.Product{}, err
 	}
 
 	now := time.Now().UTC()
@@ -298,13 +207,13 @@ func (s *Store) CreateProduct(product Product) (Product, error) {
 	return product, nil
 }
 
-func (s *Store) UpdateProduct(id string, update ProductUpdate) (Product, error) {
+func (s *MemoryStore) UpdateProduct(id string, update domains.ProductUpdate) (domains.Product, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	product, ok := s.products[id]
 	if !ok {
-		return Product{}, ErrNotFound
+		return domains.Product{}, domains.ErrNotFound
 	}
 
 	if update.Name != nil {
@@ -342,7 +251,7 @@ func (s *Store) UpdateProduct(id string, update ProductUpdate) (Product, error) 
 	}
 
 	if err := validateProduct(product); err != nil {
-		return Product{}, err
+		return domains.Product{}, err
 	}
 
 	product.UpdatedAt = time.Now().UTC()
@@ -351,36 +260,36 @@ func (s *Store) UpdateProduct(id string, update ProductUpdate) (Product, error) 
 	return product, nil
 }
 
-func (s *Store) DeleteProduct(id string) error {
+func (s *MemoryStore) DeleteProduct(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.products[id]; !ok {
-		return ErrNotFound
+		return domains.ErrNotFound
 	}
 
 	delete(s.products, id)
 	return nil
 }
 
-func (s *Store) GetCart(userID string) Cart {
+func (s *MemoryStore) GetCart(userID string) domains.Cart {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.cartLocked(userID)
 }
 
-func (s *Store) AddCartItem(userID, productID string, quantity int) (Cart, error) {
+func (s *MemoryStore) AddCartItem(userID, productID string, quantity int) (domains.Cart, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if quantity <= 0 {
-		return Cart{}, ErrInvalid
+		return domains.Cart{}, domains.ErrInvalid
 	}
 
 	product, ok := s.products[productID]
 	if !ok {
-		return Cart{}, ErrNotFound
+		return domains.Cart{}, domains.ErrNotFound
 	}
 
 	if s.carts[userID] == nil {
@@ -389,7 +298,7 @@ func (s *Store) AddCartItem(userID, productID string, quantity int) (Cart, error
 
 	nextQuantity := s.carts[userID][productID] + quantity
 	if nextQuantity > product.Stock {
-		return Cart{}, ErrOutOfStock
+		return domains.Cart{}, domains.ErrOutOfStock
 	}
 
 	s.carts[userID][productID] = nextQuantity
@@ -397,21 +306,21 @@ func (s *Store) AddCartItem(userID, productID string, quantity int) (Cart, error
 	return s.cartLocked(userID), nil
 }
 
-func (s *Store) SetCartItem(userID, productID string, quantity int) (Cart, error) {
+func (s *MemoryStore) SetCartItem(userID, productID string, quantity int) (domains.Cart, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if quantity < 0 {
-		return Cart{}, ErrInvalid
+		return domains.Cart{}, domains.ErrInvalid
 	}
 
 	product, ok := s.products[productID]
 	if !ok {
-		return Cart{}, ErrNotFound
+		return domains.Cart{}, domains.ErrNotFound
 	}
 
 	if quantity > product.Stock {
-		return Cart{}, ErrOutOfStock
+		return domains.Cart{}, domains.ErrOutOfStock
 	}
 
 	if quantity == 0 {
@@ -427,12 +336,12 @@ func (s *Store) SetCartItem(userID, productID string, quantity int) (Cart, error
 	return s.cartLocked(userID), nil
 }
 
-func (s *Store) RemoveCartItem(userID, productID string) (Cart, error) {
+func (s *MemoryStore) RemoveCartItem(userID, productID string) (domains.Cart, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, ok := s.products[productID]; !ok {
-		return Cart{}, ErrNotFound
+		return domains.Cart{}, domains.ErrNotFound
 	}
 
 	delete(s.carts[userID], productID)
@@ -440,26 +349,26 @@ func (s *Store) RemoveCartItem(userID, productID string) (Cart, error) {
 	return s.cartLocked(userID), nil
 }
 
-func (s *Store) CreateOrderFromCart(userID, paymentMethod string) (Order, error) {
+func (s *MemoryStore) CreateOrderFromCart(userID, paymentMethod string) (domains.Order, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	cart := s.cartLocked(userID)
 	if len(cart.Items) == 0 {
-		return Order{}, ErrEmptyCart
+		return domains.Order{}, domains.ErrEmptyCart
 	}
 
-	items := make([]OrderItem, 0, len(cart.Items))
+	items := make([]domains.OrderItem, 0, len(cart.Items))
 	for _, line := range cart.Items {
 		product := s.products[line.Product.ID]
 		if line.Quantity > product.Stock {
-			return Order{}, ErrOutOfStock
+			return domains.Order{}, domains.ErrOutOfStock
 		}
 		product.Stock -= line.Quantity
 		product.UpdatedAt = time.Now().UTC()
 		s.products[product.ID] = product
 
-		items = append(items, OrderItem{
+		items = append(items, domains.OrderItem{
 			ProductID:      product.ID,
 			Name:           product.Name,
 			Quantity:       line.Quantity,
@@ -468,7 +377,7 @@ func (s *Store) CreateOrderFromCart(userID, paymentMethod string) (Order, error)
 		})
 	}
 
-	order := Order{
+	order := domains.Order{
 		ID:            s.newIDLocked("ord"),
 		UserID:        userID,
 		Items:         items,
@@ -486,11 +395,11 @@ func (s *Store) CreateOrderFromCart(userID, paymentMethod string) (Order, error)
 	return order, nil
 }
 
-func (s *Store) ListOrdersForUser(userID string) []Order {
+func (s *MemoryStore) ListOrdersForUser(userID string) []domains.Order {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	orders := make([]Order, 0)
+	orders := make([]domains.Order, 0)
 	for _, order := range s.orders {
 		if order.UserID == userID {
 			orders = append(orders, order)
@@ -501,11 +410,11 @@ func (s *Store) ListOrdersForUser(userID string) []Order {
 	return orders
 }
 
-func (s *Store) ListOrders() []Order {
+func (s *MemoryStore) ListOrders() []domains.Order {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	orders := make([]Order, 0, len(s.orders))
+	orders := make([]domains.Order, 0, len(s.orders))
 	for _, order := range s.orders {
 		orders = append(orders, order)
 	}
@@ -514,8 +423,8 @@ func (s *Store) ListOrders() []Order {
 	return orders
 }
 
-func (s *Store) cartLocked(userID string) Cart {
-	lines := make([]CartLine, 0)
+func (s *MemoryStore) cartLocked(userID string) domains.Cart {
+	lines := make([]domains.CartLine, 0)
 	total := 0
 	currency := "PLN"
 
@@ -528,7 +437,7 @@ func (s *Store) cartLocked(userID string) Cart {
 		subtotal := product.PriceCents * quantity
 		total += subtotal
 		currency = product.Currency
-		lines = append(lines, CartLine{
+		lines = append(lines, domains.CartLine{
 			Product:       product,
 			Quantity:      quantity,
 			SubtotalCents: subtotal,
@@ -539,7 +448,7 @@ func (s *Store) cartLocked(userID string) Cart {
 		return lines[i].Product.Name < lines[j].Product.Name
 	})
 
-	return Cart{
+	return domains.Cart{
 		UserID:     userID,
 		Items:      lines,
 		TotalCents: total,
@@ -547,12 +456,12 @@ func (s *Store) cartLocked(userID string) Cart {
 	}
 }
 
-func (s *Store) newIDLocked(prefix string) string {
+func (s *MemoryStore) newIDLocked(prefix string) string {
 	s.nextID++
 	return fmt.Sprintf("%s_%06d", prefix, s.nextID)
 }
 
-func validateProduct(product Product) error {
+func validateProduct(product domains.Product) error {
 	if strings.TrimSpace(product.Name) == "" ||
 		strings.TrimSpace(product.Slug) == "" ||
 		strings.TrimSpace(product.Description) == "" ||
@@ -560,7 +469,7 @@ func validateProduct(product Product) error {
 		product.PriceCents <= 0 ||
 		product.DPI <= 0 ||
 		product.Stock < 0 {
-		return ErrInvalid
+		return domains.ErrInvalid
 	}
 
 	return nil
@@ -586,7 +495,7 @@ func normalizePaymentMethod(method string) string {
 	return method
 }
 
-func sortOrders(orders []Order) {
+func sortOrders(orders []domains.Order) {
 	sort.Slice(orders, func(i, j int) bool {
 		return orders[i].CreatedAt.After(orders[j].CreatedAt)
 	})

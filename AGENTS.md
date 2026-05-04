@@ -6,6 +6,20 @@ Guidance for coding agents working on Clicky-Store.
 
 Clicky-Store is an educational e-commerce web app for gaming and office mice. The project must satisfy the brief in `plan/plan.pdf`: REST API, product browsing, user registration/login, cart, orders, payment simulation or integration, admin management, responsive frontend, security basics, testing, and documentation.
 
+## Plan Brief Requirements
+
+Use this summary before opening `plan/plan.pdf`; only inspect the PDF when exact wording or academic formatting is needed.
+
+- Build a modern client-server e-commerce web system for selling products online.
+- Provide an intuitive UI, secure transaction flow, and a structure that can scale.
+- Core customer features: registration, login, product browsing, product detail views, cart management, order placement, and online payment handling by simulation or payment API integration.
+- Core admin features: product management, order management, and user management.
+- Technical requirements: REST API, database-backed persistence for products/users/orders, authorization/authentication, responsive frontend (RWD), and protection of user data.
+- Business logic requirements: purchase flow handling, data validation, order processing, payment preparation, error handling, and edge-case handling.
+- Frontend scope: product list, product details, cart, login form, and registration form, adapted to mobile devices.
+- Testing and quality scope: API testing, functional/end-to-end testing, user behavior simulation, performance review, database query optimization, app load-time optimization, final refactor, launch instructions, and project documentation.
+- Security topics from the brief: SSL/TLS in deployment, JWT/OAuth-style auth, and protection against XSS/CSRF-style attacks.
+
 ## Stack
 
 - Backend: Go
@@ -17,8 +31,13 @@ Prefer standard library Go unless a dependency gives clear value. If adding depe
 
 ## Current Architecture
 
-- `cmd/server/main.go` contains HTTP routing, middleware, auth helpers, and handlers.
-- `internal/store/store.go` contains domain models and the current in-memory store.
+- `cmd/server/main.go` is the composition root: environment, logger, store adapter, service, HTTP handler, middleware, and server startup.
+- `internal/core/domains` contains domain models and shared domain errors.
+- `internal/core/ports` contains storage interfaces that service code depends on.
+- `internal/service` contains application use cases, auth token handling, and password hashing for the prototype.
+- `internal/adapters/db` contains the current in-memory database adapter. PostgreSQL should replace or sit beside this adapter later.
+- `internal/adapters/http/v1` contains REST v1 routing, auth middleware, request DTOs, and handlers.
+- `internal/web` contains shared HTTP helpers such as JSON responses and middleware.
 - `compose.yaml` runs the API and a PostgreSQL service. The API does not use PostgreSQL yet.
 
 ## Development Rules
