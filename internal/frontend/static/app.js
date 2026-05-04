@@ -105,6 +105,7 @@ function bindEvents() {
   els.productGrid.addEventListener("click", handleProductClick);
   els.productDetail.addEventListener("click", handleProductClick);
   els.cartContent.addEventListener("click", handleCartClick);
+  els.ordersContent.addEventListener("click", handleOrderClick);
   els.productForm.addEventListener("submit", submitProductForm);
   document.querySelector("#clearProductForm").addEventListener("click", clearProductForm);
   els.adminProductsTable.addEventListener("click", handleAdminProductClick);
@@ -711,7 +712,43 @@ async function checkout() {
       await loadAdminData();
     }
     setView("orders");
-    showToast("Order placed");
+    showToast("Order placed. Payment is pending.");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function handleOrderClick(event) {
+  const button = event.target.closest("[data-action]");
+  if (!button) {
+    return;
+  }
+
+  if (button.dataset.action === "simulate-payment-success") {
+    await simulateOrderPayment(button.dataset.orderId, "success");
+  }
+  if (button.dataset.action === "simulate-payment-failure") {
+    await simulateOrderPayment(button.dataset.orderId, "failure");
+  }
+}
+
+async function simulateOrderPayment(orderId, result) {
+  if (!orderId) {
+    return;
+  }
+
+  try {
+    const data = await apiRequest(`/orders/${encodeURIComponent(orderId)}/payment/simulate`, {
+      method: "POST",
+      body: { result },
+    });
+    state.orders = state.orders.map((order) => (order.id === orderId ? data.order : order));
+    if (isAdmin()) {
+      await loadAdminData();
+    }
+    renderOrders();
+    renderAdmin();
+    showToast(result === "success" ? "Payment marked paid" : "Payment marked failed");
   } catch (error) {
     showToast(error.message);
   }
@@ -856,6 +893,8 @@ function productArt(product) {
 }
 
 function orderCard(order) {
+  const paymentPending = order.paymentStatus === "pending";
+
   return `
     <article class="order-card">
       <div class="order-header">
@@ -863,7 +902,10 @@ function orderCard(order) {
           <h3>${escapeHTML(order.id)}</h3>
           <span class="stock">${formatDate(order.createdAt)}</span>
         </div>
-        <strong>${formatMoney(order.totalCents, order.currency)}</strong>
+        <div class="order-status">
+          <span class="badge">${escapeHTML(order.status)} / ${escapeHTML(order.paymentStatus)}</span>
+          <strong>${formatMoney(order.totalCents, order.currency)}</strong>
+        </div>
       </div>
       <ul class="order-items">
         ${order.items.map((item) => `
@@ -873,6 +915,12 @@ function orderCard(order) {
           </li>
         `).join("")}
       </ul>
+      ${paymentPending ? `
+        <div class="order-actions">
+          <button class="button" type="button" data-action="simulate-payment-success" data-order-id="${escapeAttr(order.id)}">Pay</button>
+          <button class="button button-secondary" type="button" data-action="simulate-payment-failure" data-order-id="${escapeAttr(order.id)}">Fail payment</button>
+        </div>
+      ` : ""}
     </article>
   `;
 }

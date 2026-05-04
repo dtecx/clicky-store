@@ -431,8 +431,8 @@ func (s *MemoryStore) CreateOrderFromCart(userID, paymentMethod string) (domains
 		Items:         items,
 		TotalCents:    cart.TotalCents,
 		Currency:      cart.Currency,
-		Status:        "confirmed",
-		PaymentStatus: "paid",
+		Status:        domains.OrderStatusPending,
+		PaymentStatus: domains.PaymentStatusPending,
 		PaymentMethod: normalizePaymentMethod(paymentMethod),
 		CreatedAt:     time.Now().UTC(),
 	}
@@ -440,6 +440,34 @@ func (s *MemoryStore) CreateOrderFromCart(userID, paymentMethod string) (domains
 	s.orders[order.ID] = order
 	delete(s.carts, userID)
 
+	return order, nil
+}
+
+func (s *MemoryStore) SimulateOrderPayment(userID, orderID, result string) (domains.Order, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	order, ok := s.orders[strings.TrimSpace(orderID)]
+	if !ok || order.UserID != strings.TrimSpace(userID) {
+		return domains.Order{}, domains.ErrNotFound
+	}
+
+	if order.Status != domains.OrderStatusPending || order.PaymentStatus != domains.PaymentStatusPending {
+		return domains.Order{}, domains.ErrInvalid
+	}
+
+	switch strings.ToLower(strings.TrimSpace(result)) {
+	case "success":
+		order.Status = domains.OrderStatusConfirmed
+		order.PaymentStatus = domains.PaymentStatusPaid
+	case "failure":
+		order.Status = domains.OrderStatusPaymentFailed
+		order.PaymentStatus = domains.PaymentStatusFailed
+	default:
+		return domains.Order{}, domains.ErrInvalid
+	}
+
+	s.orders[order.ID] = order
 	return order, nil
 }
 

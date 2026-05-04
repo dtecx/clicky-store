@@ -93,8 +93,8 @@ func (s *Store) CreateOrderFromCart(userID, paymentMethod string) (domains.Order
 		Items:         items,
 		TotalCents:    totalCents,
 		Currency:      currency,
-		Status:        "confirmed",
-		PaymentStatus: "paid",
+		Status:        domains.OrderStatusPending,
+		PaymentStatus: domains.PaymentStatusPending,
 		PaymentMethod: normalizePaymentMethod(paymentMethod),
 		CreatedAt:     time.Now().UTC(),
 	}
@@ -178,6 +178,69 @@ func (s *Store) CreateOrderFromCart(userID, paymentMethod string) (domains.Order
 	return order, nil
 }
 
+func (s *Store) SimulateOrderPayment(userID, orderID, result string) (domains.Order, error) {
+	ctx := context.Background()
+	userID = strings.TrimSpace(userID)
+	orderID = strings.TrimSpace(orderID)
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domains.Order{}, err
+	}
+	defer tx.Rollback()
+
+	var status string
+	var paymentStatus string
+	if err := tx.QueryRowContext(
+		ctx,
+		`SELECT status, payment_status
+		FROM orders
+		WHERE id = $1 AND user_id = $2
+		FOR UPDATE`,
+		orderID,
+		userID,
+	).Scan(&status, &paymentStatus); err != nil {
+		return domains.Order{}, mapError(err)
+	}
+
+	if status != domains.OrderStatusPending || paymentStatus != domains.PaymentStatusPending {
+		return domains.Order{}, domains.ErrInvalid
+	}
+
+	nextStatus := ""
+	nextPaymentStatus := ""
+	switch strings.ToLower(strings.TrimSpace(result)) {
+	case "success":
+		nextStatus = domains.OrderStatusConfirmed
+		nextPaymentStatus = domains.PaymentStatusPaid
+	case "failure":
+		nextStatus = domains.OrderStatusPaymentFailed
+		nextPaymentStatus = domains.PaymentStatusFailed
+	default:
+		return domains.Order{}, domains.ErrInvalid
+	}
+
+	if _, err := tx.ExecContext(
+		ctx,
+		`UPDATE orders
+		SET status = $3,
+			payment_status = $4
+		WHERE id = $1 AND user_id = $2`,
+		orderID,
+		userID,
+		nextStatus,
+		nextPaymentStatus,
+	); err != nil {
+		return domains.Order{}, mapError(err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return domains.Order{}, err
+	}
+
+	return s.orderForUser(ctx, userID, orderID)
+}
+
 func (s *Store) ListOrdersForUser(userID string) []domains.Order {
 	orders, err := s.listOrders(
 		context.Background(),
@@ -234,6 +297,40 @@ func (s *Store) ListOrders() []domains.Order {
 	}
 
 	return orders
+}
+
+func (s *Store) orderForUser(ctx context.Context, userID, orderID string) (domains.Order, error) {
+	orders, err := s.listOrders(
+		ctx,
+		`SELECT
+			o.id,
+			o.user_id,
+			o.total_cents,
+			o.currency,
+			o.status,
+			o.payment_status,
+			o.payment_method,
+			o.created_at,
+			oi.product_id,
+			oi.name,
+			oi.quantity,
+			oi.unit_price_cents,
+			oi.subtotal_cents
+		FROM orders o
+		LEFT JOIN order_items oi ON oi.order_id = o.id
+		WHERE o.user_id = $1 AND o.id = $2
+		ORDER BY oi.name ASC`,
+		userID,
+		orderID,
+	)
+	if err != nil {
+		return domains.Order{}, err
+	}
+	if len(orders) == 0 {
+		return domains.Order{}, domains.ErrNotFound
+	}
+
+	return orders[0], nil
 }
 
 func (s *Store) listOrders(ctx context.Context, query string, args ...any) ([]domains.Order, error) {

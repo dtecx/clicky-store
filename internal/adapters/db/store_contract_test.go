@@ -98,11 +98,22 @@ func TestStoreContractUserProductCartOrderFlow(t *testing.T) {
 			if err != nil {
 				t.Fatalf("CreateOrderFromCart: %v", err)
 			}
-			if order.UserID != user.ID || order.Status != "confirmed" || order.PaymentStatus != "paid" {
-				t.Fatalf("order = %+v, want confirmed paid order for user", order)
+			if order.UserID != user.ID || order.Status != domains.OrderStatusPending || order.PaymentStatus != domains.PaymentStatusPending {
+				t.Fatalf("order = %+v, want pending payment order for user", order)
 			}
 			if len(order.Items) != 1 || order.Items[0].Name != updatedName || order.Items[0].UnitPriceCents != updatedPrice {
 				t.Fatalf("order items = %+v, want product snapshot", order.Items)
+			}
+
+			paidOrder, err := store.SimulateOrderPayment(user.ID, order.ID, "success")
+			if err != nil {
+				t.Fatalf("SimulateOrderPayment success: %v", err)
+			}
+			if paidOrder.Status != domains.OrderStatusConfirmed || paidOrder.PaymentStatus != domains.PaymentStatusPaid {
+				t.Fatalf("paid order status = %q/%q, want confirmed/paid", paidOrder.Status, paidOrder.PaymentStatus)
+			}
+			if _, err := store.SimulateOrderPayment(user.ID, order.ID, "failure"); !errors.Is(err, domains.ErrInvalid) {
+				t.Fatalf("second SimulateOrderPayment error = %v, want invalid", err)
 			}
 
 			emptyCart := store.GetCart(user.ID)
@@ -200,6 +211,9 @@ func TestStoreContractValidationErrors(t *testing.T) {
 			if _, err := store.CreateOrderFromCart(user.ID, "simulation"); !errors.Is(err, domains.ErrEmptyCart) {
 				t.Fatalf("empty cart CreateOrderFromCart error = %v, want empty cart", err)
 			}
+			if _, err := store.SimulateOrderPayment(user.ID, "ord_missing", "success"); !errors.Is(err, domains.ErrNotFound) {
+				t.Fatalf("missing SimulateOrderPayment error = %v, want not found", err)
+			}
 
 			product := createContractProduct(t, store, suffix, 1)
 			if _, err := store.AddCartItem(user.ID, product.ID, 0); !errors.Is(err, domains.ErrInvalid) {
@@ -207,6 +221,23 @@ func TestStoreContractValidationErrors(t *testing.T) {
 			}
 			if _, err := store.AddCartItem(user.ID, product.ID, 2); !errors.Is(err, domains.ErrOutOfStock) {
 				t.Fatalf("overstock AddCartItem error = %v, want out of stock", err)
+			}
+			if _, err := store.AddCartItem(user.ID, product.ID, 1); err != nil {
+				t.Fatalf("AddCartItem: %v", err)
+			}
+			order, err := store.CreateOrderFromCart(user.ID, "simulation")
+			if err != nil {
+				t.Fatalf("CreateOrderFromCart for payment validation: %v", err)
+			}
+			if _, err := store.SimulateOrderPayment(user.ID, order.ID, "sideways"); !errors.Is(err, domains.ErrInvalid) {
+				t.Fatalf("invalid SimulateOrderPayment error = %v, want invalid", err)
+			}
+			failedOrder, err := store.SimulateOrderPayment(user.ID, order.ID, "failure")
+			if err != nil {
+				t.Fatalf("SimulateOrderPayment failure: %v", err)
+			}
+			if failedOrder.Status != domains.OrderStatusPaymentFailed || failedOrder.PaymentStatus != domains.PaymentStatusFailed {
+				t.Fatalf("failed order status = %q/%q, want payment_failed/failed", failedOrder.Status, failedOrder.PaymentStatus)
 			}
 		})
 	}

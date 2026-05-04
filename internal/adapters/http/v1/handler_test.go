@@ -216,18 +216,35 @@ func TestProductCartAndOrderFlow(t *testing.T) {
 	}, auth.Token)
 	assertStatus(t, orderRes, http.StatusCreated)
 	createdOrder := decodeResponse[orderResponse](t, orderRes)
-	if createdOrder.Order.Status != "confirmed" || createdOrder.Order.PaymentStatus != "paid" {
-		t.Fatalf("order status = %q/%q, want confirmed/paid", createdOrder.Order.Status, createdOrder.Order.PaymentStatus)
+	if createdOrder.Order.Status != domains.OrderStatusPending || createdOrder.Order.PaymentStatus != domains.PaymentStatusPending {
+		t.Fatalf("order status = %q/%q, want pending/pending", createdOrder.Order.Status, createdOrder.Order.PaymentStatus)
 	}
 	if createdOrder.Order.TotalCents != 24900 {
 		t.Fatalf("order total = %d, want 24900", createdOrder.Order.TotalCents)
 	}
+
+	paymentRes := server.request(http.MethodPost, "/api/v1/orders/"+createdOrder.Order.ID+"/payment/simulate", map[string]any{
+		"result": "success",
+	}, auth.Token)
+	assertStatus(t, paymentRes, http.StatusOK)
+	paidOrder := decodeResponse[orderResponse](t, paymentRes)
+	if paidOrder.Order.Status != domains.OrderStatusConfirmed || paidOrder.Order.PaymentStatus != domains.PaymentStatusPaid {
+		t.Fatalf("paid order status = %q/%q, want confirmed/paid", paidOrder.Order.Status, paidOrder.Order.PaymentStatus)
+	}
+
+	secondPaymentRes := server.request(http.MethodPost, "/api/v1/orders/"+createdOrder.Order.ID+"/payment/simulate", map[string]any{
+		"result": "failure",
+	}, auth.Token)
+	assertStatus(t, secondPaymentRes, http.StatusBadRequest)
 
 	ordersRes := server.request(http.MethodGet, "/api/v1/orders", nil, auth.Token)
 	assertStatus(t, ordersRes, http.StatusOK)
 	orders := decodeResponse[ordersResponse](t, ordersRes)
 	if len(orders.Orders) != 1 || orders.Orders[0].ID != createdOrder.Order.ID {
 		t.Fatalf("orders = %+v, want created order", orders.Orders)
+	}
+	if orders.Orders[0].PaymentStatus != domains.PaymentStatusPaid {
+		t.Fatalf("listed payment status = %q, want paid", orders.Orders[0].PaymentStatus)
 	}
 
 	emptyCartRes := server.request(http.MethodGet, "/api/v1/cart", nil, auth.Token)

@@ -18,7 +18,8 @@ Implemented backend features:
 - HMAC-signed bearer tokens
 - Authenticated profile endpoint
 - Authenticated cart operations
-- Authenticated order creation with simulated payment status
+- Authenticated order creation with pending simulated payment status
+- Authenticated payment simulation for pending orders
 - Admin product management
 - Admin order listing
 - Admin user listing, inspection, and role updates
@@ -100,6 +101,7 @@ PATCH  /api/v1/cart/items/{productId}
 DELETE /api/v1/cart/items/{productId}
 GET    /api/v1/orders
 POST   /api/v1/orders
+POST   /api/v1/orders/{orderId}/payment/simulate
 ```
 
 Admin endpoints:
@@ -155,13 +157,24 @@ curl -X POST http://localhost:8080/api/v1/orders \
   -d '{"paymentMethod":"simulation"}'
 ```
 
+Simulate payment:
+
+```sh
+curl -X POST http://localhost:8080/api/v1/orders/<order-id>/payment/simulate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"result":"success"}'
+```
+
+Use `"failure"` to mark the pending simulated payment as failed.
+
 ## Planned Next Steps
 
 - Add store contract tests around memory and PostgreSQL behavior
 - Replace development password hashing/token handling with production-grade libraries
 - Expand backend tests around edge cases and store behavior
 - Expand frontend polish around loading states, validation, and admin filtering
-- Add payment provider simulation or integration boundary
+- Document the payment simulation boundary in full API docs
 
 ## Project Structure
 

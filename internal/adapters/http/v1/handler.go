@@ -40,6 +40,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.Handle(apiPrefix+"/cart/items", h.requireAuth(http.HandlerFunc(h.handleCartItems)))
 	mux.Handle(apiPrefix+"/cart/items/", h.requireAuth(http.HandlerFunc(h.handleCartItem)))
 	mux.Handle(apiPrefix+"/orders", h.requireAuth(http.HandlerFunc(h.handleOrders)))
+	mux.Handle(apiPrefix+"/orders/", h.requireAuth(http.HandlerFunc(h.handleOrderSubresource)))
 	mux.Handle(apiPrefix+"/admin/products", h.requireAdmin(http.HandlerFunc(h.handleAdminProducts)))
 	mux.Handle(apiPrefix+"/admin/products/", h.requireAdmin(http.HandlerFunc(h.handleAdminProduct)))
 	mux.Handle(apiPrefix+"/admin/orders", h.requireAdmin(http.HandlerFunc(h.handleAdminOrders)))
@@ -276,6 +277,36 @@ func (h *Handler) handleOrders(w http.ResponseWriter, r *http.Request) {
 	default:
 		web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
+}
+
+func (h *Handler) handleOrderSubresource(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	suffix := strings.TrimPrefix(r.URL.Path, apiPrefix+"/orders/")
+	parts := strings.Split(suffix, "/")
+	if len(parts) != 3 || parts[0] == "" || parts[1] != "payment" || parts[2] != "simulate" {
+		web.WriteError(w, http.StatusNotFound, "order route not found")
+		return
+	}
+
+	var req struct {
+		Result string `json:"result"`
+	}
+	if err := web.ReadJSON(r, &req); err != nil {
+		web.WriteError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+
+	order, err := h.service.SimulateOrderPayment(currentUser(r).ID, parts[0], req.Result)
+	if err != nil {
+		writeDomainError(w, err, "could not simulate payment")
+		return
+	}
+
+	web.WriteJSON(w, http.StatusOK, map[string]any{"order": order})
 }
 
 func (h *Handler) handleAdminProducts(w http.ResponseWriter, r *http.Request) {

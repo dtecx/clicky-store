@@ -90,3 +90,13 @@ type Order struct {
 	PaymentMethod string      `json:"paymentMethod"`
 	CreatedAt     time.Time   `json:"createdAt"`
 }
+
+const (
+	OrderStatusPending       = "pending"
+	OrderStatusConfirmed     = "confirmed"
+	OrderStatusPaymentFailed = "payment_failed"
+
+	PaymentStatusPending = "pending"
+	PaymentStatusPaid    = "paid"
+	PaymentStatusFailed  = "failed"
+)

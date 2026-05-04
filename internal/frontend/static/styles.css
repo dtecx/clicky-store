@@ -562,6 +562,19 @@ label {
   margin-bottom: 10px;
 }
 
+.order-status,
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.order-actions {
+  margin-top: 14px;
+}
+
 .order-items {
   display: grid;
   gap: 8px;

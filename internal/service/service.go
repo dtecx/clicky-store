@@ -165,6 +165,15 @@ func (s *Service) CreateOrderFromCart(userID, paymentMethod string) (domains.Ord
 	return s.store.CreateOrderFromCart(userID, paymentMethod)
 }
 
+func (s *Service) SimulateOrderPayment(userID, orderID, result string) (domains.Order, error) {
+	result = strings.ToLower(strings.TrimSpace(result))
+	if result != "success" && result != "failure" {
+		return domains.Order{}, domains.ErrInvalid
+	}
+
+	return s.store.SimulateOrderPayment(userID, orderID, result)
+}
+
 func (s *Service) ListOrdersForUser(userID string) []domains.Order {
 	return s.store.ListOrdersForUser(userID)
 }

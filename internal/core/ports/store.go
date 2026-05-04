@@ -27,6 +27,7 @@ type CartStore interface {
 
 type OrderStore interface {
 	CreateOrderFromCart(userID, paymentMethod string) (domains.Order, error)
+	SimulateOrderPayment(userID, orderID, result string) (domains.Order, error)
 	ListOrdersForUser(userID string) []domains.Order
 	ListOrders() []domains.Order
 }
