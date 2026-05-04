@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -80,26 +79,9 @@ func hashPassword(password string) (string, string, error) {
 }
 
 func verifyPassword(password, encodedSalt, expectedHash string) bool {
-	if encodedSalt == passwordHashSchemeBcrypt {
-		return bcrypt.CompareHashAndPassword([]byte(expectedHash), []byte(password)) == nil
-	}
-
-	salt, err := hex.DecodeString(encodedSalt)
-	if err != nil {
+	if encodedSalt != passwordHashSchemeBcrypt {
 		return false
 	}
 
-	actualHash := derivePasswordHash(password, salt)
-	return hmac.Equal([]byte(actualHash), []byte(expectedHash))
-}
-
-func derivePasswordHash(password string, salt []byte) string {
-	digest := []byte(password)
-	for i := 0; i < 120000; i++ {
-		mac := hmac.New(sha256.New, salt)
-		mac.Write(digest)
-		digest = mac.Sum(nil)
-	}
-
-	return hex.EncodeToString(digest)
+	return bcrypt.CompareHashAndPassword([]byte(expectedHash), []byte(password)) == nil
 }

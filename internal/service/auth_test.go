@@ -1,9 +1,6 @@
 package service
 
-import (
-	"encoding/hex"
-	"testing"
-)
+import "testing"
 
 func TestHashPasswordUsesBcrypt(t *testing.T) {
 	hash, scheme, err := hashPassword("password123")
@@ -23,17 +20,7 @@ func TestHashPasswordUsesBcrypt(t *testing.T) {
 	if verifyPassword("wrong-password", scheme, hash) {
 		t.Fatal("expected bcrypt password verification to reject wrong password")
 	}
-}
-
-func TestVerifyPasswordSupportsLegacySaltedHash(t *testing.T) {
-	salt := []byte("legacy-test-salt")
-	encodedSalt := hex.EncodeToString(salt)
-	legacyHash := derivePasswordHash("password123", salt)
-
-	if !verifyPassword("password123", encodedSalt, legacyHash) {
-		t.Fatal("expected legacy password verification to pass")
-	}
-	if verifyPassword("wrong-password", encodedSalt, legacyHash) {
-		t.Fatal("expected legacy password verification to reject wrong password")
+	if verifyPassword("password123", "legacy", hash) {
+		t.Fatal("expected non-bcrypt password scheme to be rejected")
 	}
 }

@@ -6,7 +6,7 @@ This repository is starting with the backend and container foundation using:
 
 - Go for the HTTP API
 - Docker Compose for local services
-- HTML/CSS/JavaScript for the future frontend
+- HTML/CSS/JavaScript for the embedded frontend
 - PostgreSQL in Compose for durable persistence
 
 ## Current Status
@@ -197,7 +197,7 @@ internal/adapters/http/v1 REST API v1 handlers and request DTOs
 internal/core/domains/    Domain models and shared domain errors
 internal/core/ports/      Storage interfaces
 internal/frontend/        Embedded HTML/CSS/JavaScript storefront
-internal/service/         Application use cases and prototype auth
+internal/service/         Application use cases and auth helpers
 internal/web/             Shared HTTP JSON and middleware helpers
 compose.yaml              Local API and database services
 Dockerfile                Production-style Go API image

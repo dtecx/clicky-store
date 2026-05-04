@@ -51,7 +51,6 @@ Rotate secrets if they were committed, logged, or shared.
 Implemented:
 
 - Bcrypt password hashing for new accounts.
-- Legacy prototype password-hash verification for older local data.
 - HMAC-signed bearer tokens.
 - Admin-only endpoint checks.
 - Basic in-process login rate limiting.
