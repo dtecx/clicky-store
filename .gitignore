@@ -7,6 +7,11 @@ Thumbs.db
 .env.local
 .env.development.local
 
+# IDE and editor files
+.vscode/*
+!.vscode/extensions.json
+.idea
+
 # Personal files
 plan/
 *.pdf
