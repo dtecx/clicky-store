@@ -2,8 +2,9 @@ FROM golang:1.22-alpine AS build
 
 WORKDIR /src
 
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
+RUN go mod tidy
 
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/clicky-store ./cmd/server
