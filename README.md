@@ -76,6 +76,8 @@ AUTH_SECRET="replace-me" docker compose up --build
 
 `DATABASE_URL` defaults to the PostgreSQL service in `compose.yaml`. Leave it empty only when you intentionally want the server to use the in-memory development store.
 
+Development mode (`APP_ENV=development`) provides demo defaults for `AUTH_SECRET` and the seeded admin account. Outside development, set a non-demo `AUTH_SECRET`; admin seeding only runs when `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` are all configured.
+
 ## API Overview
 
 Public endpoints:

@@ -22,6 +22,11 @@ func main() {
 	cfg := config.Load()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
+	if err := cfg.Validate(); err != nil {
+		logger.Error("invalid configuration", "error", err)
+		os.Exit(1)
+	}
+
 	var store ports.Store
 	if cfg.DatabaseURL == "" {
 		logger.Warn("DATABASE_URL is not set; using in-memory store")
@@ -40,8 +45,12 @@ func main() {
 
 	appService := service.New(store, cfg.AuthSecret)
 
-	if err := appService.SeedAdmin(cfg.AdminName, cfg.AdminEmail, cfg.AdminPassword); err != nil {
-		logger.Error("admin seed failed", "error", err)
+	if cfg.HasAdminSeed() {
+		if err := appService.SeedAdmin(cfg.AdminName, cfg.AdminEmail, cfg.AdminPassword); err != nil {
+			logger.Error("admin seed failed", "error", err)
+		}
+	} else {
+		logger.Warn("admin seed skipped; ADMIN_NAME, ADMIN_EMAIL, and ADMIN_PASSWORD must all be set")
 	}
 
 	api := httpv1.NewHandler(appService)
