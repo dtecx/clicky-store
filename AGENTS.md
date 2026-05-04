@@ -87,9 +87,9 @@ Avoid large mixed commits that combine database work, UI redesign, tests, and do
 
 ### 1. PostgreSQL Persistence
 
-This is the highest-priority task.
+Status: implemented.
 
-The current in-memory store is useful for a prototype, but the project brief requires database-backed persistence. Implement PostgreSQL before adding more large UI features.
+PostgreSQL persistence is now available when `DATABASE_URL` is configured. The memory store remains useful for lightweight local development and tests. Future database work should focus on migration safety, persistence tests, rollback behavior, and query cleanup rather than reimplementing the adapter.
 
 Add or update:
 
