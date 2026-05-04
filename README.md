@@ -81,6 +81,15 @@ Development mode (`APP_ENV=development`) provides demo defaults for `AUTH_SECRET
 
 ## API Overview
 
+More detailed API and setup documentation is available in:
+
+```txt
+docs/openapi.yaml
+docs/api-examples.md
+docs/development.md
+docs/deployment.md
+```
+
 Public endpoints:
 
 ```txt
