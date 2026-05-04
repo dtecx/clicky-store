@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">TravelClick Compact Mouse</title>
+  <desc id="desc">A compact travel mouse on a clean blue and yellow background.</desc>
+  <rect width="900" height="620" fill="#f2f6fb"/>
+  <rect x="70" y="86" width="760" height="420" rx="38" fill="#ffffff"/>
+  <path d="M70 372h760v134H70z" rx="38" fill="#2e6ea6"/>
+  <path d="M165 135h174v72H165z" rx="18" fill="#f3c845"/>
+  <path d="M615 112h120v120H615z" rx="28" fill="#ee6b4d"/>
+  <path d="M452 142c-90 0-146 72-146 184 0 78 34 139 91 164 17 7 36 11 57 11 20 0 40-4 57-12 59-26 91-89 88-167-3-110-59-180-147-180z" fill="#20242a"/>
+  <path d="M363 289c12-62 44-98 89-98 47 0 80 36 92 98H363z" fill="#f7f8fa"/>
+  <path d="M361 313h184c-4 71-38 117-92 117-53 0-87-46-92-117z" fill="#e6ebf0"/>
+  <path d="M453 191v239" stroke="#20242a" stroke-width="8" stroke-linecap="round"/>
+  <rect x="438" y="211" width="30" height="48" rx="15" fill="#ee6b4d"/>
+</svg>

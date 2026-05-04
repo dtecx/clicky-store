@@ -309,7 +309,7 @@ func createContractProduct(t *testing.T, store ports.Store, suffix string, stock
 		Wireless:    true,
 		Ergonomic:   true,
 		Stock:       stock,
-		ImageURL:    "/assets/products/contract.jpg",
+		ImageURL:    "/assets/products/product-generic.svg",
 	})
 	if err != nil {
 		t.Fatalf("CreateProduct: %v", err)

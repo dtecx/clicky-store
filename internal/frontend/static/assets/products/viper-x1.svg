@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Viper X1 Gaming Mouse</title>
+  <desc id="desc">A lightweight wired gaming mouse shown on a red and steel background.</desc>
+  <rect width="900" height="620" fill="#f3f5f7"/>
+  <path d="M0 430h900v190H0z" fill="#20242a"/>
+  <path d="M48 94h804v360H48z" rx="34" fill="#ffffff"/>
+  <path d="M48 370h804v84H48z" rx="34" fill="#e43f45"/>
+  <path d="M600 134c98 42 180 123 198 223" fill="none" stroke="#d7dce2" stroke-width="22" stroke-linecap="round"/>
+  <path d="M444 110c-112 0-184 89-184 225 0 92 42 172 112 204 23 10 51 16 78 16s55-6 78-16c70-32 112-112 112-204 0-136-76-225-196-225z" fill="#15181d"/>
+  <path d="M448 132c-71 2-118 58-127 148h254c-9-94-58-149-127-148z" fill="#f7f8fa"/>
+  <path d="M319 306h258c-3 106-51 180-127 180-76 0-125-74-131-180z" fill="#e9edf2"/>
+  <path d="M448 134v350" stroke="#15181d" stroke-width="10" stroke-linecap="round"/>
+  <rect x="428" y="166" width="40" height="82" rx="20" fill="#e43f45"/>
+  <path d="M302 340c-80 15-132 52-156 110" fill="none" stroke="#15181d" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="188" cy="468" r="18" fill="#e43f45"/>
+</svg>

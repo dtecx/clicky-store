@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">Orbit Pro Wireless Mouse</title>
+  <desc id="desc">A wireless ergonomic gaming mouse on a teal and violet studio background.</desc>
+  <rect width="900" height="620" fill="#edf7f5"/>
+  <path d="M74 84h752v452H74z" rx="40" fill="#15201f"/>
+  <path d="M74 377h752v159H74z" rx="40" fill="#09a88f"/>
+  <circle cx="702" cy="172" r="72" fill="#7b61ff" opacity=".9"/>
+  <circle cx="210" cy="432" r="54" fill="#f7c843"/>
+  <path d="M450 96c-124 0-200 94-200 242 0 104 46 183 125 214 22 9 49 14 76 14 28 0 56-5 79-15 79-33 123-113 120-217C646 188 570 96 450 96z" fill="#f8fafc"/>
+  <path d="M319 290c15-88 61-136 131-136 72 0 119 48 134 136H319z" fill="#202830"/>
+  <path d="M316 318h270c-5 102-55 169-136 169-78 0-128-67-134-169z" fill="#d9e1e8"/>
+  <path d="M450 154v333" stroke="#202830" stroke-width="10" stroke-linecap="round"/>
+  <rect x="428" y="186" width="44" height="72" rx="22" fill="#09a88f"/>
+  <path d="M578 364c24-5 47-13 67-25" fill="none" stroke="#7b61ff" stroke-width="18" stroke-linecap="round"/>
+</svg>

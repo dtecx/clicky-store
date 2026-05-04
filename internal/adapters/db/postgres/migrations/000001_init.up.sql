@@ -98,7 +98,7 @@ INSERT INTO products (
     false,
     false,
     18,
-    '/assets/products/viper-x1.jpg',
+    '/assets/products/viper-x1.svg',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -114,7 +114,7 @@ INSERT INTO products (
     true,
     true,
     12,
-    '/assets/products/orbit-pro.jpg',
+    '/assets/products/orbit-pro.svg',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -130,7 +130,7 @@ INSERT INTO products (
     true,
     true,
     30,
-    '/assets/products/quietdesk-m2.jpg',
+    '/assets/products/quietdesk-m2.svg',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ),
@@ -146,7 +146,7 @@ INSERT INTO products (
     true,
     false,
     25,
-    '/assets/products/travelclick.jpg',
+    '/assets/products/travelclick.svg',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )

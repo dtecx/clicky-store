@@ -67,7 +67,7 @@ curl -X POST http://localhost:8080/api/v1/admin/products \
     "wireless":true,
     "ergonomic":true,
     "stock":10,
-    "imageUrl":"/assets/products/demo.jpg"
+    "imageUrl":"/assets/products/product-generic.svg"
   }'
 ```
 
