@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"clicky-store/internal/core/domains"
@@ -52,51 +51,21 @@ func newID(prefix string) string {
 }
 
 func normalizeEmail(email string) string {
-	return strings.ToLower(strings.TrimSpace(email))
+	return domains.NormalizeEmail(email)
 }
 
 func normalizeCurrency(currency string) string {
-	currency = strings.ToUpper(strings.TrimSpace(currency))
-	if currency == "" {
-		return "PLN"
-	}
-
-	return currency
+	return domains.NormalizeCurrency(currency)
 }
 
 func normalizeRole(role string) string {
-	role = strings.ToLower(strings.TrimSpace(role))
-	if role == "" {
-		return "customer"
-	}
-
-	switch role {
-	case "admin", "customer":
-		return role
-	default:
-		return ""
-	}
+	return domains.NormalizeRole(role)
 }
 
 func normalizePaymentMethod(method string) string {
-	method = strings.ToLower(strings.TrimSpace(method))
-	if method == "" {
-		return "simulation"
-	}
-
-	return method
+	return domains.NormalizePaymentMethod(method)
 }
 
 func validateProduct(product domains.Product) error {
-	if strings.TrimSpace(product.Name) == "" ||
-		strings.TrimSpace(product.Slug) == "" ||
-		strings.TrimSpace(product.Description) == "" ||
-		strings.TrimSpace(product.Category) == "" ||
-		product.PriceCents <= 0 ||
-		product.DPI <= 0 ||
-		product.Stock < 0 {
-		return domains.ErrInvalid
-	}
-
-	return nil
+	return domains.ValidateProduct(product)
 }

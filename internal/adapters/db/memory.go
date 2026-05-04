@@ -106,8 +106,8 @@ func (s *MemoryStore) CreateUser(user domains.User) (domains.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	email := normalizeEmail(user.Email)
-	role := normalizeRole(user.Role)
+	email := domains.NormalizeEmail(user.Email)
+	role := domains.NormalizeRole(user.Role)
 	if email == "" || role == "" {
 		return domains.User{}, domains.ErrInvalid
 	}
@@ -134,7 +134,7 @@ func (s *MemoryStore) ListUsers(filter domains.UserFilter) []domains.User {
 	query := strings.ToLower(strings.TrimSpace(filter.Query))
 	users := make([]domains.User, 0, len(s.users))
 
-	if role != "" && normalizeRole(role) == "" {
+	if role != "" && domains.NormalizeRole(role) == "" {
 		return users
 	}
 
@@ -159,7 +159,7 @@ func (s *MemoryStore) UserByEmail(email string) (domains.User, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	id, ok := s.emailIndex[normalizeEmail(email)]
+	id, ok := s.emailIndex[domains.NormalizeEmail(email)]
 	if !ok {
 		return domains.User{}, domains.ErrNotFound
 	}
@@ -188,7 +188,7 @@ func (s *MemoryStore) UpdateUserRole(id, role string) (domains.User, error) {
 		return domains.User{}, domains.ErrNotFound
 	}
 
-	role = normalizeRole(role)
+	role = domains.NormalizeRole(role)
 	if role == "" {
 		return domains.User{}, domains.ErrInvalid
 	}
@@ -240,14 +240,13 @@ func (s *MemoryStore) CreateProduct(product domains.Product) (domains.Product, e
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := validateProduct(product); err != nil {
+	product = domains.NormalizeProduct(product)
+	if err := domains.ValidateProduct(product); err != nil {
 		return domains.Product{}, err
 	}
 
 	now := time.Now().UTC()
 	product.ID = s.newIDLocked("prod")
-	product.Category = strings.ToLower(strings.TrimSpace(product.Category))
-	product.Currency = normalizeCurrency(product.Currency)
 	product.CreatedAt = now
 	product.UpdatedAt = now
 	s.products[product.ID] = product
@@ -264,41 +263,8 @@ func (s *MemoryStore) UpdateProduct(id string, update domains.ProductUpdate) (do
 		return domains.Product{}, domains.ErrNotFound
 	}
 
-	if update.Name != nil {
-		product.Name = strings.TrimSpace(*update.Name)
-	}
-	if update.Slug != nil {
-		product.Slug = strings.TrimSpace(*update.Slug)
-	}
-	if update.Description != nil {
-		product.Description = strings.TrimSpace(*update.Description)
-	}
-	if update.Category != nil {
-		product.Category = strings.ToLower(strings.TrimSpace(*update.Category))
-	}
-	if update.PriceCents != nil {
-		product.PriceCents = *update.PriceCents
-	}
-	if update.Currency != nil {
-		product.Currency = normalizeCurrency(*update.Currency)
-	}
-	if update.DPI != nil {
-		product.DPI = *update.DPI
-	}
-	if update.Wireless != nil {
-		product.Wireless = *update.Wireless
-	}
-	if update.Ergonomic != nil {
-		product.Ergonomic = *update.Ergonomic
-	}
-	if update.Stock != nil {
-		product.Stock = *update.Stock
-	}
-	if update.ImageURL != nil {
-		product.ImageURL = strings.TrimSpace(*update.ImageURL)
-	}
-
-	if err := validateProduct(product); err != nil {
+	product = domains.ApplyProductUpdate(product, update)
+	if err := domains.ValidateProduct(product); err != nil {
 		return domains.Product{}, err
 	}
 
@@ -433,7 +399,7 @@ func (s *MemoryStore) CreateOrderFromCart(userID, paymentMethod string) (domains
 		Currency:      cart.Currency,
 		Status:        domains.OrderStatusPending,
 		PaymentStatus: domains.PaymentStatusPending,
-		PaymentMethod: normalizePaymentMethod(paymentMethod),
+		PaymentMethod: domains.NormalizePaymentMethod(paymentMethod),
 		CreatedAt:     time.Now().UTC(),
 	}
 
@@ -535,53 +501,6 @@ func (s *MemoryStore) cartLocked(userID string) domains.Cart {
 func (s *MemoryStore) newIDLocked(prefix string) string {
 	s.nextID++
 	return fmt.Sprintf("%s_%06d", prefix, s.nextID)
-}
-
-func validateProduct(product domains.Product) error {
-	if strings.TrimSpace(product.Name) == "" ||
-		strings.TrimSpace(product.Slug) == "" ||
-		strings.TrimSpace(product.Description) == "" ||
-		strings.TrimSpace(product.Category) == "" ||
-		product.PriceCents <= 0 ||
-		product.DPI <= 0 ||
-		product.Stock < 0 {
-		return domains.ErrInvalid
-	}
-
-	return nil
-}
-
-func normalizeEmail(email string) string {
-	return strings.ToLower(strings.TrimSpace(email))
-}
-
-func normalizeCurrency(currency string) string {
-	currency = strings.ToUpper(strings.TrimSpace(currency))
-	if currency == "" {
-		return "PLN"
-	}
-	return currency
-}
-
-func normalizeRole(role string) string {
-	role = strings.ToLower(strings.TrimSpace(role))
-	if role == "" {
-		return "customer"
-	}
-	switch role {
-	case "admin", "customer":
-		return role
-	default:
-		return ""
-	}
-}
-
-func normalizePaymentMethod(method string) string {
-	method = strings.ToLower(strings.TrimSpace(method))
-	if method == "" {
-		return "simulation"
-	}
-	return method
 }
 
 func sortOrders(orders []domains.Order) {
