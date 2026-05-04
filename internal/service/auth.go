@@ -2,14 +2,17 @@ package service
 
 import (
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"strings"
+
+	"golang.org/x/crypto/bcrypt"
 )
+
+const passwordHashSchemeBcrypt = "bcrypt"
 
 type tokenClaims struct {
 	UserID    string `json:"userId"`
@@ -68,15 +71,19 @@ func (s *tokenSigner) signature(payload string) string {
 }
 
 func hashPassword(password string) (string, string, error) {
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
 		return "", "", err
 	}
 
-	return derivePasswordHash(password, salt), hex.EncodeToString(salt), nil
+	return string(hash), passwordHashSchemeBcrypt, nil
 }
 
 func verifyPassword(password, encodedSalt, expectedHash string) bool {
+	if encodedSalt == passwordHashSchemeBcrypt {
+		return bcrypt.CompareHashAndPassword([]byte(expectedHash), []byte(password)) == nil
+	}
+
 	salt, err := hex.DecodeString(encodedSalt)
 	if err != nil {
 		return false
