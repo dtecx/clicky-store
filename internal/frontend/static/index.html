@@ -35,6 +35,7 @@
               <div>
                 <p class="eyebrow">Mice for play and work</p>
                 <h1 id="productsTitle">Products</h1>
+                <p id="storeSummary" class="view-subtitle"></p>
               </div>
               <div class="toolbar">
                 <label class="search-field">
@@ -61,6 +62,7 @@
             <div>
               <p class="eyebrow">Checkout</p>
               <h1 id="cartTitle">Cart</h1>
+              <p id="cartSummary" class="view-subtitle"></p>
             </div>
           </div>
           <div id="cartContent"></div>
@@ -73,6 +75,7 @@
             <div>
               <p class="eyebrow">History</p>
               <h1 id="ordersTitle">Orders</h1>
+              <p id="ordersSummary" class="view-subtitle"></p>
             </div>
           </div>
           <div id="ordersContent" class="record-list"></div>
@@ -129,10 +132,35 @@
           </section>
 
           <section id="adminOrdersPanel" class="admin-panel is-hidden">
+            <div class="panel-toolbar">
+              <label>Status
+                <select id="adminOrderStatus">
+                  <option value="">All statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="payment_failed">Payment failed</option>
+                </select>
+              </label>
+              <label>Search
+                <input id="adminOrderQuery" type="search" placeholder="Order or user ID" autocomplete="off" />
+              </label>
+            </div>
             <div id="adminOrdersTable" class="table-wrap"></div>
           </section>
 
           <section id="adminUsersPanel" class="admin-panel is-hidden">
+            <div class="panel-toolbar">
+              <label>Role
+                <select id="adminUserRole">
+                  <option value="">All roles</option>
+                  <option value="customer">Customer</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+              <label>Search
+                <input id="adminUserQuery" type="search" placeholder="Name or email" autocomplete="off" />
+              </label>
+            </div>
             <div id="adminUsersTable" class="table-wrap"></div>
           </section>
         </div>

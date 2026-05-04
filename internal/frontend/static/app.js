@@ -2,7 +2,11 @@ const API_BASE = "/api/v1";
 
 const state = {
   adminOrders: [],
+  adminOrderQuery: "",
+  adminOrderStatus: "",
   adminTab: "products",
+  adminUserQuery: "",
+  adminUserRole: "",
   adminUsers: [],
   authMode: "login",
   cart: null,
@@ -28,10 +32,14 @@ function cacheElements() {
   Object.assign(els, {
     accountName: document.querySelector("#accountName"),
     adminNav: document.querySelector("#adminNav"),
+    adminOrderQuery: document.querySelector("#adminOrderQuery"),
+    adminOrderStatus: document.querySelector("#adminOrderStatus"),
     adminOrdersPanel: document.querySelector("#adminOrdersPanel"),
     adminOrdersTable: document.querySelector("#adminOrdersTable"),
     adminProductsPanel: document.querySelector("#adminProductsPanel"),
     adminProductsTable: document.querySelector("#adminProductsTable"),
+    adminUserQuery: document.querySelector("#adminUserQuery"),
+    adminUserRole: document.querySelector("#adminUserRole"),
     adminUsersPanel: document.querySelector("#adminUsersPanel"),
     adminUsersTable: document.querySelector("#adminUsersTable"),
     authDialog: document.querySelector("#authDialog"),
@@ -42,11 +50,13 @@ function cacheElements() {
     authTitle: document.querySelector("#authTitle"),
     cartContent: document.querySelector("#cartContent"),
     cartCount: document.querySelector("#cartCount"),
+    cartSummary: document.querySelector("#cartSummary"),
     closeAuth: document.querySelector("#closeAuth"),
     loginButton: document.querySelector("#loginButton"),
     logoutButton: document.querySelector("#logoutButton"),
     nameField: document.querySelector("#nameField"),
     ordersContent: document.querySelector("#ordersContent"),
+    ordersSummary: document.querySelector("#ordersSummary"),
     productCategory: document.querySelector("#productCategory"),
     productCurrency: document.querySelector("#productCurrency"),
     productDescription: document.querySelector("#productDescription"),
@@ -63,6 +73,7 @@ function cacheElements() {
     productWireless: document.querySelector("#productWireless"),
     productErgonomic: document.querySelector("#productErgonomic"),
     searchInput: document.querySelector("#searchInput"),
+    storeSummary: document.querySelector("#storeSummary"),
     toast: document.querySelector("#toast"),
   });
 }
@@ -110,6 +121,24 @@ function bindEvents() {
   document.querySelector("#clearProductForm").addEventListener("click", clearProductForm);
   els.adminProductsTable.addEventListener("click", handleAdminProductClick);
   els.adminUsersTable.addEventListener("click", handleAdminUserClick);
+  document.addEventListener("error", handleProductImageError, true);
+
+  els.adminOrderStatus.addEventListener("change", () => {
+    state.adminOrderStatus = els.adminOrderStatus.value;
+    renderAdminOrders();
+  });
+  els.adminOrderQuery.addEventListener("input", () => {
+    state.adminOrderQuery = els.adminOrderQuery.value.trim().toLowerCase();
+    renderAdminOrders();
+  });
+  els.adminUserRole.addEventListener("change", () => {
+    state.adminUserRole = els.adminUserRole.value;
+    renderAdminUsers();
+  });
+  els.adminUserQuery.addEventListener("input", () => {
+    state.adminUserQuery = els.adminUserQuery.value.trim().toLowerCase();
+    renderAdminUsers();
+  });
 }
 
 async function boot() {
@@ -179,7 +208,7 @@ async function loadProducts() {
   }
 
   const suffix = params.toString() ? `?${params.toString()}` : "";
-  const data = await apiRequest(`/products${suffix}`, { auth: false });
+  const data = await apiRequest(`/products${suffix}`);
   state.products = data.products || [];
 
   if (!state.products.some((product) => product.id === state.selectedProductId)) {
@@ -259,62 +288,50 @@ function renderProducts() {
     return;
   }
 
+  els.storeSummary.textContent = productSummaryText();
   if (state.products.length === 0) {
     els.productGrid.innerHTML = `<div class="empty-state">No products found.</div>`;
     return;
   }
 
-  els.productGrid.innerHTML = state.products.map((product) => `
-    <article class="product-card">
-      ${productArt(product)}
-      <div class="product-body">
-        <h3 class="product-title">${escapeHTML(product.name)}</h3>
-        <p class="product-description">${escapeHTML(product.description)}</p>
-        <div class="meta-row">
-          <span class="badge">${escapeHTML(product.category)}</span>
-          <span class="badge">${product.dpi.toLocaleString()} DPI</span>
-          <span class="badge">${product.wireless ? "Wireless" : "Wired"}</span>
-        </div>
-      </div>
-      <div class="price-row">
-        <div>
-          <div class="price">${formatMoney(product.priceCents, product.currency)}</div>
-          <div class="stock">${product.stock} in stock</div>
-        </div>
-        <div class="line-actions">
-          <button class="button button-secondary" type="button" data-action="view-product" data-product-id="${escapeAttr(product.id)}">View</button>
-          <button class="button" type="button" data-action="add-cart" data-product-id="${escapeAttr(product.id)}" ${product.stock <= 0 ? "disabled" : ""}>Add</button>
-        </div>
-      </div>
-    </article>
-  `).join("");
+  els.productGrid.innerHTML = state.products.map(productCardTemplate).join("");
 }
 
 function renderProductDetail() {
   const product = selectedProduct();
   if (!product) {
-    els.productDetail.innerHTML = `<div class="empty-state">Select a product.</div>`;
+    els.productDetail.innerHTML = `<div class="empty-state">No product selected.</div>`;
     return;
   }
 
   els.productDetail.innerHTML = `
-    ${productArt(product)}
+    ${productMediaTemplate(product, "detail-media")}
     <div class="detail-body">
-      <p class="eyebrow">${escapeHTML(product.category)}</p>
-      <h2>${escapeHTML(product.name)}</h2>
-      <p>${escapeHTML(product.description)}</p>
-      <div class="detail-specs">
-        <div class="spec"><span>Price</span><strong>${formatMoney(product.priceCents, product.currency)}</strong></div>
-        <div class="spec"><span>Sensor</span><strong>${product.dpi.toLocaleString()} DPI</strong></div>
-        <div class="spec"><span>Connection</span><strong>${product.wireless ? "Wireless" : "Wired"}</strong></div>
-        <div class="spec"><span>Shape</span><strong>${product.ergonomic ? "Ergonomic" : "Compact"}</strong></div>
+      <div class="detail-title-row">
+        <div>
+          <p class="eyebrow">${escapeHTML(product.category)}</p>
+          <h2>${escapeHTML(product.name)}</h2>
+        </div>
+        ${stockBadgeTemplate(product.stock)}
       </div>
-      <button class="button" type="button" data-action="add-cart" data-product-id="${escapeAttr(product.id)}" ${product.stock <= 0 ? "disabled" : ""}>Add to cart</button>
+      <p>${escapeHTML(product.description)}</p>
+      <dl class="detail-specs">
+        <div><dt>Price</dt><dd>${formatMoney(product.priceCents, product.currency)}</dd></div>
+        <div><dt>Sensor</dt><dd>${product.dpi.toLocaleString()} DPI</dd></div>
+        <div><dt>Connection</dt><dd>${escapeHTML(connectionLabel(product))}</dd></div>
+        <div><dt>Shape</dt><dd>${product.ergonomic ? "Ergonomic" : "Compact"}</dd></div>
+      </dl>
+      <div class="detail-actions">
+        <button class="button" type="button" data-action="add-cart" data-product-id="${escapeAttr(product.id)}" ${product.stock <= 0 ? "disabled" : ""}>Add to cart</button>
+        <span class="stock-note">${product.stock <= 0 ? "Out of stock" : `${product.stock} available`}</span>
+      </div>
     </div>
   `;
 }
 
 function renderCart() {
+  els.cartSummary.textContent = cartSummaryText();
+
   if (!state.user) {
     els.cartContent.innerHTML = `
       <div class="empty-state">
@@ -335,7 +352,8 @@ function renderCart() {
     <div class="cart-list">
       ${items.map((line) => `
         <article class="cart-line">
-          <div>
+          ${productMediaTemplate(line.product, "cart-media")}
+          <div class="cart-item-copy">
             <h3>${escapeHTML(line.product.name)}</h3>
             <p class="stock">${formatMoney(line.product.priceCents, line.product.currency)} each</p>
           </div>
@@ -371,6 +389,8 @@ function renderCart() {
 }
 
 function renderOrders() {
+  els.ordersSummary.textContent = orderSummaryText();
+
   if (!state.user) {
     els.ordersContent.innerHTML = `<div class="empty-state">Log in to view orders.</div>`;
     return;
@@ -425,10 +445,15 @@ function renderAdminProducts() {
       <tbody>
         ${state.products.map((product) => `
           <tr>
-            <td><strong>${escapeHTML(product.name)}</strong><br><span class="stock">${escapeHTML(product.slug)}</span></td>
-            <td>${escapeHTML(product.category)}</td>
+            <td>
+              <div class="table-product">
+                ${productMediaTemplate(product, "table-media")}
+                <div><strong>${escapeHTML(product.name)}</strong><br><span class="stock">${escapeHTML(product.slug)}</span></div>
+              </div>
+            </td>
+            <td>${badgeTemplate(product.category)}</td>
             <td>${formatMoney(product.priceCents, product.currency)}</td>
-            <td>${product.stock}</td>
+            <td>${stockBadgeTemplate(product.stock)}</td>
             <td>
               <div class="admin-row-actions">
                 <button class="button button-secondary" type="button" data-action="edit-product" data-product-id="${escapeAttr(product.id)}">Edit</button>
@@ -447,7 +472,8 @@ function renderAdminOrders() {
     return;
   }
 
-  if (state.adminOrders.length === 0) {
+  const orders = filteredAdminOrders();
+  if (orders.length === 0) {
     els.adminOrdersTable.innerHTML = `<div class="empty-state">No orders yet.</div>`;
     return;
   }
@@ -464,12 +490,12 @@ function renderAdminOrders() {
         </tr>
       </thead>
       <tbody>
-        ${state.adminOrders.map((order) => `
+        ${orders.map((order) => `
           <tr>
             <td><strong>${escapeHTML(order.id)}</strong><br><span class="stock">${order.items.length} item(s)</span></td>
             <td>${escapeHTML(order.userId)}</td>
             <td>${formatMoney(order.totalCents, order.currency)}</td>
-            <td>${escapeHTML(order.status)} / ${escapeHTML(order.paymentStatus)}</td>
+            <td>${statusBadgeTemplate(order.status)} ${statusBadgeTemplate(order.paymentStatus, "payment")}</td>
             <td>${formatDate(order.createdAt)}</td>
           </tr>
         `).join("")}
@@ -483,7 +509,8 @@ function renderAdminUsers() {
     return;
   }
 
-  if (state.adminUsers.length === 0) {
+  const users = filteredAdminUsers();
+  if (users.length === 0) {
     els.adminUsersTable.innerHTML = `<div class="empty-state">No users found.</div>`;
     return;
   }
@@ -499,7 +526,7 @@ function renderAdminUsers() {
         </tr>
       </thead>
       <tbody>
-        ${state.adminUsers.map((user) => `
+        ${users.map((user) => `
           <tr>
             <td><strong>${escapeHTML(user.name)}</strong><br><span class="stock">${escapeHTML(user.email)}</span></td>
             <td>
@@ -608,6 +635,7 @@ function handleProductClick(event) {
   const productId = button.dataset.productId;
   if (button.dataset.action === "view-product") {
     state.selectedProductId = productId;
+    renderProducts();
     renderProductDetail();
   }
   if (button.dataset.action === "add-cart") {
@@ -883,12 +911,44 @@ function selectedProduct() {
   return state.products.find((product) => product.id === state.selectedProductId) || null;
 }
 
-function productArt(product) {
-  const categoryClass = product.category === "office" ? "office" : "";
+function productCardTemplate(product) {
+  const selectedClass = product.id === state.selectedProductId ? " is-selected" : "";
+
   return `
-    <div class="product-art ${categoryClass}" aria-hidden="true">
-      <span class="mouse"></span>
-    </div>
+    <article class="product-card${selectedClass}">
+      ${productMediaTemplate(product)}
+      <div class="product-body">
+        <div class="product-title-row">
+          <h3 class="product-title">${escapeHTML(product.name)}</h3>
+          ${stockBadgeTemplate(product.stock)}
+        </div>
+        <p class="product-description">${escapeHTML(product.description)}</p>
+        <div class="meta-row">
+          ${badgeTemplate(product.category)}
+          ${badgeTemplate(`${product.dpi.toLocaleString()} DPI`)}
+          ${badgeTemplate(connectionLabel(product))}
+        </div>
+      </div>
+      <div class="price-row">
+        <div>
+          <div class="price">${formatMoney(product.priceCents, product.currency)}</div>
+          <div class="stock-note">${product.stock <= 0 ? "Unavailable" : `${product.stock} available`}</div>
+        </div>
+        <div class="line-actions">
+          <button class="button button-secondary" type="button" data-action="view-product" data-product-id="${escapeAttr(product.id)}">View</button>
+          <button class="button" type="button" data-action="add-cart" data-product-id="${escapeAttr(product.id)}" ${product.stock <= 0 ? "disabled" : ""}>Add</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function productMediaTemplate(product, className = "") {
+  const imageURL = product.imageUrl || "/assets/products/product-generic.svg";
+  return `
+    <figure class="product-media ${className}">
+      <img data-product-image src="${escapeAttr(imageURL)}" alt="${escapeAttr(product.name)}" loading="lazy" />
+    </figure>
   `;
 }
 
@@ -903,7 +963,8 @@ function orderCard(order) {
           <span class="stock">${formatDate(order.createdAt)}</span>
         </div>
         <div class="order-status">
-          <span class="badge">${escapeHTML(order.status)} / ${escapeHTML(order.paymentStatus)}</span>
+          ${statusBadgeTemplate(order.status)}
+          ${statusBadgeTemplate(order.paymentStatus, "payment")}
           <strong>${formatMoney(order.totalCents, order.currency)}</strong>
         </div>
       </div>
@@ -923,6 +984,106 @@ function orderCard(order) {
       ` : ""}
     </article>
   `;
+}
+
+function badgeTemplate(label) {
+  return `<span class="badge">${escapeHTML(label)}</span>`;
+}
+
+function stockBadgeTemplate(stock) {
+  if (stock <= 0) {
+    return `<span class="badge badge-danger">Out</span>`;
+  }
+  if (stock <= 5) {
+    return `<span class="badge badge-warning">Low stock</span>`;
+  }
+  return `<span class="badge badge-success">In stock</span>`;
+}
+
+function statusBadgeTemplate(status, group = "order") {
+  const normalized = String(status || "").toLowerCase();
+  let tone = "";
+  if (normalized === "confirmed" || normalized === "paid") {
+    tone = " badge-success";
+  } else if (normalized === "pending") {
+    tone = " badge-warning";
+  } else if (normalized === "payment_failed" || normalized === "failed") {
+    tone = " badge-danger";
+  }
+  const label = group === "payment" ? `Payment: ${statusLabel(normalized)}` : statusLabel(normalized);
+  return `<span class="badge${tone}">${escapeHTML(label)}</span>`;
+}
+
+function statusLabel(status) {
+  return String(status || "")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function connectionLabel(product) {
+  return product.wireless ? "Wireless" : "Wired";
+}
+
+function productSummaryText() {
+  const count = state.products.length;
+  const category = state.category ? `${state.category} ` : "";
+  return `${count} ${category}${count === 1 ? "product" : "products"}`;
+}
+
+function cartSummaryText() {
+  if (!state.user) {
+    return "";
+  }
+  const count = cartItemCount();
+  if (count === 0) {
+    return "No items";
+  }
+  return `${count} ${count === 1 ? "item" : "items"} - ${formatMoney(state.cart?.totalCents || 0, state.cart?.currency || "PLN")}`;
+}
+
+function orderSummaryText() {
+  if (!state.user) {
+    return "";
+  }
+  const pending = state.orders.filter((order) => order.paymentStatus === "pending").length;
+  if (state.orders.length === 0) {
+    return "No orders";
+  }
+  return pending === 0 ? `${state.orders.length} orders` : `${state.orders.length} orders - ${pending} pending`;
+}
+
+function filteredAdminOrders() {
+  return state.adminOrders.filter((order) => {
+    if (state.adminOrderStatus && order.status !== state.adminOrderStatus) {
+      return false;
+    }
+    if (!state.adminOrderQuery) {
+      return true;
+    }
+    return `${order.id} ${order.userId}`.toLowerCase().includes(state.adminOrderQuery);
+  });
+}
+
+function filteredAdminUsers() {
+  return state.adminUsers.filter((user) => {
+    if (state.adminUserRole && user.role !== state.adminUserRole) {
+      return false;
+    }
+    if (!state.adminUserQuery) {
+      return true;
+    }
+    return `${user.name} ${user.email} ${user.id}`.toLowerCase().includes(state.adminUserQuery);
+  });
+}
+
+function handleProductImageError(event) {
+  const image = event.target.closest?.("[data-product-image]");
+  if (!image || image.dataset.fallbackApplied === "true") {
+    return;
+  }
+
+  image.dataset.fallbackApplied = "true";
+  image.src = "/assets/products/product-generic.svg";
 }
 
 function cartItemCount() {

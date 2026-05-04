@@ -20,7 +20,7 @@ func TestHashPasswordUsesBcrypt(t *testing.T) {
 	if verifyPassword("wrong-password", scheme, hash) {
 		t.Fatal("expected bcrypt password verification to reject wrong password")
 	}
-	if verifyPassword("password123", "legacy", hash) {
+	if verifyPassword("password123", "old-scheme", hash) {
 		t.Fatal("expected non-bcrypt password scheme to be rejected")
 	}
 }
