@@ -288,6 +288,30 @@ func TestProductCartAndOrderFlow(t *testing.T) {
 	assertStatus(t, emptyOrderRes, http.StatusBadRequest)
 }
 
+func TestProductLookupBySlug(t *testing.T) {
+	server := newAPITestServer(t)
+
+	res := server.request(http.MethodGet, "/api/v1/products/slug/viper-x1-gaming-mouse", nil, "")
+	assertStatus(t, res, http.StatusOK)
+	body := decodeResponse[productResponse](t, res)
+	if body.Product.ID != "prod-gaming-viper" || body.Product.Slug != "viper-x1-gaming-mouse" {
+		t.Fatalf("product = %+v, want viper x1 mouse", body.Product)
+	}
+
+	missingRes := server.request(http.MethodGet, "/api/v1/products/slug/does-not-exist", nil, "")
+	assertStatus(t, missingRes, http.StatusNotFound)
+	missing := decodeResponse[errorResponse](t, missingRes)
+	if missing.Error == "" {
+		t.Fatal("expected error message for missing slug")
+	}
+
+	emptyRes := server.request(http.MethodGet, "/api/v1/products/slug/", nil, "")
+	assertStatus(t, emptyRes, http.StatusNotFound)
+
+	nestedRes := server.request(http.MethodGet, "/api/v1/products/slug/foo/bar", nil, "")
+	assertStatus(t, nestedRes, http.StatusNotFound)
+}
+
 func TestAdminProductManagementRequiresAdmin(t *testing.T) {
 	server := newAPITestServer(t)
 

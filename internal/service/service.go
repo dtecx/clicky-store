@@ -133,6 +133,10 @@ func (s *Service) GetProduct(id string) (domains.Product, error) {
 	return s.store.GetProduct(id)
 }
 
+func (s *Service) GetProductBySlug(slug string) (domains.Product, error) {
+	return s.store.GetProductBySlug(slug)
+}
+
 func (s *Service) CreateProduct(product domains.Product) (domains.Product, error) {
 	return s.store.CreateProduct(product)
 }

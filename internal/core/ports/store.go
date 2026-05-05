@@ -13,6 +13,7 @@ type UserStore interface {
 type ProductStore interface {
 	ListProducts(filter domains.ProductFilter) []domains.Product
 	GetProduct(id string) (domains.Product, error)
+	GetProductBySlug(slug string) (domains.Product, error)
 	CreateProduct(product domains.Product) (domains.Product, error)
 	UpdateProduct(id string, update domains.ProductUpdate) (domains.Product, error)
 	DeleteProduct(id string) error

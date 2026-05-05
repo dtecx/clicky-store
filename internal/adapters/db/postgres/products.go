@@ -96,6 +96,21 @@ func (s *Store) GetProduct(id string) (domains.Product, error) {
 	return scanProduct(row)
 }
 
+func (s *Store) GetProductBySlug(slug string) (domains.Product, error) {
+	slug = strings.TrimSpace(slug)
+	if slug == "" {
+		return domains.Product{}, domains.ErrNotFound
+	}
+
+	row := s.db.QueryRowContext(
+		context.Background(),
+		`SELECT `+productSelectColumns("")+` FROM products WHERE slug = $1`,
+		slug,
+	)
+
+	return scanProduct(row)
+}
+
 func (s *Store) CreateProduct(product domains.Product) (domains.Product, error) {
 	product.ID = newID("prod")
 	product.Name = strings.TrimSpace(product.Name)

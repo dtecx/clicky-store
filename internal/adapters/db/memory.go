@@ -236,6 +236,24 @@ func (s *MemoryStore) GetProduct(id string) (domains.Product, error) {
 	return product, nil
 }
 
+func (s *MemoryStore) GetProductBySlug(slug string) (domains.Product, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	slug = strings.TrimSpace(slug)
+	if slug == "" {
+		return domains.Product{}, domains.ErrNotFound
+	}
+
+	for _, product := range s.products {
+		if product.Slug == slug {
+			return product, nil
+		}
+	}
+
+	return domains.Product{}, domains.ErrNotFound
+}
+
 func (s *MemoryStore) CreateProduct(product domains.Product) (domains.Product, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

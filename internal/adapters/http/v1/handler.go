@@ -107,13 +107,35 @@ func (h *Handler) handleProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productID := strings.TrimPrefix(r.URL.Path, apiPrefix+"/products/")
-	if productID == "" || strings.Contains(productID, "/") {
+	rest := strings.TrimPrefix(r.URL.Path, apiPrefix+"/products/")
+	if rest == "" {
 		web.WriteError(w, http.StatusNotFound, "product not found")
 		return
 	}
 
-	product, err := h.service.GetProduct(productID)
+	if strings.HasPrefix(rest, "slug/") {
+		slug := strings.TrimPrefix(rest, "slug/")
+		if slug == "" || strings.Contains(slug, "/") {
+			web.WriteError(w, http.StatusNotFound, "product not found")
+			return
+		}
+
+		product, err := h.service.GetProductBySlug(slug)
+		if err != nil {
+			writeDomainError(w, err, "product not found")
+			return
+		}
+
+		web.WriteJSON(w, http.StatusOK, map[string]any{"product": product})
+		return
+	}
+
+	if strings.Contains(rest, "/") {
+		web.WriteError(w, http.StatusNotFound, "product not found")
+		return
+	}
+
+	product, err := h.service.GetProduct(rest)
 	if err != nil {
 		writeDomainError(w, err, "product not found")
 		return

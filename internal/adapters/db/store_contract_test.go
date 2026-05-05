@@ -78,6 +78,17 @@ func TestStoreContractUserProductCartOrderFlow(t *testing.T) {
 				t.Fatalf("ListProducts did not include product: %+v", filteredProducts)
 			}
 
+			fetchedBySlug, err := store.GetProductBySlug(product.Slug)
+			if err != nil {
+				t.Fatalf("GetProductBySlug: %v", err)
+			}
+			if fetchedBySlug.ID != product.ID {
+				t.Fatalf("GetProductBySlug ID = %q, want %q", fetchedBySlug.ID, product.ID)
+			}
+			if _, err := store.GetProductBySlug("does-not-exist-" + suffix); !errors.Is(err, domains.ErrNotFound) {
+				t.Fatalf("GetProductBySlug missing error = %v, want not found", err)
+			}
+
 			cart, err := store.AddCartItem(user.ID, product.ID, 2)
 			if err != nil {
 				t.Fatalf("AddCartItem: %v", err)
