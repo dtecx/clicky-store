@@ -1,18 +1,18 @@
 import {
   CircleUserRound,
+  LogOut,
   MousePointer2,
   Search,
   ShieldCheck,
   ShoppingCart,
 } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../state/authStore'
 import { cn } from '../../utils/cn'
 
-const navItems = [
-  { label: 'Store', to: '/' },
-  { label: 'Orders', to: '/orders' },
-  { label: 'Admin', to: '/admin' },
-]
+const baseNavItems = [{ label: 'Store', to: '/', end: true }]
+const customerNavItems = [{ label: 'Orders', to: '/orders', end: false }]
+const adminNavItems = [{ label: 'Admin', to: '/admin', end: false }]
 
 function navLinkClass(isActive: boolean) {
   return cn(
@@ -24,6 +24,22 @@ function navLinkClass(isActive: boolean) {
 }
 
 export function Header() {
+  const { status, user, isAdmin, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const isAuthenticated = status === 'authenticated'
+
+  const navItems = [
+    ...baseNavItems,
+    ...(isAuthenticated ? customerNavItems : []),
+    ...(isAdmin ? adminNavItems : []),
+  ]
+
+  function handleLogout() {
+    logout()
+    navigate('/', { replace: true })
+  }
+
   return (
     <header className="sticky top-0 z-30 border-b border-stone-200 bg-stone-100/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
@@ -51,7 +67,7 @@ export function Header() {
           {navItems.map((item) => (
             <NavLink
               className={({ isActive }) => navLinkClass(isActive)}
-              end={item.to === '/'}
+              end={item.end}
               key={item.to}
               to={item.to}
             >
@@ -61,29 +77,50 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex min-w-fit items-center gap-2">
+          {isAuthenticated ? (
+            <>
+              <span
+                className="hidden h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm sm:inline-flex"
+                title={user?.email}
+              >
+                <CircleUserRound aria-hidden="true" size={18} />
+                <span className="max-w-32 truncate">{user?.name ?? 'Account'}</span>
+              </span>
+              <button
+                className="hidden h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm hover:bg-stone-50 sm:inline-flex"
+                onClick={handleLogout}
+                type="button"
+              >
+                <LogOut aria-hidden="true" size={18} />
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              className="hidden h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm hover:bg-stone-50 sm:inline-flex"
+              to="/login"
+            >
+              <CircleUserRound aria-hidden="true" size={18} />
+              Login
+            </Link>
+          )}
+
+          {isAdmin ? (
+            <Link
+              className="hidden h-10 items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 text-sm font-semibold text-sky-900 shadow-sm hover:bg-sky-100 lg:inline-flex"
+              to="/admin"
+            >
+              <ShieldCheck aria-hidden="true" size={18} />
+              Admin
+            </Link>
+          ) : null}
+
           <Link
-            className="hidden h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm hover:bg-stone-50 sm:inline-flex"
-            to="/login"
-          >
-            <CircleUserRound aria-hidden="true" size={18} />
-            Login
-          </Link>
-          <Link
-            className="hidden h-10 items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 text-sm font-semibold text-sky-900 shadow-sm hover:bg-sky-100 lg:inline-flex"
-            to="/admin"
-          >
-            <ShieldCheck aria-hidden="true" size={18} />
-            Admin
-          </Link>
-          <Link
-            aria-label="Cart with 0 items"
+            aria-label="Cart"
             className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-stone-300 bg-white text-slate-900 shadow-sm hover:bg-stone-50"
             to="/cart"
           >
             <ShoppingCart aria-hidden="true" size={19} />
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
-              0
-            </span>
           </Link>
         </div>
       </div>
