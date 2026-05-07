@@ -26,3 +26,14 @@ export async function getProduct(
   )
   return data.product
 }
+
+export async function getProductBySlug(
+  slug: string,
+  extras: RequestExtras = {},
+): Promise<Product> {
+  const data = await apiFetch<{ product: Product }>(
+    `/products/slug/${encodeURIComponent(slug)}`,
+    { signal: extras.signal },
+  )
+  return data.product
+}

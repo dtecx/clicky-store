@@ -5,18 +5,19 @@ import { PageShell } from '../components/layout/PageShell'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { ErrorState } from '../components/ui/ErrorState'
-import { useAuth } from '../state/authStore'
+import { useAuth } from '../state/useAuth'
 import { errorMessage } from '../utils/errors'
 
 type LocationState = {
-  from?: { pathname?: string }
+  from?: { pathname?: string; search?: string }
 }
 
 export function LoginPage() {
   const { login, status } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const redirectTo = (location.state as LocationState | null)?.from?.pathname ?? '/'
+  const from = (location.state as LocationState | null)?.from
+  const redirectTo = from?.pathname ? `${from.pathname}${from.search ?? ''}` : '/'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

@@ -1,6 +1,6 @@
 import { ArrowRight, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { listProducts } from '../api/products'
 import { ProductGrid } from '../components/product/ProductGrid'
 import { Badge } from '../components/ui/Badge'
@@ -8,6 +8,8 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LinkButton } from '../components/ui/LinkButton'
 import { LoadingState } from '../components/ui/LoadingState'
+import { useAuth } from '../state/useAuth'
+import { useCart } from '../state/useCart'
 import type { Product } from '../types/product'
 import { cn } from '../utils/cn'
 import { errorMessage } from '../utils/errors'
@@ -55,6 +57,10 @@ function sortProducts(products: Product[], sort: SortOption): Product[] {
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { status: authStatus } = useAuth()
+  const { addItem } = useCart()
   const category = searchParams.get('category') ?? ''
   const queryParam = searchParams.get('q') ?? ''
   const sort: SortOption = isSortOption(searchParams.get('sort') ?? '')
@@ -65,6 +71,9 @@ export function HomePage() {
   const [products, setProducts] = useState<Product[] | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pendingProductId, setPendingProductId] = useState<string | null>(null)
+  const [cartError, setCartError] = useState<string | null>(null)
+  const [cartNotice, setCartNotice] = useState<string | null>(null)
 
   // Keep the search input synced when the URL changes (e.g., via Header search
   // in the future or browser back/forward).
@@ -129,6 +138,25 @@ export function HomePage() {
 
   function handleSortChange(event: React.ChangeEvent<HTMLSelectElement>) {
     updateSearchParams({ sort: event.target.value === 'featured' ? null : event.target.value })
+  }
+
+  async function handleAddToCart(product: Product) {
+    if (authStatus !== 'authenticated') {
+      navigate('/login', { state: { from: location } })
+      return
+    }
+
+    setPendingProductId(product.id)
+    setCartError(null)
+    setCartNotice(null)
+    try {
+      await addItem(product.id, 1)
+      setCartNotice(`${product.name} added to cart.`)
+    } catch (err) {
+      setCartError(errorMessage(err))
+    } finally {
+      setPendingProductId(null)
+    }
   }
 
   return (
@@ -252,7 +280,26 @@ export function HomePage() {
               Try clearing the search box or selecting a different category.
             </EmptyState>
           ) : (
-            <ProductGrid products={sortedProducts} />
+            <div className="space-y-4">
+              {cartNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                  {cartNotice}{' '}
+                  <Link className="underline underline-offset-2" to="/cart">
+                    View cart
+                  </Link>
+                </div>
+              ) : null}
+              {cartError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                  {cartError}
+                </div>
+              ) : null}
+              <ProductGrid
+                onAddToCart={handleAddToCart}
+                pendingProductId={pendingProductId}
+                products={sortedProducts}
+              />
+            </div>
           )}
         </div>
       </section>

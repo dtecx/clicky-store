@@ -1,7 +1,7 @@
-import { Minus, Plus, ShoppingCart } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { listProducts } from '../api/products'
+import { CheckCircle2, Minus, Plus, ShoppingCart } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { getProductBySlug } from '../api/products'
 import { PageShell } from '../components/layout/PageShell'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -10,8 +10,10 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LinkButton } from '../components/ui/LinkButton'
 import { LoadingState } from '../components/ui/LoadingState'
+import { useAuth } from '../state/useAuth'
+import { useCart } from '../state/useCart'
 import type { Product } from '../types/product'
-import { errorMessage } from '../utils/errors'
+import { errorMessage, isApiErrorWithStatus } from '../utils/errors'
 import { formatCents } from '../utils/money'
 
 const fallbackImageUrl = '/assets/products/product-generic.svg'
@@ -28,24 +30,47 @@ function formatDpi(dpi: number): string {
 
 export function ProductPage() {
   const { slug } = useParams()
-  const [products, setProducts] = useState<Product[] | null>(null)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { status: authStatus, isAdmin } = useAuth()
+  const { addItem } = useCart()
+  const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+  const [addNotice, setAddNotice] = useState<string | null>(null)
 
-  // Phase 6 will add a dedicated `/api/v1/products/slug/{slug}` lookup; until
-  // then the React app fetches the listing and finds the product by slug. The
-  // catalog is small, so this is acceptable as an interim step.
   useEffect(() => {
     const controller = new AbortController()
     setIsLoading(true)
     setError(null)
-    listProducts({}, { signal: controller.signal })
-      .then((items) => {
-        setProducts(items)
+    setNotFound(false)
+    setProduct(null)
+    setQuantity(1)
+    setAddError(null)
+    setAddNotice(null)
+
+    if (!slug) {
+      setNotFound(true)
+      setIsLoading(false)
+      return () => {
+        controller.abort()
+      }
+    }
+
+    getProductBySlug(slug, { signal: controller.signal })
+      .then((item) => {
+        setProduct(item)
       })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') {
+          return
+        }
+        if (isApiErrorWithStatus(err, 404)) {
+          setNotFound(true)
           return
         }
         setError(errorMessage(err))
@@ -55,15 +80,11 @@ export function ProductPage() {
           setIsLoading(false)
         }
       })
+
     return () => {
       controller.abort()
     }
-  }, [])
-
-  const product = useMemo(
-    () => products?.find((item) => item.slug === slug) ?? null,
-    [products, slug],
-  )
+  }, [slug])
 
   if (isLoading) {
     return (
@@ -84,7 +105,7 @@ export function ProductPage() {
     )
   }
 
-  if (!product) {
+  if (notFound || !product) {
     return (
       <PageShell title="Product not found">
         <EmptyState
@@ -118,6 +139,30 @@ export function ProductPage() {
       if (next > maxQuantity) return maxQuantity
       return next
     })
+  }
+
+  async function handleAddToCart() {
+    const selectedProduct = product
+    if (!selectedProduct) {
+      return
+    }
+
+    if (authStatus !== 'authenticated') {
+      navigate('/login', { state: { from: location } })
+      return
+    }
+
+    setIsAdding(true)
+    setAddError(null)
+    setAddNotice(null)
+    try {
+      await addItem(selectedProduct.id, quantity)
+      setAddNotice(`${quantity} ${quantity === 1 ? 'item' : 'items'} added to cart.`)
+    } catch (err) {
+      setAddError(errorMessage(err))
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   return (
@@ -188,7 +233,7 @@ export function ProductPage() {
                 <button
                   aria-label="Decrease quantity"
                   className="flex h-12 w-12 items-center justify-center text-slate-700 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
-                  disabled={!canAddToCart || quantity <= 1}
+                  disabled={!canAddToCart || quantity <= 1 || isAdding}
                   onClick={() => adjustQuantity(-1)}
                   type="button"
                 >
@@ -198,7 +243,7 @@ export function ProductPage() {
                 <button
                   aria-label="Increase quantity"
                   className="flex h-12 w-12 items-center justify-center text-slate-700 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
-                  disabled={!canAddToCart || quantity >= maxQuantity}
+                  disabled={!canAddToCart || quantity >= maxQuantity || isAdding}
                   onClick={() => adjustQuantity(1)}
                   type="button"
                 >
@@ -207,14 +252,39 @@ export function ProductPage() {
               </div>
               <Button
                 className="flex-1"
-                disabled={!canAddToCart}
+                disabled={!canAddToCart || isAdding}
                 leftIcon={<ShoppingCart aria-hidden="true" size={18} />}
+                onClick={handleAddToCart}
                 size="lg"
               >
-                {canAddToCart ? 'Add to cart' : 'Sold out'}
+                {canAddToCart
+                  ? isAdding
+                    ? 'Adding...'
+                    : authStatus === 'authenticated'
+                      ? 'Add to cart'
+                      : 'Login to add'
+                  : 'Sold out'}
               </Button>
             </div>
+            {addNotice ? (
+              <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                <CheckCircle2 aria-hidden="true" size={17} />
+                {addNotice}
+                <Link className="underline underline-offset-2" to="/cart">
+                  View cart
+                </Link>
+              </p>
+            ) : null}
+            {addError ? (
+              <p className="mt-4 text-sm font-semibold text-red-700">{addError}</p>
+            ) : null}
           </Card>
+
+          {isAdmin ? (
+            <LinkButton to="/admin/products" variant="secondary">
+              Manage products
+            </LinkButton>
+          ) : null}
 
           <Card className="overflow-hidden">
             <table className="w-full text-left text-sm">
@@ -224,7 +294,7 @@ export function ProductPage() {
                     Sensor
                   </th>
                   <td className="px-4 py-3 text-slate-950">
-                    {formatDpi(product.dpi) || '—'}
+                    {formatDpi(product.dpi) || '-'}
                   </td>
                 </tr>
                 <tr>

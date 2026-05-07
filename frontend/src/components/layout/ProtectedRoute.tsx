@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { LoadingState } from '../ui/LoadingState'
-import { useAuth } from '../../state/authStore'
+import { useAuth } from '../../state/useAuth'
 
 type ProtectedRouteProps = {
   children: ReactNode

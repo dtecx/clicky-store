@@ -64,12 +64,13 @@ The repository currently has:
 - API, development, and deployment documentation.
 - GitHub Actions CI for formatting, tests, vet, frontend lint/build, and Docker build.
 - Embedded frontend served from `internal/frontend/static`.
-- React + Vite + TypeScript + Tailwind CSS skeleton in `frontend/`, with route placeholders and a Vite proxy to the Go backend.
+- React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, and customer orders.
+- React admin API helpers exist, but admin product/order/user pages are still mostly placeholder UI and are not fully backend-backed.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
 
-The production-served frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. The React app exists as a skeleton, but it does not yet have typed API modules, real auth/cart/order state, backend-backed product listing, admin CRUD flows, uploaded image handling, or production serving from Go.
+The production-served frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. The React app now covers the main customer storefront, auth, cart, checkout, and customer order flow, but it does not yet have backend-backed admin CRUD pages, uploaded image handling, or production serving from Go.
 
 ---
 
@@ -284,7 +285,7 @@ internal/adapters/db/postgres/      PostgreSQL store, helpers, migrations
 internal/adapters/http/v1/          REST API v1 handlers, requests, auth middleware, rate limiting
 internal/frontend/                  Embedded frontend handler and static files
 internal/frontend/static/           Current legacy HTML/CSS/JS and embedded demo assets
-frontend/                           React + Vite + TypeScript + Tailwind skeleton
+frontend/                           React + Vite + TypeScript + Tailwind source app
 internal/web/                       Shared HTTP JSON, CORS, logging, middleware helpers
 docs/                               API, development, and deployment documentation
 compose.yaml                        Local API and PostgreSQL services
@@ -349,13 +350,11 @@ Address these before adding unrelated features:
 4. There is no runtime upload directory or uploaded file serving.
 5. There is no product image gallery model.
 6. There is no limit of up to 10 images per product.
-7. Product detail UI exists, but not as a real dedicated e-shop product page with a reloadable URL.
-8. Product URLs should be slug-based, for example `/products/viper-x1-gaming-mouse`.
-9. The current layout should be redesigned into a real e-shop layout.
-10. The frontend should be migrated to reusable React components.
-11. The frontend should use Tailwind instead of large handwritten CSS.
-12. Product specs are too limited for a real mouse shop.
-13. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
+7. Go production serving still needs to serve React product routes on direct reload.
+8. Admin product/order/user pages still need to be rebuilt as backend-backed React flows.
+9. Product detail pages need richer gallery/spec/related-product polish once product images exist.
+10. Product specs are too limited for a real mouse shop.
+11. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
 
 ---
 
@@ -820,6 +819,8 @@ git commit -m "feat: rebuild product listing in react"
 
 Goal: every mouse gets a dedicated reloadable page.
 
+Current status: backend slug lookup and the React `/products/:slug` route exist. Go production serving for direct React route reloads still belongs to Phase 10.
+
 Suggested backend changes:
 
 - Add slug field if missing.
@@ -848,6 +849,8 @@ git commit -m "feat: add product slug routes"
 
 Goal: make product pages look like actual e-shop pages.
 
+Current status: initial React product detail page exists with slug fetch, fallback image, price, stock, quantity, add-to-cart, specs, and admin shortcut. Gallery/related-product polish should wait for product image support.
+
 Suggested changes:
 
 - Product gallery area with fallback image.
@@ -870,6 +873,8 @@ git commit -m "feat: build react product detail page"
 ### Phase 8: Rebuild Cart, Checkout, and Orders
 
 Goal: make the full customer purchase flow work in React.
+
+Current status: initial React cart provider, cart page, checkout page, order creation, customer orders page, and payment simulation controls exist.
 
 Suggested changes:
 

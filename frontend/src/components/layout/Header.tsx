@@ -7,7 +7,8 @@ import {
   ShoppingCart,
 } from 'lucide-react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../state/authStore'
+import { useAuth } from '../../state/useAuth'
+import { useCart } from '../../state/useCart'
 import { cn } from '../../utils/cn'
 
 const baseNavItems = [{ label: 'Store', to: '/', end: true }]
@@ -25,6 +26,7 @@ function navLinkClass(isActive: boolean) {
 
 export function Header() {
   const { status, user, isAdmin, logout } = useAuth()
+  const { itemCount } = useCart()
   const navigate = useNavigate()
 
   const isAuthenticated = status === 'authenticated'
@@ -53,15 +55,24 @@ export function Header() {
           <span>Clicky-Store</span>
         </Link>
 
-        <label className="order-3 flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-slate-500 sm:order-none sm:min-w-64">
+        <form
+          className="order-3 flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-slate-500 sm:order-none sm:min-w-64"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const formData = new FormData(event.currentTarget)
+            const query = String(formData.get('q') ?? '').trim()
+            navigate(query ? `/?q=${encodeURIComponent(query)}` : '/')
+          }}
+        >
           <Search aria-hidden="true" size={18} />
           <span className="sr-only">Search products</span>
           <input
             className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
+            name="q"
             placeholder="Search mice"
             type="search"
           />
-        </label>
+        </form>
 
         <nav className="flex min-w-fit items-center gap-1">
           {navItems.map((item) => (
@@ -121,6 +132,11 @@ export function Header() {
             to="/cart"
           >
             <ShoppingCart aria-hidden="true" size={19} />
+            {itemCount > 0 ? (
+              <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-emerald-700 px-1.5 text-xs font-bold text-white">
+                {itemCount > 99 ? '99+' : itemCount}
+              </span>
+            ) : null}
           </Link>
         </div>
       </div>
