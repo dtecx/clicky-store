@@ -204,6 +204,11 @@ func TestProductCartAndOrderFlow(t *testing.T) {
 	if detail.Product.Stock != 18 {
 		t.Fatalf("initial stock = %d, want 18", detail.Product.Stock)
 	}
+	if len(detail.Product.Images) != 1 ||
+		!detail.Product.Images[0].IsPrimary ||
+		detail.Product.Images[0].URL != detail.Product.ImageURL {
+		t.Fatalf("detail images = %+v, want primary image matching imageUrl %q", detail.Product.Images, detail.Product.ImageURL)
+	}
 
 	registerRes := server.request(http.MethodPost, "/api/v1/auth/register", map[string]any{
 		"name":     "Cart Customer",

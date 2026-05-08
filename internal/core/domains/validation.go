@@ -49,6 +49,15 @@ func NormalizeProduct(product Product) Product {
 	return product
 }
 
+func NormalizeProductImage(image ProductImage) ProductImage {
+	image.ID = strings.TrimSpace(image.ID)
+	image.ProductID = strings.TrimSpace(image.ProductID)
+	image.URL = strings.TrimSpace(image.URL)
+	image.AltText = strings.TrimSpace(image.AltText)
+
+	return image
+}
+
 func ApplyProductUpdate(product Product, update ProductUpdate) Product {
 	if update.Name != nil {
 		product.Name = strings.TrimSpace(*update.Name)
@@ -87,6 +96,20 @@ func ApplyProductUpdate(product Product, update ProductUpdate) Product {
 	return product
 }
 
+func ApplyProductImageUpdate(image ProductImage, update ProductImageUpdate) ProductImage {
+	if update.AltText != nil {
+		image.AltText = strings.TrimSpace(*update.AltText)
+	}
+	if update.SortOrder != nil {
+		image.SortOrder = *update.SortOrder
+	}
+	if update.IsPrimary != nil {
+		image.IsPrimary = *update.IsPrimary
+	}
+
+	return image
+}
+
 func ValidateProduct(product Product) error {
 	if strings.TrimSpace(product.Name) == "" ||
 		strings.TrimSpace(product.Slug) == "" ||
@@ -97,6 +120,16 @@ func ValidateProduct(product Product) error {
 		product.PriceCents <= 0 ||
 		product.DPI <= 0 ||
 		product.Stock < 0 {
+		return ErrInvalid
+	}
+
+	return nil
+}
+
+func ValidateProductImage(image ProductImage) error {
+	if strings.TrimSpace(image.ProductID) == "" ||
+		strings.TrimSpace(image.URL) == "" ||
+		image.SortOrder < 0 {
 		return ErrInvalid
 	}
 

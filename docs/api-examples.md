@@ -50,6 +50,14 @@ Get a product:
 curl http://localhost:8080/api/v1/products/prod-gaming-viper
 ```
 
+Get a product by customer-facing slug:
+
+```sh
+curl http://localhost:8080/api/v1/products/slug/viper-x1-gaming-mouse
+```
+
+Product responses include both the temporary `imageUrl` compatibility field and an `images` gallery array. Until admin uploads are added, seeded products expose their demo SVG as the primary gallery image.
+
 Create a product as admin:
 
 ```sh

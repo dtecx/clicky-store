@@ -3,25 +3,42 @@ package domains
 import "time"
 
 type Product struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Slug        string    `json:"slug"`
-	Description string    `json:"description"`
-	Category    string    `json:"category"`
-	PriceCents  int       `json:"priceCents"`
-	Currency    string    `json:"currency"`
-	DPI         int       `json:"dpi"`
-	Wireless    bool      `json:"wireless"`
-	Ergonomic   bool      `json:"ergonomic"`
-	Stock       int       `json:"stock"`
-	ImageURL    string    `json:"imageUrl"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Slug        string         `json:"slug"`
+	Description string         `json:"description"`
+	Category    string         `json:"category"`
+	PriceCents  int            `json:"priceCents"`
+	Currency    string         `json:"currency"`
+	DPI         int            `json:"dpi"`
+	Wireless    bool           `json:"wireless"`
+	Ergonomic   bool           `json:"ergonomic"`
+	Stock       int            `json:"stock"`
+	ImageURL    string         `json:"imageUrl"`
+	Images      []ProductImage `json:"images"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
 }
 
 type ProductFilter struct {
 	Category string
 	Query    string
+}
+
+type ProductImage struct {
+	ID        string    `json:"id"`
+	ProductID string    `json:"productId"`
+	URL       string    `json:"url"`
+	AltText   string    `json:"altText"`
+	SortOrder int       `json:"sortOrder"`
+	IsPrimary bool      `json:"isPrimary"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+type ProductImageUpdate struct {
+	AltText   *string
+	SortOrder *int
+	IsPrimary *bool
 }
 
 type ProductUpdate struct {

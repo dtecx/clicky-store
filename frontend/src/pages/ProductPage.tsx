@@ -15,8 +15,10 @@ import { useCart } from '../state/useCart'
 import type { Product } from '../types/product'
 import { errorMessage, isApiErrorWithStatus } from '../utils/errors'
 import { formatCents } from '../utils/money'
-
-const fallbackImageUrl = '/assets/products/product-generic.svg'
+import {
+  fallbackProductImageUrl,
+  productGalleryImageUrls,
+} from '../utils/productImages'
 
 function formatDpi(dpi: number): string {
   if (!Number.isFinite(dpi) || dpi <= 0) {
@@ -128,7 +130,8 @@ export function ProductPage() {
       : product.stock <= 5
         ? { label: `Only ${product.stock} left`, variant: 'warning' as const }
         : { label: 'In stock', variant: 'success' as const }
-  const galleryImages = [product.imageUrl || fallbackImageUrl]
+  const galleryImages = productGalleryImageUrls(product)
+  const mainImageUrl = galleryImages[0] ?? fallbackProductImageUrl
   const maxQuantity = Math.max(1, product.stock)
   const canAddToCart = product.stock > 0
 
@@ -184,9 +187,9 @@ export function ProductPage() {
               alt={product.name}
               className="max-h-[22rem] w-full object-contain"
               onError={(event) => {
-                event.currentTarget.src = fallbackImageUrl
+                event.currentTarget.src = fallbackProductImageUrl
               }}
-              src={product.imageUrl || fallbackImageUrl}
+              src={mainImageUrl}
             />
           </Card>
           {galleryImages.length > 1 ? (

@@ -13,6 +13,7 @@ import { useCart } from '../state/useCart'
 import type { Product } from '../types/product'
 import { cn } from '../utils/cn'
 import { errorMessage } from '../utils/errors'
+import { primaryProductImageUrl } from '../utils/productImages'
 
 const categories: { label: string; value: string }[] = [
   { label: 'All', value: '' },
@@ -159,14 +160,18 @@ export function HomePage() {
     }
   }
 
+  const featuredImageUrl = featuredProduct
+    ? primaryProductImageUrl(featuredProduct, '')
+    : ''
+
   return (
     <>
       <section className="relative overflow-hidden bg-slate-950 text-white">
-        {featuredProduct?.imageUrl ? (
+        {featuredImageUrl ? (
           <img
             alt=""
             className="absolute inset-y-0 right-0 h-full w-full object-contain object-right opacity-20 sm:opacity-30"
-            src={featuredProduct.imageUrl}
+            src={featuredImageUrl}
           />
         ) : null}
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

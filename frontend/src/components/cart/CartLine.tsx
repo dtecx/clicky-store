@@ -2,8 +2,10 @@ import { Minus, Plus, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { CartLine as CartLineType } from '../../types/cart'
 import { formatCents } from '../../utils/money'
-
-const fallbackImageUrl = '/assets/products/product-generic.svg'
+import {
+  fallbackProductImageUrl,
+  primaryProductImageUrl,
+} from '../../utils/productImages'
 
 type CartLineProps = {
   line: CartLineType
@@ -19,6 +21,7 @@ export function CartLine({
   onRemove,
 }: CartLineProps) {
   const { product } = line
+  const imageUrl = primaryProductImageUrl(product)
   const canDecrease = line.quantity > 1 && !isPending
   const canIncrease = line.quantity < product.stock && !isPending
 
@@ -34,9 +37,9 @@ export function CartLine({
           className="h-full w-full object-contain"
           loading="lazy"
           onError={(event) => {
-            event.currentTarget.src = fallbackImageUrl
+            event.currentTarget.src = fallbackProductImageUrl
           }}
-          src={product.imageUrl || fallbackImageUrl}
+          src={imageUrl}
         />
       </Link>
 

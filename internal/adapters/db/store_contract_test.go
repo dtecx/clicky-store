@@ -60,6 +60,80 @@ func TestStoreContractUserProductCartOrderFlow(t *testing.T) {
 			}
 
 			product := createContractProduct(t, store, suffix, 5)
+			if len(product.Images) != 1 || !product.Images[0].IsPrimary || product.Images[0].URL != product.ImageURL {
+				t.Fatalf("created product images = %+v, want primary compatibility image for %q", product.Images, product.ImageURL)
+			}
+			seedImage := product.Images[0]
+
+			listedImages, err := store.ListProductImages(product.ID)
+			if err != nil {
+				t.Fatalf("ListProductImages: %v", err)
+			}
+			if len(listedImages) != 1 || listedImages[0].ID != seedImage.ID {
+				t.Fatalf("listed images = %+v, want seeded image %q", listedImages, seedImage.ID)
+			}
+
+			sideImageURL := "/uploads/products/" + suffix + "-side.png"
+			imagesAfterCreate, err := store.CreateProductImages(product.ID, []domains.ProductImage{
+				{
+					URL:     sideImageURL,
+					AltText: "Side angle " + suffix,
+				},
+			})
+			if err != nil {
+				t.Fatalf("CreateProductImages: %v", err)
+			}
+			if len(imagesAfterCreate) != 2 {
+				t.Fatalf("images after create = %+v, want two images", imagesAfterCreate)
+			}
+			sideImage, ok := findProductImageByURL(imagesAfterCreate, sideImageURL)
+			if !ok || sideImage.ID == "" || sideImage.ProductID != product.ID {
+				t.Fatalf("created side image = %+v, ok=%v", sideImage, ok)
+			}
+
+			primary := true
+			altText := "Primary angle " + suffix
+			updatedImage, err := store.UpdateProductImage(product.ID, sideImage.ID, domains.ProductImageUpdate{
+				AltText:   &altText,
+				IsPrimary: &primary,
+			})
+			if err != nil {
+				t.Fatalf("UpdateProductImage: %v", err)
+			}
+			if !updatedImage.IsPrimary || updatedImage.AltText != altText {
+				t.Fatalf("updated image = %+v, want primary image with alt text %q", updatedImage, altText)
+			}
+
+			productWithNewPrimary, err := store.GetProduct(product.ID)
+			if err != nil {
+				t.Fatalf("GetProduct after image primary update: %v", err)
+			}
+			if productWithNewPrimary.ImageURL != sideImageURL {
+				t.Fatalf("product imageUrl = %q, want primary image URL %q", productWithNewPrimary.ImageURL, sideImageURL)
+			}
+
+			reorderedImages, err := store.ReorderProductImages(product.ID, []string{sideImage.ID, seedImage.ID})
+			if err != nil {
+				t.Fatalf("ReorderProductImages: %v", err)
+			}
+			if len(reorderedImages) != 2 || reorderedImages[0].ID != sideImage.ID || reorderedImages[0].SortOrder != 0 {
+				t.Fatalf("reordered images = %+v, want side image first", reorderedImages)
+			}
+
+			if err := store.DeleteProductImage(product.ID, sideImage.ID); err != nil {
+				t.Fatalf("DeleteProductImage: %v", err)
+			}
+			productAfterImageDelete, err := store.GetProduct(product.ID)
+			if err != nil {
+				t.Fatalf("GetProduct after image delete: %v", err)
+			}
+			if len(productAfterImageDelete.Images) != 1 ||
+				productAfterImageDelete.Images[0].ID != seedImage.ID ||
+				!productAfterImageDelete.Images[0].IsPrimary ||
+				productAfterImageDelete.ImageURL != seedImage.URL {
+				t.Fatalf("product after image delete = %+v, want seeded image restored as primary", productAfterImageDelete)
+			}
+
 			updatedName := "Updated Contract Mouse " + suffix
 			updatedPrice := 13500
 			updatedProduct, err := store.UpdateProduct(product.ID, domains.ProductUpdate{
@@ -227,6 +301,15 @@ func TestStoreContractValidationErrors(t *testing.T) {
 			}
 
 			product := createContractProduct(t, store, suffix, 1)
+			if _, err := store.CreateProductImages("prod_missing_"+suffix, []domains.ProductImage{{URL: "/uploads/products/missing.png"}}); !errors.Is(err, domains.ErrNotFound) {
+				t.Fatalf("missing CreateProductImages error = %v, want not found", err)
+			}
+			if _, err := store.CreateProductImages(product.ID, []domains.ProductImage{{URL: ""}}); !errors.Is(err, domains.ErrInvalid) {
+				t.Fatalf("invalid CreateProductImages error = %v, want invalid", err)
+			}
+			if _, err := store.ReorderProductImages(product.ID, []string{"img_missing"}); !errors.Is(err, domains.ErrInvalid) {
+				t.Fatalf("invalid ReorderProductImages error = %v, want invalid", err)
+			}
 			if _, err := store.AddCartItem(user.ID, product.ID, 0); !errors.Is(err, domains.ErrInvalid) {
 				t.Fatalf("zero quantity AddCartItem error = %v, want invalid", err)
 			}
@@ -356,6 +439,16 @@ func hasProduct(products []domains.Product, id string) bool {
 	}
 
 	return false
+}
+
+func findProductImageByURL(images []domains.ProductImage, url string) (domains.ProductImage, bool) {
+	for _, image := range images {
+		if image.URL == url {
+			return image, true
+		}
+	}
+
+	return domains.ProductImage{}, false
 }
 
 func hasOrder(orders []domains.Order, id string) bool {

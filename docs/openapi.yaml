@@ -104,6 +104,23 @@ paths:
                     $ref: "#/components/schemas/Product"
         "404":
           $ref: "#/components/responses/Error"
+  /products/slug/{slug}:
+    get:
+      summary: Get a public product by slug
+      parameters:
+        - $ref: "#/components/parameters/ProductSlug"
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product:
+                    $ref: "#/components/schemas/Product"
+        "404":
+          $ref: "#/components/responses/Error"
   /cart:
     get:
       summary: Get the authenticated user's cart
@@ -362,6 +379,12 @@ components:
       required: true
       schema:
         type: string
+    ProductSlug:
+      in: path
+      name: slug
+      required: true
+      schema:
+        type: string
     OrderId:
       in: path
       name: orderId
@@ -513,12 +536,36 @@ components:
           properties:
             id:
               type: string
+            images:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductImage"
             createdAt:
               type: string
               format: date-time
             updatedAt:
               type: string
               format: date-time
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+        url:
+          type: string
+          example: /assets/products/viper-x1.svg
+        altText:
+          type: string
+        sortOrder:
+          type: integer
+          minimum: 0
+        isPrimary:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
     CartItemRequest:
       type: object
       required:

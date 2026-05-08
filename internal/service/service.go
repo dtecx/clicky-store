@@ -149,6 +149,26 @@ func (s *Service) DeleteProduct(id string) error {
 	return s.store.DeleteProduct(id)
 }
 
+func (s *Service) ListProductImages(productID string) ([]domains.ProductImage, error) {
+	return s.store.ListProductImages(productID)
+}
+
+func (s *Service) CreateProductImages(productID string, images []domains.ProductImage) ([]domains.ProductImage, error) {
+	return s.store.CreateProductImages(productID, images)
+}
+
+func (s *Service) UpdateProductImage(productID, imageID string, update domains.ProductImageUpdate) (domains.ProductImage, error) {
+	return s.store.UpdateProductImage(productID, imageID, update)
+}
+
+func (s *Service) ReorderProductImages(productID string, imageIDs []string) ([]domains.ProductImage, error) {
+	return s.store.ReorderProductImages(productID, imageIDs)
+}
+
+func (s *Service) DeleteProductImage(productID, imageID string) error {
+	return s.store.DeleteProductImage(productID, imageID)
+}
+
 func (s *Service) GetCart(userID string) domains.Cart {
 	return s.store.GetCart(userID)
 }

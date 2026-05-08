@@ -83,17 +83,32 @@ func (s *Store) ListProducts(filter domains.ProductFilter) []domains.Product {
 		return []domains.Product{}
 	}
 
+	if err := s.attachImages(ctx, products); err != nil {
+		return []domains.Product{}
+	}
+
 	return products
 }
 
 func (s *Store) GetProduct(id string) (domains.Product, error) {
+	ctx := context.Background()
 	row := s.db.QueryRowContext(
-		context.Background(),
+		ctx,
 		`SELECT `+productSelectColumns("")+` FROM products WHERE id = $1`,
 		strings.TrimSpace(id),
 	)
 
-	return scanProduct(row)
+	product, err := scanProduct(row)
+	if err != nil {
+		return domains.Product{}, err
+	}
+
+	products := []domains.Product{product}
+	if err := s.attachImages(ctx, products); err != nil {
+		return domains.Product{}, err
+	}
+
+	return products[0], nil
 }
 
 func (s *Store) GetProductBySlug(slug string) (domains.Product, error) {
@@ -102,13 +117,24 @@ func (s *Store) GetProductBySlug(slug string) (domains.Product, error) {
 		return domains.Product{}, domains.ErrNotFound
 	}
 
+	ctx := context.Background()
 	row := s.db.QueryRowContext(
-		context.Background(),
+		ctx,
 		`SELECT `+productSelectColumns("")+` FROM products WHERE slug = $1`,
 		slug,
 	)
 
-	return scanProduct(row)
+	product, err := scanProduct(row)
+	if err != nil {
+		return domains.Product{}, err
+	}
+
+	products := []domains.Product{product}
+	if err := s.attachImages(ctx, products); err != nil {
+		return domains.Product{}, err
+	}
+
+	return products[0], nil
 }
 
 func (s *Store) CreateProduct(product domains.Product) (domains.Product, error) {
@@ -128,8 +154,15 @@ func (s *Store) CreateProduct(product domains.Product) (domains.Product, error) 
 	product.CreatedAt = now
 	product.UpdatedAt = now
 
-	row := s.db.QueryRowContext(
-		context.Background(),
+	ctx := context.Background()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domains.Product{}, err
+	}
+	defer tx.Rollback()
+
+	row := tx.QueryRowContext(
+		ctx,
 		`INSERT INTO products (
 			id,
 			name,
@@ -166,7 +199,25 @@ func (s *Store) CreateProduct(product domains.Product) (domains.Product, error) 
 		product.UpdatedAt,
 	)
 
-	return scanProduct(row)
+	createdProduct, err := scanProduct(row)
+	if err != nil {
+		return domains.Product{}, err
+	}
+
+	if createdProduct.ImageURL != "" {
+		if err := upsertPrimaryProductImage(ctx, tx, createdProduct.ID, createdProduct.ImageURL, createdProduct.Name); err != nil {
+			return domains.Product{}, err
+		}
+	}
+	if err := syncProductImageURL(ctx, tx, createdProduct.ID); err != nil {
+		return domains.Product{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return domains.Product{}, err
+	}
+
+	return s.GetProduct(createdProduct.ID)
 }
 
 func (s *Store) UpdateProduct(id string, update domains.ProductUpdate) (domains.Product, error) {
@@ -215,8 +266,15 @@ func (s *Store) UpdateProduct(id string, update domains.ProductUpdate) (domains.
 
 	product.UpdatedAt = time.Now().UTC()
 
-	row := s.db.QueryRowContext(
-		context.Background(),
+	ctx := context.Background()
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domains.Product{}, err
+	}
+	defer tx.Rollback()
+
+	row := tx.QueryRowContext(
+		ctx,
 		`UPDATE products
 		SET
 			name = $2,
@@ -248,7 +306,27 @@ func (s *Store) UpdateProduct(id string, update domains.ProductUpdate) (domains.
 		product.UpdatedAt,
 	)
 
-	return scanProduct(row)
+	updatedProduct, err := scanProduct(row)
+	if err != nil {
+		return domains.Product{}, err
+	}
+
+	if update.ImageURL != nil {
+		if updatedProduct.ImageURL != "" {
+			if err := upsertPrimaryProductImage(ctx, tx, updatedProduct.ID, updatedProduct.ImageURL, updatedProduct.Name); err != nil {
+				return domains.Product{}, err
+			}
+		}
+		if err := syncProductImageURL(ctx, tx, updatedProduct.ID); err != nil {
+			return domains.Product{}, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return domains.Product{}, err
+	}
+
+	return s.GetProduct(updatedProduct.ID)
 }
 
 func (s *Store) DeleteProduct(id string) error {

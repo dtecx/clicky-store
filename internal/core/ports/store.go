@@ -19,6 +19,14 @@ type ProductStore interface {
 	DeleteProduct(id string) error
 }
 
+type ProductImageStore interface {
+	ListProductImages(productID string) ([]domains.ProductImage, error)
+	CreateProductImages(productID string, images []domains.ProductImage) ([]domains.ProductImage, error)
+	UpdateProductImage(productID, imageID string, update domains.ProductImageUpdate) (domains.ProductImage, error)
+	ReorderProductImages(productID string, imageIDs []string) ([]domains.ProductImage, error)
+	DeleteProductImage(productID, imageID string) error
+}
+
 type CartStore interface {
 	GetCart(userID string) domains.Cart
 	AddCartItem(userID, productID string, quantity int) (domains.Cart, error)
@@ -36,6 +44,7 @@ type OrderStore interface {
 type Store interface {
 	UserStore
 	ProductStore
+	ProductImageStore
 	CartStore
 	OrderStore
 }

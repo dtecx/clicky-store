@@ -27,8 +27,10 @@ import type { CreateProductRequest, Product } from '../types/product'
 import { cn } from '../utils/cn'
 import { errorMessage } from '../utils/errors'
 import { formatCents } from '../utils/money'
-
-const fallbackImageUrl = '/assets/products/product-generic.svg'
+import {
+  fallbackProductImageUrl,
+  primaryProductImageUrl,
+} from '../utils/productImages'
 
 const categoryOptions = [
   { label: 'All categories', value: '' },
@@ -623,6 +625,7 @@ export function AdminProductsPage() {
               <tbody className="divide-y divide-stone-200">
                 {visibleProducts.map((product) => {
                   const stock = stockBadge(product.stock)
+                  const imageUrl = primaryProductImageUrl(product)
 
                   return (
                     <tr key={product.id}>
@@ -632,9 +635,9 @@ export function AdminProductsPage() {
                             alt=""
                             className="h-12 w-12 rounded-lg bg-stone-50 object-contain p-1"
                             onError={(event) => {
-                              event.currentTarget.src = fallbackImageUrl
+                              event.currentTarget.src = fallbackProductImageUrl
                             }}
-                            src={product.imageUrl || fallbackImageUrl}
+                            src={imageUrl}
                           />
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-slate-950">

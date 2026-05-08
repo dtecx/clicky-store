@@ -2,11 +2,13 @@ import { ShoppingCart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../../types/product'
 import { formatCents } from '../../utils/money'
+import {
+  fallbackProductImageUrl,
+  primaryProductImageUrl,
+} from '../../utils/productImages'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
-
-const fallbackImageUrl = '/assets/products/product-generic.svg'
 
 type ProductCardProps = {
   /** Product to display. */
@@ -40,6 +42,7 @@ function formatDpi(dpi: number): string {
 export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps) {
   const stock = stockBadge(product.stock)
   const detailHref = `/products/${product.slug}`
+  const imageUrl = primaryProductImageUrl(product)
   const traits = [
     product.wireless ? 'Wireless' : 'Wired',
     product.ergonomic ? 'Ergonomic' : null,
@@ -61,9 +64,9 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
           className="mx-auto aspect-square h-44 w-full max-w-56 object-contain"
           loading="lazy"
           onError={(event) => {
-            event.currentTarget.src = fallbackImageUrl
+            event.currentTarget.src = fallbackProductImageUrl
           }}
-          src={product.imageUrl || fallbackImageUrl}
+          src={imageUrl}
         />
       </Link>
       <div className="flex flex-1 flex-col gap-4 p-5">

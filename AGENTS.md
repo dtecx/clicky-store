@@ -67,11 +67,12 @@ The repository currently has:
 - Multi-stage Dockerfile that builds the React frontend and Go backend, then copies `frontend/dist` into the runtime image.
 - React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, customer orders, and admin dashboard/product/order/user flows.
 - React admin pages are backend-backed for dashboard metrics, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates.
+- Product responses now include an `images` gallery array backed by in-memory and PostgreSQL stores, with `imageUrl` retained as the compatibility primary-image fallback.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
 
-The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Uploaded image handling is still pending.
+The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Runtime upload storage, upload APIs, and admin image-management UI are still pending.
 
 ---
 
@@ -330,6 +331,7 @@ Admin-facing features:
 Backend/platform features:
 
 - PostgreSQL persistence for users, products, carts, and orders when `DATABASE_URL` is configured.
+- Product image gallery persistence in memory and PostgreSQL, with seeded `imageUrl` values mirrored as primary gallery images.
 - In-memory fallback for lightweight development/tests.
 - Transactional checkout behavior in store implementations.
 - Store contract tests.
@@ -345,12 +347,12 @@ Backend/platform features:
 
 Address these before adding unrelated features:
 
-1. Product media is still based around a single `imageUrl` field.
+1. Product media persistence supports galleries, but the legacy `imageUrl` field still remains as a compatibility fallback.
 2. Demo product images are embedded SVG files under static assets.
 3. There is no admin drag-and-drop/select image upload flow.
 4. There is no runtime upload directory or uploaded file serving.
-5. There is no product image gallery model.
-6. There is no limit of up to 10 images per product.
+5. There is no admin product image upload/reorder/delete API yet.
+6. There is no enforced limit of up to 10 images per product.
 7. Go production serving now serves React `index.html` for frontend route reloads when `FRONTEND_DIST_DIR` points at a Vite build.
 8. Admin product/order/user pages are backend-backed in React, but image management is still pending.
 9. Product detail pages need richer gallery/spec/related-product polish once product images exist.
@@ -953,6 +955,8 @@ git commit -m "chore: serve react frontend from go"
 ### Phase 11: Add Product Image Persistence Model
 
 Goal: support multiple images per product in memory and PostgreSQL.
+
+Current status: completed. Products now include `Images []ProductImage`, the store interface includes gallery operations, in-memory and PostgreSQL adapters persist galleries, existing `imageUrl` values are mirrored into primary images, cart/product API responses include galleries, and contract tests cover create, primary update, reorder, delete, and validation behavior.
 
 Suggested changes:
 

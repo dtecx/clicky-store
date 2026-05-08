@@ -218,6 +218,10 @@ func (s *Store) cart(ctx context.Context, userID string) (domains.Cart, error) {
 		return domains.Cart{}, err
 	}
 
+	if err := s.attachImagesToCartLines(ctx, lines); err != nil {
+		return domains.Cart{}, err
+	}
+
 	return domains.Cart{
 		UserID:     userID,
 		Items:      lines,

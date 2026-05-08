@@ -1,9 +1,16 @@
 /**
  * Product shape returned by the API. Matches the Go `domains.Product` struct.
- *
- * Note: `images` is not yet part of the API but will be added in Phase 11.
- * Until then, `imageUrl` carries the single product image.
  */
+export type ProductImage = {
+  id: string
+  productId: string
+  url: string
+  altText: string
+  sortOrder: number
+  isPrimary: boolean
+  createdAt: string
+}
+
 export type Product = {
   id: string
   name: string
@@ -17,6 +24,7 @@ export type Product = {
   ergonomic: boolean
   stock: number
   imageUrl: string
+  images: ProductImage[]
   createdAt: string
   updatedAt: string
 }
