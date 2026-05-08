@@ -27,7 +27,7 @@ The project should satisfy the expected online-shop requirements:
 - Tests and documentation.
 - Docker-based local/deployment workflow.
 
-The backend is already more than a skeleton. Treat the current repository as a working MVP with persistence, auth, customer flows, admin flows, docs, CI, and an embedded static frontend.
+The backend is already more than a skeleton. Treat the current repository as a working MVP with persistence, auth, customer flows, admin flows, docs, CI, and a React frontend served by Go in production builds.
 
 The next major direction is to turn the UI into a real e-shop frontend using:
 
@@ -63,14 +63,15 @@ The repository currently has:
 - Admin product, order, and user management.
 - API, development, and deployment documentation.
 - GitHub Actions CI for formatting, tests, vet, frontend lint/build, and Docker build.
-- Embedded frontend served from `internal/frontend/static`.
+- Go frontend serving adapter that can serve the React `frontend/dist` build via `FRONTEND_DIST_DIR`, with embedded legacy static files retained as temporary fallback assets.
+- Multi-stage Dockerfile that builds the React frontend and Go backend, then copies `frontend/dist` into the runtime image.
 - React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, customer orders, and admin dashboard/product/order/user flows.
 - React admin pages are backend-backed for dashboard metrics, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
 
-The production-served frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. The React app now covers the main customer storefront, auth, cart, checkout, customer order flow, and backend-backed admin flows, but it does not yet have uploaded image handling or production serving from Go.
+The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Uploaded image handling is still pending.
 
 ---
 
@@ -350,7 +351,7 @@ Address these before adding unrelated features:
 4. There is no runtime upload directory or uploaded file serving.
 5. There is no product image gallery model.
 6. There is no limit of up to 10 images per product.
-7. Go production serving still needs to serve React product routes on direct reload.
+7. Go production serving now serves React `index.html` for frontend route reloads when `FRONTEND_DIST_DIR` points at a Vite build.
 8. Admin product/order/user pages are backend-backed in React, but image management is still pending.
 9. Product detail pages need richer gallery/spec/related-product polish once product images exist.
 10. Product specs are too limited for a real mouse shop.
@@ -664,7 +665,7 @@ Go serves the React app and API from one container.
 
 ## Dockerfile Direction
 
-Current Dockerfile should be converted into a multi-stage build when React is added.
+Current Dockerfile is a multi-stage build that builds React with Node, builds the Go backend, and copies `frontend/dist` into the runtime image.
 
 Recommended stages:
 
@@ -819,7 +820,7 @@ git commit -m "feat: rebuild product listing in react"
 
 Goal: every mouse gets a dedicated reloadable page.
 
-Current status: backend slug lookup and the React `/products/:slug` route exist. Go production serving for direct React route reloads still belongs to Phase 10.
+Current status: backend slug lookup, the React `/products/:slug` route, and Go production serving for direct React route reloads exist.
 
 Suggested backend changes:
 
@@ -928,6 +929,8 @@ git commit -m "feat: rebuild admin dashboard in react"
 ### Phase 10: Serve React Build from Go
 
 Goal: make production use the new React frontend.
+
+Current status: Docker builds `frontend/dist`, copies it into the runtime image, and sets `FRONTEND_DIST_DIR=/app/frontend/dist`. The Go frontend handler serves that React build with SPA route fallback while keeping embedded legacy product SVG assets available under `/assets/products/...`.
 
 Suggested changes:
 
@@ -1152,6 +1155,61 @@ Suggested commit:
 ```sh
 git add README.md docs .env.example compose.yaml Dockerfile AGENTS.md frontend
 git commit -m "docs: document react storefront and image uploads"
+```
+
+---
+
+### Phase 19: Add Initial Polish Retailer Mouse Scraper
+
+Goal: write an initial catalog-import scraper for Polish mouse listings so the shop can seed realistic product data from real retailer pages.
+
+Suggested scope:
+
+- Scrape public product listing/detail data from Media Expert and MediaMarkt Poland.
+- Collect exactly 10 real mouse products for an initial seed/import run.
+- Include 5 popular gaming mice and 5 popular, widespread office/productivity mice.
+- Capture Polish product names and descriptions.
+- Capture current listed prices in PLN.
+- Capture actual product image URLs and, where permitted, download/cache images for local import.
+- Normalize scraped data into the existing product fields and future gallery fields.
+- Keep source URL and source retailer metadata for attribution/debugging.
+- Make the scraper repeatable but rate-limited and polite.
+- Respect `robots.txt`, site terms, and blocking behavior; do not bypass anti-bot protections.
+- Provide a manual CSV/JSON fallback path if live scraping is blocked or unstable.
+- Keep scraped/imported output out of git unless it is intentionally curated seed data.
+
+Suggested implementation direction:
+
+```text
+cmd/scrape-products/              CLI entrypoint for one-off scraping/import prep
+internal/adapters/scraper/        retailer-specific fetch/parse code
+data/scraped-products/            ignored local output for raw scraper runs
+docs/scraping.md                  source, usage, and compliance notes
+```
+
+Suggested output:
+
+```json
+{
+  "source": "mediaexpert",
+  "sourceUrl": "https://...",
+  "name": "Polish product name",
+  "description": "Polish description",
+  "category": "gaming",
+  "priceCents": 24900,
+  "currency": "PLN",
+  "imageUrls": ["https://..."],
+  "dpi": 26000,
+  "wireless": false,
+  "ergonomic": false
+}
+```
+
+Suggested commit:
+
+```sh
+git add cmd internal docs .gitignore
+git commit -m "feat: add initial product scraper"
 ```
 
 ---

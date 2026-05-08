@@ -1,4 +1,14 @@
-FROM golang:1.25-alpine AS build
+FROM node:22-alpine AS frontend-build
+
+WORKDIR /src/frontend
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+FROM golang:1.25-alpine AS backend-build
 
 WORKDIR /src
 
@@ -12,7 +22,12 @@ FROM alpine:3.20
 
 RUN adduser -D -H -s /sbin/nologin appuser
 
-COPY --from=build /out/clicky-store /usr/local/bin/clicky-store
+WORKDIR /app
+
+ENV FRONTEND_DIST_DIR=/app/frontend/dist
+
+COPY --from=backend-build /out/clicky-store /usr/local/bin/clicky-store
+COPY --from=frontend-build /src/frontend/dist ./frontend/dist
 
 USER appuser
 EXPOSE 8080

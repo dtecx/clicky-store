@@ -15,19 +15,19 @@ Copy the example environment file if you want to override defaults:
 cp .env.example .env
 ```
 
-Start PostgreSQL and the API:
+Start PostgreSQL, build the React frontend, and run the Go server:
 
 ```sh
 docker compose up --build
 ```
 
-The storefront and API are served from:
+The React storefront and API are served from:
 
 ```txt
 http://localhost:8080
 ```
 
-The React frontend is currently developed separately while the Go server still serves the legacy embedded frontend:
+For UI development, run Vite separately while the Go server handles the API:
 
 ```sh
 cd frontend
@@ -36,6 +36,17 @@ npm run dev
 ```
 
 The Vite dev server proxies `/api`, `/assets`, `/uploads`, and `/healthz` to `http://localhost:8080`.
+
+To test the production-style Go static serving path locally without Docker:
+
+```sh
+cd frontend
+npm run build
+cd ..
+FRONTEND_DIST_DIR=frontend/dist go run ./cmd/server
+```
+
+When `FRONTEND_DIST_DIR` is set, Go serves the Vite build and falls back to React `index.html` for frontend routes such as `/products/viper-x1-gaming-mouse` or `/admin/products`. If it is not set, the embedded legacy static frontend is still available as a temporary fallback during the migration.
 
 The default development admin account is:
 
@@ -111,5 +122,5 @@ POSTGRES_DATA_PATH=/private/tmp/clicky-store-pgdata docker compose up -d db
 - Keep handlers independent from database details.
 - Keep service code depending on `internal/core/ports`.
 - Keep new frontend code in `frontend/` with React, Vite, TypeScript, and Tailwind CSS.
-- Keep the legacy embedded frontend until the React customer and admin flows replace it.
+- Keep the legacy embedded frontend until React plus uploaded image support fully replace it.
 - Do not commit `.env`, generated build output, `frontend/dist/`, `frontend/node_modules/`, `data/`, or files under `plan/`.

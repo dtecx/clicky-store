@@ -9,6 +9,7 @@ services:
       APP_ENV: ${APP_ENV:-development}
       PORT: ${PORT:-8080}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+      FRONTEND_DIST_DIR: ${FRONTEND_DIST_DIR:-/app/frontend/dist}
       AUTH_SECRET: ${AUTH_SECRET:-change-me-for-local-development}
       DATABASE_URL: ${DATABASE_URL:-postgres://clicky:clicky_dev_password@db:5432/clicky_store?sslmode=disable}
       ADMIN_NAME: ${ADMIN_NAME:-Clicky Admin}

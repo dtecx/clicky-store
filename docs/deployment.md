@@ -14,6 +14,7 @@ ADMIN_NAME=<initial-admin-name>
 ADMIN_EMAIL=<initial-admin-email>
 ADMIN_PASSWORD=<initial-admin-password>
 FRONTEND_ORIGIN=<public-origin>
+FRONTEND_DIST_DIR=/app/frontend/dist
 ```
 
 The server refuses to start outside development when `AUTH_SECRET` is missing or still uses the development demo value.
@@ -33,6 +34,14 @@ Admin seeding runs only when `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` a
 Run the app behind HTTPS in real deployments. A reverse proxy such as Caddy, Nginx, Traefik, or a platform load balancer can terminate TLS and forward traffic to the Go server.
 
 Set `FRONTEND_ORIGIN` to the deployed origin so browser requests are scoped to the expected host.
+
+## Frontend Build
+
+The production Docker image builds the Vite React app in a Node stage, builds the Go server in a Go stage, and copies `frontend/dist` into the runtime image at `/app/frontend/dist`.
+
+`FRONTEND_DIST_DIR` tells the Go server where to find that build. In Docker/Compose it defaults to `/app/frontend/dist`. When the variable points at a valid Vite build directory, Go serves the React app and falls back to `index.html` for direct reloads of frontend routes such as `/products/:slug`, `/cart`, `/orders`, and `/admin/products`.
+
+The embedded legacy static frontend remains only as a temporary fallback and as the source for current demo product SVGs until uploaded product image support replaces those assets.
 
 ## Secrets
 
@@ -54,7 +63,7 @@ Implemented:
 - HMAC-signed bearer tokens.
 - Admin-only endpoint checks.
 - Basic in-process login rate limiting.
-- Escaped frontend template output for user-controlled data.
+- React rendering for user-controlled frontend content.
 - Consistent JSON error responses.
 
 Still recommended before production use:
