@@ -64,13 +64,13 @@ The repository currently has:
 - API, development, and deployment documentation.
 - GitHub Actions CI for formatting, tests, vet, frontend lint/build, and Docker build.
 - Embedded frontend served from `internal/frontend/static`.
-- React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, and customer orders.
-- React admin API helpers exist, but admin product/order/user pages are still mostly placeholder UI and are not fully backend-backed.
+- React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, customer orders, and admin dashboard/product/order/user flows.
+- React admin pages are backend-backed for dashboard metrics, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
 
-The production-served frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. The React app now covers the main customer storefront, auth, cart, checkout, and customer order flow, but it does not yet have backend-backed admin CRUD pages, uploaded image handling, or production serving from Go.
+The production-served frontend is still an embedded single-page static UI with custom HTML/CSS/JavaScript. The React app now covers the main customer storefront, auth, cart, checkout, customer order flow, and backend-backed admin flows, but it does not yet have uploaded image handling or production serving from Go.
 
 ---
 
@@ -351,7 +351,7 @@ Address these before adding unrelated features:
 5. There is no product image gallery model.
 6. There is no limit of up to 10 images per product.
 7. Go production serving still needs to serve React product routes on direct reload.
-8. Admin product/order/user pages still need to be rebuilt as backend-backed React flows.
+8. Admin product/order/user pages are backend-backed in React, but image management is still pending.
 9. Product detail pages need richer gallery/spec/related-product polish once product images exist.
 10. Product specs are too limited for a real mouse shop.
 11. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
@@ -900,6 +900,8 @@ git commit -m "feat: rebuild cart checkout and orders in react"
 ### Phase 9: Rebuild Admin UI
 
 Goal: rebuild current admin functionality before adding image features.
+
+Current status: React admin dashboard, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates are backend-backed. Product image upload/management still belongs to later image phases.
 
 Suggested changes:
 
