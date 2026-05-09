@@ -15,6 +15,7 @@ import (
 	"clicky-store/internal/config"
 	"clicky-store/internal/core/ports"
 	"clicky-store/internal/frontend"
+	"clicky-store/internal/initcatalog"
 	"clicky-store/internal/service"
 	"clicky-store/internal/web"
 )
@@ -54,6 +55,19 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("using local upload storage", "dir", cfg.UploadDir, "urlPrefix", cfg.UploadURLPrefix)
+
+	catalogSeed, err := initcatalog.Seed(store, uploadStore, initcatalog.Config{
+		Path:          cfg.InitCatalogPath,
+		MaxImages:     cfg.MaxProductImages,
+		MaxImageBytes: cfg.MaxProductImageBytes,
+	})
+	if err != nil {
+		logger.Warn("demo catalog seed skipped; using fallback catalog", "path", cfg.InitCatalogPath, "error", err)
+	} else if catalogSeed.Applied {
+		logger.Info("seeded demo catalog", "products", catalogSeed.ProductCount, "images", catalogSeed.ImageCount)
+	} else {
+		logger.Info("demo catalog seed skipped", "reason", catalogSeed.Reason)
+	}
 
 	appService := service.New(store, cfg.AuthSecret)
 

@@ -16,12 +16,14 @@ services:
       MAX_PRODUCT_IMAGES: ${MAX_PRODUCT_IMAGES:-10}
       MAX_PRODUCT_IMAGE_BYTES: ${MAX_PRODUCT_IMAGE_BYTES:-4194304}
       MAX_PRODUCT_UPLOAD_BYTES: ${MAX_PRODUCT_UPLOAD_BYTES:-50331648}
+      INIT_CATALOG_PATH: ${INIT_CATALOG_PATH:-/app/init/init.json}
       DATABASE_URL: ${DATABASE_URL:-postgres://clicky:clicky_dev_password@db:5432/clicky_store?sslmode=disable}
       ADMIN_NAME: ${ADMIN_NAME:-Clicky Admin}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@clicky.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin12345}
     volumes:
       - ${UPLOAD_DATA_PATH:-./data/uploads}:/app/data/uploads
+      - ${INIT_DATA_PATH:-./init}:/app/init:ro
     ports:
       - "${HOST_PORT:-8080}:${PORT:-8080}"
     depends_on:

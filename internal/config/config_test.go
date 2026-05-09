@@ -35,18 +35,22 @@ func TestLoadUsesDevelopmentDefaultsOnlyInDevelopment(t *testing.T) {
 	if cfg.MaxProductUploadBytes != defaultMaxProductUploadBytes {
 		t.Fatalf("MaxProductUploadBytes = %d, want %d", cfg.MaxProductUploadBytes, defaultMaxProductUploadBytes)
 	}
+	if cfg.InitCatalogPath != defaultInitCatalogPath {
+		t.Fatalf("InitCatalogPath = %q, want default", cfg.InitCatalogPath)
+	}
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("Validate development config: %v", err)
 	}
 }
 
-func TestLoadUsesUploadEnvironment(t *testing.T) {
+func TestLoadUsesUploadAndInitEnvironment(t *testing.T) {
 	t.Setenv("APP_ENV", "development")
 	t.Setenv("UPLOAD_DIR", "/tmp/clicky-uploads")
 	t.Setenv("UPLOAD_URL_PREFIX", "media/uploads/")
 	t.Setenv("MAX_PRODUCT_IMAGES", "8")
 	t.Setenv("MAX_PRODUCT_IMAGE_BYTES", "1024")
 	t.Setenv("MAX_PRODUCT_UPLOAD_BYTES", "4096")
+	t.Setenv("INIT_CATALOG_PATH", "/tmp/clicky-init/init.json")
 
 	cfg := Load()
 
@@ -60,6 +64,9 @@ func TestLoadUsesUploadEnvironment(t *testing.T) {
 		cfg.MaxProductImageBytes != 1024 ||
 		cfg.MaxProductUploadBytes != 4096 {
 		t.Fatalf("upload limits = %d/%d/%d, want 8/1024/4096", cfg.MaxProductImages, cfg.MaxProductImageBytes, cfg.MaxProductUploadBytes)
+	}
+	if cfg.InitCatalogPath != "/tmp/clicky-init/init.json" {
+		t.Fatalf("InitCatalogPath = %q, want env value", cfg.InitCatalogPath)
 	}
 }
 

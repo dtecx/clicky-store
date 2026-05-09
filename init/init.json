@@ -1,0 +1,194 @@
+{
+  "products": [
+    {
+      "name": "Logitech MX Master 4",
+      "slug": "logitech-mx-master-4",
+      "description": "Flagowa mysz biurowa premium do pracy kreatywnej, programowania i wielozadaniowości. Sensor 8000 DPI, ciche kliknięcia, haptyczny panel boczny i szybkie przewijanie MagSpeed pomagają wygodnie pracować na dużych monitorach i przełączać się między aplikacjami.",
+      "category": "office",
+      "priceCents": 54900,
+      "currency": "PLN",
+      "dpi": 8000,
+      "wireless": true,
+      "ergonomic": true,
+      "stock": 15,
+      "images": [
+        {
+          "path": "img/logitech-mx-master-4/1.jpg",
+          "altText": "Logitech MX Master 4 widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Logitech MX Master 3S",
+      "slug": "logitech-mx-master-3s",
+      "description": "Popularna mysz biurowa dla osób pracujących z wieloma aplikacjami i komputerami. Ciche kliknięcia, rolka MagSpeed, ergonomiczny profil oraz sensor 8000 DPI sprawdzają się przy arkuszach, grafice, edycji dokumentów i codziennej produktywności.",
+      "category": "office",
+      "priceCents": 46900,
+      "currency": "PLN",
+      "dpi": 8000,
+      "wireless": true,
+      "ergonomic": true,
+      "stock": 18,
+      "images": [
+        {
+          "path": "img/logitech-mx-master-3s/1.jpg",
+          "altText": "Logitech MX Master 3S widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Logitech MX Anywhere 3S",
+      "slug": "logitech-mx-anywhere-3s",
+      "description": "Kompaktowa mysz premium do pracy hybrydowej i podróży. Sensor 8000 DPI działa na wielu powierzchniach, a szybka rolka i ciche przyciski dobrze pasują do laptopa, małego biurka, kawiarni oraz mobilnego stanowiska pracy.",
+      "category": "office",
+      "priceCents": 39900,
+      "currency": "PLN",
+      "dpi": 8000,
+      "wireless": true,
+      "ergonomic": false,
+      "stock": 20,
+      "images": [
+        {
+          "path": "img/logitech-mx-anywhere-3s/1.jpg",
+          "altText": "Logitech MX Anywhere 3S widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Logitech Lift Vertical",
+      "slug": "logitech-lift-vertical",
+      "description": "Pionowa mysz ergonomiczna do długiej pracy przy komputerze. Ustawienie dłoni pod kątem 57 stopni pomaga odciążyć nadgarstek, a łączność Bluetooth lub Logi Bolt ułatwia utrzymanie porządku na stanowisku.",
+      "category": "office",
+      "priceCents": 31900,
+      "currency": "PLN",
+      "dpi": 4000,
+      "wireless": true,
+      "ergonomic": true,
+      "stock": 16,
+      "images": [
+        {
+          "path": "img/logitech-lift-vertical/1.jpg",
+          "altText": "Logitech Lift Vertical widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Logitech Signature M650",
+      "slug": "logitech-signature-m650",
+      "description": "Uniwersalna mysz biurowa do codziennej produktywności. SmartWheel płynnie przełącza się między precyzyjnym i szybkim przewijaniem, a ciche kliknięcia dobrze pasują do open space, nauki i domowego biura.",
+      "category": "office",
+      "priceCents": 17900,
+      "currency": "PLN",
+      "dpi": 4000,
+      "wireless": true,
+      "ergonomic": true,
+      "stock": 28,
+      "images": [
+        {
+          "path": "img/logitech-signature-m650/1.jpg",
+          "altText": "Logitech Signature M650 widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Logitech G Pro X Superlight 2",
+      "slug": "logitech-g-pro-x-superlight-2",
+      "description": "Bardzo lekka bezprzewodowa mysz esportowa dla graczy FPS. Sensor HERO 2 do 44000 DPI, szybkie raportowanie LIGHTSPEED i minimalistyczna forma pomagają utrzymać precyzję przy flickach, tracking'u i długich sesjach rankingowych.",
+      "category": "gaming",
+      "priceCents": 64900,
+      "currency": "PLN",
+      "dpi": 44000,
+      "wireless": true,
+      "ergonomic": false,
+      "stock": 14,
+      "images": [
+        {
+          "path": "img/logitech-g-pro-x-superlight-2/1.jpg",
+          "altText": "Logitech G Pro X Superlight 2 widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Razer Viper V4 Pro",
+      "slug": "razer-viper-v4-pro",
+      "description": "Ultralekka symetryczna mysz bezprzewodowa dla wymagających graczy turniejowych. Sensor Focus Pro 45K, masa około 49 gramów i szybka łączność HyperSpeed tworzą zestaw nastawiony na FPS, battle royale i aim training.",
+      "category": "gaming",
+      "priceCents": 74900,
+      "currency": "PLN",
+      "dpi": 45000,
+      "wireless": true,
+      "ergonomic": false,
+      "stock": 12,
+      "images": [
+        {
+          "path": "img/razer-viper-v4-pro/1.jpg",
+          "altText": "Razer Viper V4 Pro widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Razer DeathAdder V4 Pro",
+      "slug": "razer-deathadder-v4-pro",
+      "description": "Ergonomiczna mysz esportowa o klasycznym profilu DeathAdder. Sensor Focus Pro 45K, niska masa i wygodne podparcie dłoni sprawiają, że dobrze pasuje do palm i claw gripu w szybkich grach FPS.",
+      "category": "gaming",
+      "priceCents": 69900,
+      "currency": "PLN",
+      "dpi": 45000,
+      "wireless": true,
+      "ergonomic": true,
+      "stock": 11,
+      "images": [
+        {
+          "path": "img/razer-deathadder-v4-pro/1.jpg",
+          "altText": "Razer DeathAdder V4 Pro widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Logitech G502 X Plus",
+      "slug": "logitech-g502-x-plus",
+      "description": "Bogato wyposażona mysz gamingowa dla graczy, którzy lubią dodatkowe przyciski, szybkie przewijanie i podświetlenie RGB. Sensor HERO 25K, LIGHTSPEED i programowalne sterowanie dobrze pasują do MMO, strategii i pracy po godzinach.",
+      "category": "gaming",
+      "priceCents": 59900,
+      "currency": "PLN",
+      "dpi": 25600,
+      "wireless": true,
+      "ergonomic": true,
+      "stock": 13,
+      "images": [
+        {
+          "path": "img/logitech-g502-x-plus/1.jpg",
+          "altText": "Logitech G502 X Plus widok główny",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "name": "Razer Basilisk V3 Pro 35K",
+      "slug": "razer-basilisk-v3-pro-35k",
+      "description": "Zaawansowana ergonomiczna mysz gamingowa dla osób, które chcą dużo przycisków i rozbudowaną konfigurację. Sensor Focus Pro 35K, łączność HyperSpeed, Bluetooth i przewodowa oraz charakterystyczny profil Basilisk sprawdzają się w grach i pracy.",
+      "category": "gaming",
+      "priceCents": 66900,
+      "currency": "PLN",
+      "dpi": 35000,
+      "wireless": true,
+      "ergonomic": true,
+      "stock": 10,
+      "images": [
+        {
+          "path": "img/razer-basilisk-v3-pro-35k/1.jpg",
+          "altText": "Razer Basilisk V3 Pro 35K widok główny",
+          "isPrimary": true
+        }
+      ]
+    }
+  ]
+}

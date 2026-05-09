@@ -73,11 +73,12 @@ The repository currently has:
 - React storefront uses uploaded gallery images everywhere they apply: product cards, the dedicated product page (interactive `ProductGallery` with keyboard-navigable thumbnails), cart lines, the admin product table, and the home hero, with admin-supplied alt text propagated through cards/cart and the legacy `imageUrl` plus generic SVG retained as ordered fallbacks.
 - Phase 17 polish is complete across customer and admin: sticky header with scroll shadow, gradient hero, value-prop strip, category card grid, sticky filter bar with live count, hover-lift product cards with image zoom, breadcrumb-led product page with sticky buy rail, trust strip, and a related-products strip, refined cart/checkout summaries, order cards with prominent payment-simulation actions. Admin has a shared sidebar layout (`AdminLayout`), dashboard with toned stat cards and a pending-payments callout, refined hover-row tables across products/orders/users, and consistent rounded-2xl card surfaces with stone-tinted shadows. UI primitives include a `Skeleton` family used for grid loading.
 - Phase 18 documentation and final checks are complete: README, development/deployment docs, API examples, and OpenAPI now describe the React storefront, slug product pages, gallery/image upload APIs, upload env vars/storage, validation rules, and the remaining uploaded-file cleanup gap. Latest local checks passed: `gofmt -l .`, `go test ./...`, `go vet ./...`, `docker compose config`, `npm run lint`, `npm run build`, and `docker build -t clicky-store:test .`.
-- Seed/demo product images currently stored as embedded SVG assets.
+- Phase 19 now uses a curated demo catalog initializer instead of a live retailer scraper. `init/init.json` contains 10 real mouse products with Polish descriptions and relative image paths. `internal/initcatalog` validates the whole JSON file plus local JPG/PNG files under `init/img/{slug}/...`; if anything is missing or invalid, startup leaves the original four fallback products in place.
+- Seed/demo fallback product images currently use SVG assets. Phase 19 demo images are local, ignored files under `init/img/` and are copied into runtime upload storage only after validation passes.
 
 Important frontend limitation:
 
-The production Docker image serves the React app through the Go server. The legacy embedded static frontend has been removed; only the React build under `frontend/dist` is served. Seed product SVGs are shipped via `frontend/public/assets/products/`. Uploaded-file cleanup policy on product/image deletion is still pending.
+The production Docker image serves the React app through the Go server. The legacy embedded static frontend has been removed; only the React build under `frontend/dist` is served. Seed product SVGs are shipped via `frontend/public/assets/products/`. Optional Phase 19 demo images are loaded from `init/img/` and copied into `UPLOAD_DIR` only when `init/init.json` and all referenced files validate. Uploaded-file cleanup policy on product/image deletion is still pending.
 
 ---
 
@@ -92,6 +93,7 @@ The production Docker image serves the React app through the Go server. The lega
 - Run `go vet ./...` before finalizing backend changes when Go tooling is available.
 - Run frontend build/type/lint checks once the React frontend exists.
 - Do not commit `.env`, generated build output, secrets, `data/`, uploaded product images, or database files.
+- Do not commit local Phase 19 demo photos under `init/img/`; only commit `init/init.json`, docs, and placeholder files.
 - Do not commit `frontend/dist/` unless the repository intentionally changes to committed static assets. Prefer Docker/CI builds.
 - Keep handlers independent from PostgreSQL details.
 - Keep service code dependent on interfaces from `internal/core/ports`.
@@ -290,9 +292,11 @@ internal/service/                   Application use cases, auth, password hashin
 internal/adapters/db/               In-memory store and store contract tests
 internal/adapters/db/postgres/      PostgreSQL store, helpers, migrations
 internal/adapters/http/v1/          REST API v1 handlers, requests, auth middleware, rate limiting
+internal/initcatalog/               Optional validated demo catalog loader/seeder
 internal/frontend/                  Frontend serving adapter (FRONTEND_DIST_DIR aware)
 frontend/                           React + Vite + TypeScript + Tailwind source app
 frontend/public/assets/products/    Seed product SVGs shipped with the Vite build
+init/                               Phase 19 demo catalog JSON and ignored local image source folder
 internal/web/                       Shared HTTP JSON, CORS, logging, middleware helpers
 docs/                               API, development, and deployment documentation
 compose.yaml                        Local API and PostgreSQL services
@@ -352,7 +356,7 @@ Backend/platform features:
 Address these before adding unrelated features:
 
 1. Product media persistence supports galleries, but the legacy `imageUrl` field still remains as a compatibility fallback.
-2. Seed product images live in `frontend/public/assets/products/` as SVG files; richer product art still depends on the upcoming retailer scraper (Phase 19).
+2. Phase 19 demo catalog JSON exists, but richer product art still depends on manually adding valid JPG/PNG files under `init/img/{slug}/` for the referenced paths.
 3. Uploaded-file cleanup on product/image deletion still needs a deliberate policy.
 4. Admin product/order/user pages are backend-backed in React; image management and the new layout polish should still receive browser QA against the Go server.
 5. Product specs are too limited for a real mouse shop (sensor model, weight, switch type, polling rate, dimensions, included accessories are all missing fields).
@@ -1176,57 +1180,41 @@ git commit -m "docs: document react storefront and image uploads"
 
 ---
 
-### Phase 19: Add Initial Polish Retailer Mouse Scraper
+### Phase 19: Add Validated Demo Catalog Init
 
-Goal: write an initial catalog-import scraper for Polish mouse listings so the shop can seed realistic product data from real retailer pages.
+Goal: seed realistic demo catalog data without scraping real stores.
 
-Suggested scope:
+Current status: implemented. `init/init.json` contains 10 curated mouse products: 5 office/productivity and 5 gaming models, with Polish descriptions, PLN prices, current product fields, and relative image paths such as `img/logitech-mx-master-3s/1.jpg`. The Go initializer validates the full JSON file and every referenced image before seeding. If any product field or image is missing, invalid, oversized, not JPG/PNG, outside `init/img/{slug}/`, or not decodable as a real image, startup keeps the original four fallback products.
 
-- Scrape public product listing/detail data from Media Expert and MediaMarkt Poland.
-- Collect exactly 10 real mouse products for an initial seed/import run.
-- Include 5 popular gaming mice and 5 popular, widespread office/productivity mice.
-- Capture Polish product names and descriptions.
-- Capture current listed prices in PLN.
-- Capture actual product image URLs and, where permitted, download/cache images for local import.
-- Normalize scraped data into the existing product fields and future gallery fields.
-- Keep source URL and source retailer metadata for attribution/debugging.
-- Make the scraper repeatable but rate-limited and polite.
-- Respect `robots.txt`, site terms, and blocking behavior; do not bypass anti-bot protections.
-- Provide a manual CSV/JSON fallback path if live scraping is blocked or unstable.
-- Keep scraped/imported output out of git unless it is intentionally curated seed data.
+Implemented scope:
 
-Suggested implementation direction:
+- Add `internal/initcatalog` for JSON decoding, full-product validation, relative path checks, image existence/type/header validation, and fallback-safe seeding.
+- Add `cmd/initcatalog` so the catalog can be checked manually with `go run ./cmd/initcatalog -path init/init.json`.
+- Run the initializer during server startup after upload storage is ready.
+- Copy validated local source images into normal runtime upload storage and persist gallery metadata through the existing product image store APIs.
+- Replace only the exact fallback catalog. If admins have already customized products, skip the demo seed instead of overwriting work.
+- Keep local demo photos under ignored `init/img/`; commit only the JSON contract and placeholders.
+- Mount `./init` into the Compose server container and copy `init/` into the production image.
+
+Manual image workflow:
 
 ```text
-cmd/scrape-products/              CLI entrypoint for one-off scraping/import prep
-internal/adapters/scraper/        retailer-specific fetch/parse code
-data/scraped-products/            ignored local output for raw scraper runs
-docs/scraping.md                  source, usage, and compliance notes
+init/init.json
+init/img/{slug}/1.jpg
+init/img/{slug}/2.jpg
 ```
 
-Suggested output:
+After downloading images, validate them with:
 
-```json
-{
-  "source": "mediaexpert",
-  "sourceUrl": "https://...",
-  "name": "Polish product name",
-  "description": "Polish description",
-  "category": "gaming",
-  "priceCents": 24900,
-  "currency": "PLN",
-  "imageUrls": ["https://..."],
-  "dpi": 26000,
-  "wireless": false,
-  "ergonomic": false
-}
+```sh
+go run ./cmd/initcatalog -path init/init.json
 ```
 
 Suggested commit:
 
 ```sh
-git add cmd internal docs .gitignore
-git commit -m "feat: add initial product scraper"
+git add AGENTS.md README.md docs .env.example .gitignore Dockerfile compose.yaml cmd internal init
+git commit -m "feat: add validated demo catalog init"
 ```
 
 ---

@@ -29,3 +29,7 @@ frontend/.vite/
 # Database files
 data/
 
+# Local demo catalog images
+init/img/**
+!init/img/
+!init/img/.gitkeep

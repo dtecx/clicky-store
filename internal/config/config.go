@@ -16,6 +16,7 @@ const (
 	defaultMaxProductImages      = 10
 	defaultMaxProductImageBytes  = 4 * 1024 * 1024
 	defaultMaxProductUploadBytes = 48 * 1024 * 1024
+	defaultInitCatalogPath       = "./init/init.json"
 )
 
 type Config struct {
@@ -35,6 +36,8 @@ type Config struct {
 	MaxProductImages      int
 	MaxProductImageBytes  int64
 	MaxProductUploadBytes int64
+
+	InitCatalogPath string
 }
 
 func Load() Config {
@@ -57,6 +60,8 @@ func Load() Config {
 		MaxProductImages:      envInt("MAX_PRODUCT_IMAGES", defaultMaxProductImages),
 		MaxProductImageBytes:  envInt64("MAX_PRODUCT_IMAGE_BYTES", defaultMaxProductImageBytes),
 		MaxProductUploadBytes: envInt64("MAX_PRODUCT_UPLOAD_BYTES", defaultMaxProductUploadBytes),
+
+		InitCatalogPath: env("INIT_CATALOG_PATH", defaultInitCatalogPath),
 	}
 }
 

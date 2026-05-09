@@ -20,6 +20,7 @@ UPLOAD_URL_PREFIX=/uploads
 MAX_PRODUCT_IMAGES=10
 MAX_PRODUCT_IMAGE_BYTES=4194304
 MAX_PRODUCT_UPLOAD_BYTES=50331648
+INIT_CATALOG_PATH=/app/init/init.json
 ```
 
 The server refuses to start outside development when `AUTH_SECRET` is missing or still uses the development demo value.
@@ -57,6 +58,18 @@ The server creates the upload directory on startup and serves files under `UPLOA
 Current server-side image validation accepts JPEG and PNG only, checks file extension, MIME/content sniffing, decoded image headers, and maximum size. Keep request-size limits aligned at the reverse proxy with `MAX_PRODUCT_UPLOAD_BYTES`.
 
 Back up upload storage together with PostgreSQL, because product gallery metadata and files are stored separately. Deleting a product image currently removes database metadata; a deliberate disk cleanup/orphan-retention policy is still pending, so production-like deployments should monitor upload volume growth.
+
+## Demo Catalog Init
+
+The production image includes `init/init.json`. Compose also mounts `${INIT_DATA_PATH:-./init}` to `/app/init` so operators can provide local demo photos without rebuilding.
+
+On startup, the server validates the configured JSON catalog and all referenced JPG/PNG files under `init/img/{slug}/`. If the catalog is valid and the database still contains the exact fallback products, it copies those source images into `UPLOAD_DIR`, stores gallery metadata, and removes the fallback products. If validation fails or the product catalog is already customized, the server keeps the existing catalog.
+
+Validate demo assets before starting a fresh deployment:
+
+```sh
+go run ./cmd/initcatalog -path init/init.json
+```
 
 ## Secrets
 

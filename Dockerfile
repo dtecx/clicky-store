@@ -28,6 +28,7 @@ ENV FRONTEND_DIST_DIR=/app/frontend/dist
 
 COPY --from=backend-build /out/clicky-store /usr/local/bin/clicky-store
 COPY --from=frontend-build /src/frontend/dist ./frontend/dist
+COPY init ./init
 
 USER appuser
 EXPOSE 8080

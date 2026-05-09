@@ -91,6 +91,20 @@ The storage layer accepts only JPEG and PNG files, validates extension, sniffed 
 
 When testing image uploads, verify both drag-and-drop and the file picker in the admin product editor. Uploaded images should appear on product cards, product detail galleries, cart lines, and the admin product table. Deleting an image currently removes gallery metadata; uploaded-file cleanup on disk remains a planned follow-up.
 
+## Demo Catalog Init
+
+`INIT_CATALOG_PATH` defaults to `./init/init.json` for direct Go runs and `/app/init/init.json` in Docker Compose. The Phase 19 initializer reads that JSON, checks every required product field, verifies each referenced path stays under `init/img/{slug}/`, and validates that every referenced file is a decodable JPG or PNG within `MAX_PRODUCT_IMAGE_BYTES`.
+
+The initializer only replaces the exact four-product fallback catalog. If the JSON or any image is invalid, the fallback catalog stays in place. If products have already been customized, the initializer skips seeding instead of overwriting admin work.
+
+After downloading local demo images, run:
+
+```sh
+go run ./cmd/initcatalog -path init/init.json
+```
+
+Then start the server with a fresh fallback catalog. Compose mounts `${INIT_DATA_PATH:-./init}` read-only into `/app/init`, so downloaded images are available inside the server container without rebuilding.
+
 ## Useful Commands
 
 Run tests:
@@ -154,3 +168,4 @@ POSTGRES_DATA_PATH=/private/tmp/clicky-store-pgdata docker compose up -d db
 - Keep new frontend code in `frontend/` with React, Vite, TypeScript, and Tailwind CSS.
 - Production runs on the React build only. Set `FRONTEND_DIST_DIR` for Go-served deployments or run `npm run dev` for local UI work.
 - Do not commit `.env`, generated build output, `frontend/dist/`, `frontend/node_modules/`, `data/`, or files under `plan/`.
+- Do not commit local demo photos under `init/img/`; commit only the JSON contract and placeholders.

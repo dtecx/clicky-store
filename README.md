@@ -33,6 +33,7 @@ Implemented features:
 - PostgreSQL persistence for users, products, product galleries, carts, and orders when `DATABASE_URL` is set
 - Local upload storage served under `/uploads`
 - Go production serving for the React build with SPA route fallback
+- Optional validated demo catalog seed from `init/init.json` and local JPG/PNG files under `init/img/`
 
 The API uses PostgreSQL when `DATABASE_URL` is configured. If `DATABASE_URL` is empty, the server falls back to the in-memory store for lightweight local development and tests.
 
@@ -86,6 +87,24 @@ AUTH_SECRET="replace-me" docker compose up --build
 Development mode (`APP_ENV=development`) provides demo defaults for `AUTH_SECRET` and the seeded admin account. Outside development, set a non-demo `AUTH_SECRET`; admin seeding only runs when `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` are all configured.
 
 Uploaded product files are stored outside the React build. Docker Compose mounts `${UPLOAD_DATA_PATH:-./data/uploads}` into `/app/data/uploads`, and the server publishes generated image URLs under `/uploads`. Uploads accept JPEG and PNG only, with default limits of 10 images per product, 4 MiB per image, and 48 MiB per multipart request.
+
+## Demo Catalog Init
+
+Phase 19 uses a curated JSON init file instead of a live scraper. `init/init.json` defines 10 demo mice with Polish descriptions, PLN prices, product specs, and relative image paths such as:
+
+```txt
+img/logitech-mx-master-3s/1.jpg
+```
+
+Add local images under `init/img/{slug}/`. They must be JPG or PNG files, match the JSON paths, and decode as real images. The server validates the full catalog before seeding; if any required field or image is wrong, the original four fallback products remain in use.
+
+Validate the catalog manually after adding images:
+
+```sh
+go run ./cmd/initcatalog -path init/init.json
+```
+
+Local files under `init/img/` are ignored by Git. Compose mounts `${INIT_DATA_PATH:-./init}` into `/app/init`, and the Docker image also copies the `init/` directory for production-style demos.
 
 ## API Overview
 
@@ -200,12 +219,13 @@ Use `"failure"` to mark the pending simulated payment as failed.
 
 - Define an uploaded-image cleanup policy on product/image deletion
 - Expand mouse-specific product specs such as sensor, weight, switch type, polling rate, dimensions, and accessories
-- Seed the catalog with real Polish retailer data via the upcoming scraper
+- Add real demo photos under `init/img/` for the Phase 19 catalog
 
 ## Project Structure
 
 ```txt
 cmd/server/               Go HTTP server composition root
+cmd/initcatalog/          Manual validator for init/init.json and referenced images
 internal/adapters/db/     Current in-memory database adapter
 internal/adapters/db/postgres PostgreSQL adapter and embedded migrations
 internal/adapters/http/v1 REST API v1 handlers and request DTOs
@@ -213,8 +233,10 @@ internal/adapters/uploads Local product image upload storage
 internal/core/domains/    Domain models and shared domain errors
 internal/core/ports/      Storage interfaces
 internal/frontend/        React build serving adapter (FRONTEND_DIST_DIR aware)
+internal/initcatalog/     Validated demo catalog loader and seeder
 internal/service/         Application use cases and auth helpers
 internal/web/             Shared HTTP JSON and middleware helpers
+init/                     Phase 19 demo catalog JSON and ignored image source folder
 frontend/                 React + Vite + TypeScript + Tailwind source app
 frontend/public/assets/products Seed product SVGs included in the Vite build
 compose.yaml              Local API and database services
