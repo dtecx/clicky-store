@@ -71,7 +71,7 @@ The repository currently has:
 - Runtime upload storage config, local filesystem serving, and admin product image upload/reorder/update/delete APIs exist.
 - React admin product editing includes drag-and-drop/select image uploads, previews, primary-image updates, alt text editing, reordering, deletion, and max-count feedback.
 - React storefront uses uploaded gallery images everywhere they apply: product cards, the dedicated product page (interactive `ProductGallery` with keyboard-navigable thumbnails), cart lines, the admin product table, and the home hero, with admin-supplied alt text propagated through cards/cart and the legacy `imageUrl` plus generic SVG retained as ordered fallbacks.
-- Phase 17 customer storefront polish is in: sticky header with scroll shadow, gradient hero, value-prop strip, category card grid, sticky filter bar with live count, hover-lift product cards with image zoom, breadcrumb-led product page with sticky buy rail and trust strip, refined cart/checkout summaries, and order cards with prominent payment-simulation actions. UI primitives now include a `Skeleton` family used for grid loading.
+- Phase 17 polish is complete across customer and admin: sticky header with scroll shadow, gradient hero, value-prop strip, category card grid, sticky filter bar with live count, hover-lift product cards with image zoom, breadcrumb-led product page with sticky buy rail, trust strip, and a related-products strip, refined cart/checkout summaries, order cards with prominent payment-simulation actions. Admin has a shared sidebar layout (`AdminLayout`), dashboard with toned stat cards and a pending-payments callout, refined hover-row tables across products/orders/users, and consistent rounded-2xl card surfaces with stone-tinted shadows. UI primitives include a `Skeleton` family used for grid loading.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
@@ -355,9 +355,7 @@ Address these before adding unrelated features:
 3. Uploaded-file cleanup on product/image deletion still needs a deliberate policy.
 4. Admin product/order/user pages are backend-backed in React; image management and the new layout polish should still receive browser QA against the Go server.
 5. Product specs are too limited for a real mouse shop (sensor model, weight, switch type, polling rate, dimensions, included accessories are all missing fields).
-6. Related-product suggestions on the product detail page are still pending; the new sticky buy rail leaves room for a related-products strip below it.
-7. Admin dashboard polish (sidebar, table density, status hierarchy) is still pending — Phase 17 focused on the customer storefront.
-8. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
+6. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
 
 ---
 
@@ -1112,7 +1110,7 @@ If Go needs an embedded directory, replace legacy static files with copied/gener
 
 Goal: make the UI match a real shop.
 
-Current status: customer storefront polished. Header is sticky with a scroll shadow, refined search, account chip, and cart badge with stock count. Footer rebuilt as a four-column block with shop/account/support links and a fine-print row. Home hero now has a gradient backdrop, featured-product card, prominent CTAs, and a value-prop strip. Category selector is a four-card grid; filter/sort row is sticky and shows live result count. ProductCard has a hover lift, image zoom, and prominent stock + price. ProductPage uses breadcrumbs, gallery + sticky right rail with quantity stepper, trust badges, refined spec table. Cart and checkout use sticky summaries, refined empty/error states, and `Skeleton` shimmer placeholders for grid loading. Orders cards expose pending payment actions in an amber callout. Admin dashboard polish is still pending and tracked separately.
+Current status: completed. Customer storefront polished — sticky header with scroll shadow, refined search, account chip, and cart badge with stock count; four-column footer; gradient hero with featured-product card and value-prop strip; sticky filter/sort bar with live result count; ProductCard with hover lift + image zoom; ProductPage with breadcrumbs, gallery, sticky right rail, trust badges, refined spec table, and a related-products strip beneath; cart/checkout/orders polished with sticky summaries, refined empty/error states, and `Skeleton` shimmer placeholders. Admin polished — shared `AdminLayout` with sidebar nav, dashboard with toned stat cards + pending-payments callout, refined product/orders/users tables with hover rows and consistent badge palette.
 
 Suggested changes:
 

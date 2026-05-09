@@ -137,7 +137,7 @@ export function AdminOrdersPage() {
 
   if (isLoading && !orders) {
     return (
-      <PageShell eyebrow="Admin" title="Orders">
+      <PageShell bare eyebrow="Admin" title="Orders">
         <LoadingState label="Loading orders" />
       </PageShell>
     )
@@ -145,34 +145,49 @@ export function AdminOrdersPage() {
 
   if (error) {
     return (
-      <PageShell eyebrow="Admin" title="Orders">
+      <PageShell bare eyebrow="Admin" title="Orders">
         <ErrorState message={error} title="Orders unavailable" />
       </PageShell>
     )
   }
 
   return (
-    <PageShell eyebrow="Admin" title="Orders">
-      <div className="mb-5 flex flex-col gap-4 rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-300/30 lg:flex-row lg:items-center lg:justify-between">
+    <PageShell
+      bare
+      description="Track every checkout, simulate payments, and triage failures."
+      eyebrow="Admin"
+      title="Orders"
+    >
+      <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm shadow-stone-400/10 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
           {filters.map((entry) => (
             <button
               className={cn(
-                'h-9 rounded-lg border px-3 text-sm font-semibold transition',
+                'inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition-colors',
                 filter === entry.value
-                  ? 'border-slate-950 bg-slate-950 text-white'
+                  ? 'border-slate-950 bg-slate-950 text-white shadow-sm shadow-slate-900/30'
                   : 'border-stone-300 bg-white text-slate-700 hover:bg-stone-50',
               )}
               key={entry.value}
               onClick={() => setFilter(entry.value)}
               type="button"
             >
-              {entry.label} ({counts[entry.value]})
+              {entry.label}
+              <span
+                className={cn(
+                  'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold',
+                  filter === entry.value
+                    ? 'bg-white/15 text-white'
+                    : 'bg-stone-100 text-slate-600',
+                )}
+              >
+                {counts[entry.value]}
+              </span>
             </button>
           ))}
         </div>
         <form className="flex min-w-0 gap-2 sm:w-96" onSubmit={handleSearch}>
-          <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-slate-500">
+          <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-slate-500 shadow-sm shadow-stone-400/10 focus-within:border-emerald-700 focus-within:ring-2 focus-within:ring-emerald-700/15">
             <Search aria-hidden="true" size={18} />
             <span className="sr-only">Search orders</span>
             <input
@@ -190,62 +205,63 @@ export function AdminOrdersPage() {
       </div>
 
       {visibleOrders.length === 0 ? (
-        <Card className="p-5">
-          <EmptyState
-            icon={<ClipboardList aria-hidden="true" size={22} />}
-            title="No orders found"
-          >
-            Orders that match the current filters will show up here.
-          </EmptyState>
-        </Card>
+        <EmptyState
+          icon={<ClipboardList aria-hidden="true" size={24} />}
+          title="No orders found"
+        >
+          Orders that match the current filters will show up here.
+        </EmptyState>
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[920px] text-left text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-slate-500">
+              <thead className="border-b border-stone-200 bg-stone-50/60 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Order</th>
-                  <th className="px-4 py-3">Customer</th>
-                  <th className="px-4 py-3">Items</th>
-                  <th className="px-4 py-3">Payment</th>
-                  <th className="px-4 py-3">Total</th>
-                  <th className="px-4 py-3">Created</th>
+                  <th className="px-5 py-3">Order</th>
+                  <th className="px-5 py-3">Customer</th>
+                  <th className="px-5 py-3">Items</th>
+                  <th className="px-5 py-3">Payment</th>
+                  <th className="px-5 py-3">Total</th>
+                  <th className="px-5 py-3">Created</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
                 {visibleOrders.map((order) => {
                   const details = statusDetails(order)
                   const itemSummary = order.items
-                    .map((item) => `${item.quantity}x ${item.name}`)
+                    .map((item) => `${item.quantity}× ${item.name}`)
                     .join(', ')
 
                   return (
-                    <tr key={order.id}>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-950">{order.id}</p>
-                        <p className="mt-1 text-xs capitalize text-slate-500">
+                    <tr
+                      className="transition-colors hover:bg-stone-50/60"
+                      key={order.id}
+                    >
+                      <td className="px-5 py-3">
+                        <p className="font-bold text-slate-950">{order.id}</p>
+                        <p className="mt-0.5 text-xs capitalize text-slate-500">
                           {order.status.replace('_', ' ')}
                         </p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <p className="max-w-40 truncate text-slate-700">{order.userId}</p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <p className="max-w-sm truncate text-slate-700">{itemSummary}</p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <Badge variant={details.variant}>
-                          <span className="mr-1 inline-flex">{details.icon}</span>
+                          <span className="inline-flex">{details.icon}</span>
                           {details.label}
                         </Badge>
                         <p className="mt-1 text-xs capitalize text-slate-500">
                           {order.paymentMethod}
                         </p>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-950">
+                      <td className="px-5 py-3 font-bold text-slate-950">
                         {formatCents(order.totalCents, order.currency)}
                       </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      <td className="px-5 py-3 text-slate-700">
                         {formatDateTime(order.createdAt)}
                       </td>
                     </tr>

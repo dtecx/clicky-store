@@ -11,9 +11,10 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { getProductBySlug } from '../api/products'
+import { getProductBySlug, listProducts } from '../api/products'
 import { PageShell } from '../components/layout/PageShell'
 import { ProductGallery } from '../components/product/ProductGallery'
+import { RelatedProducts } from '../components/product/RelatedProducts'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -50,6 +51,7 @@ export function ProductPage() {
   const { status: authStatus, isAdmin } = useAuth()
   const { addItem } = useCart()
   const [product, setProduct] = useState<Product | null>(null)
+  const [related, setRelated] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -64,6 +66,7 @@ export function ProductPage() {
     setError(null)
     setNotFound(false)
     setProduct(null)
+    setRelated([])
     setQuantity(1)
     setAddError(null)
     setAddNotice(null)
@@ -100,6 +103,33 @@ export function ProductPage() {
       controller.abort()
     }
   }, [slug])
+
+  // Once we have the current product, ask the API for siblings in its
+  // category. Keep this best-effort: if it fails, just hide the strip.
+  useEffect(() => {
+    if (!product) {
+      return
+    }
+    const controller = new AbortController()
+    listProducts(
+      { category: product.category },
+      { signal: controller.signal },
+    )
+      .then((items) => {
+        const siblings = items.filter((item) => item.id !== product.id).slice(0, 4)
+        setRelated(siblings)
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return
+        }
+        // Best-effort: leave related empty rather than surfacing the error.
+        setRelated([])
+      })
+    return () => {
+      controller.abort()
+    }
+  }, [product])
 
   if (isLoading) {
     return (
@@ -340,6 +370,8 @@ export function ProductPage() {
           </Card>
         </aside>
       </div>
+
+      <RelatedProducts category={product.category} products={related} />
     </PageShell>
   )
 }

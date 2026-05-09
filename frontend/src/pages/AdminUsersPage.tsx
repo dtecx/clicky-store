@@ -11,6 +11,7 @@ import { LoadingState } from '../components/ui/LoadingState'
 import { useAuth } from '../state/useAuth'
 import type { UserRole } from '../types/api'
 import type { User } from '../types/user'
+import { cn } from '../utils/cn'
 import { formatDateTime } from '../utils/dates'
 import { errorMessage } from '../utils/errors'
 
@@ -106,7 +107,7 @@ export function AdminUsersPage() {
 
   if (isLoading && !users) {
     return (
-      <PageShell eyebrow="Admin" title="Users">
+      <PageShell bare eyebrow="Admin" title="Users">
         <LoadingState label="Loading users" />
       </PageShell>
     )
@@ -114,15 +115,20 @@ export function AdminUsersPage() {
 
   if (error) {
     return (
-      <PageShell eyebrow="Admin" title="Users">
+      <PageShell bare eyebrow="Admin" title="Users">
         <ErrorState message={error} title="Users unavailable" />
       </PageShell>
     )
   }
 
   return (
-    <PageShell eyebrow="Admin" title="Users">
-      <div className="mb-5 flex flex-col gap-4 rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-300/30 lg:flex-row lg:items-center lg:justify-between">
+    <PageShell
+      bare
+      description="Browse customers and admins, change roles when needed."
+      eyebrow="Admin"
+      title="Users"
+    >
+      <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm shadow-stone-400/10 lg:flex-row lg:items-center lg:justify-between">
         <form className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row" onSubmit={handleSearch}>
           <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-slate-500">
             <Search aria-hidden="true" size={18} />
@@ -180,34 +186,43 @@ export function AdminUsersPage() {
       ) : null}
 
       {visibleUsers.length === 0 ? (
-        <Card className="p-5">
-          <EmptyState icon={<UsersRound aria-hidden="true" size={22} />} title="No users found">
-            Users that match the current filters will show up here.
-          </EmptyState>
-        </Card>
+        <EmptyState icon={<UsersRound aria-hidden="true" size={24} />} title="No users found">
+          Users that match the current filters will show up here.
+        </EmptyState>
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-slate-500">
+              <thead className="border-b border-stone-200 bg-stone-50/60 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Created</th>
+                  <th className="px-5 py-3">User</th>
+                  <th className="px-5 py-3">Role</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Created</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
                 {visibleUsers.map((user) => {
                   const isCurrentUser = currentUser?.id === user.id
                   const isPending = pendingUserId === user.id
+                  const isAdmin = user.role === 'admin'
 
                   return (
-                    <tr key={user.id}>
-                      <td className="px-4 py-3">
+                    <tr
+                      className="transition-colors hover:bg-stone-50/60"
+                      key={user.id}
+                    >
+                      <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800">
-                            {user.role === 'admin' ? (
+                          <div
+                            className={cn(
+                              'flex h-10 w-10 items-center justify-center rounded-xl ring-1',
+                              isAdmin
+                                ? 'bg-sky-50 text-sky-700 ring-sky-100'
+                                : 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+                            )}
+                          >
+                            {isAdmin ? (
                               <ShieldCheck aria-hidden="true" size={18} />
                             ) : (
                               <UserCog aria-hidden="true" size={18} />
@@ -215,16 +230,16 @@ export function AdminUsersPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="truncate font-semibold text-slate-950">
+                              <p className="truncate font-bold text-slate-950">
                                 {user.name}
                               </p>
                               {isCurrentUser ? <Badge variant="accent">You</Badge> : null}
                             </div>
-                            <p className="mt-1 truncate text-xs text-slate-500">{user.email}</p>
+                            <p className="mt-0.5 truncate text-xs text-slate-500">{user.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <select
                           className={fieldClass}
                           disabled={isPending || isCurrentUser}
@@ -242,10 +257,12 @@ export function AdminUsersPage() {
                           <option value="admin">Admin</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="success">{isPending ? 'Updating' : 'Active'}</Badge>
+                      <td className="px-5 py-3">
+                        <Badge variant={isPending ? 'warning' : 'success'}>
+                          {isPending ? 'Updating…' : 'Active'}
+                        </Badge>
                       </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      <td className="px-5 py-3 text-slate-700">
                         {formatDateTime(user.createdAt)}
                       </td>
                     </tr>

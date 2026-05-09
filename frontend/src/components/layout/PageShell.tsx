@@ -11,11 +11,17 @@ type PageShellProps = {
    * page that render their own hero block.
    */
   hideHeader?: boolean
+  /**
+   * Skip the outer max-width container. Useful when the page is rendered
+   * inside a layout (e.g. admin sidebar shell) that already provides one.
+   */
+  bare?: boolean
   title: string
 }
 
 export function PageShell({
   actions,
+  bare = false,
   breadcrumbs,
   children,
   description,
@@ -23,8 +29,8 @@ export function PageShell({
   hideHeader = false,
   title,
 }: PageShellProps) {
-  return (
-    <div className="mx-auto min-h-[calc(100vh-9rem)] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+  const inner = (
+    <>
       {breadcrumbs ? <div className="mb-4">{breadcrumbs}</div> : null}
       {!hideHeader ? (
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -49,6 +55,16 @@ export function PageShell({
         </div>
       ) : null}
       {children}
+    </>
+  )
+
+  if (bare) {
+    return <>{inner}</>
+  }
+
+  return (
+    <div className="mx-auto min-h-[calc(100vh-9rem)] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {inner}
     </div>
   )
 }

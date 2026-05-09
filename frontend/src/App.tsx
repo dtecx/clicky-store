@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import { AdminLayout } from './components/admin/AdminLayout'
 import { AdminRoute } from './components/layout/AdminRoute'
 import { Footer } from './components/layout/Footer'
 import { Header } from './components/layout/Header'
@@ -54,34 +55,15 @@ function App() {
             path="/admin"
             element={
               <AdminRoute>
-                <AdminDashboardPage />
+                <AdminLayout />
               </AdminRoute>
             }
-          />
-          <Route
-            path="/admin/products"
-            element={
-              <AdminRoute>
-                <AdminProductsPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/orders"
-            element={
-              <AdminRoute>
-                <AdminOrdersPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <AdminRoute>
-                <AdminUsersPage />
-              </AdminRoute>
-            }
-          />
+          >
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="products" element={<AdminProductsPage />} />
+            <Route path="orders" element={<AdminOrdersPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+          </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

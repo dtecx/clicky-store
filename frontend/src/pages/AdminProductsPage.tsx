@@ -422,10 +422,12 @@ export function AdminProductsPage() {
           </Button>
         </>
       }
+      bare
+      description="Create, edit, and manage every mouse in the catalog."
       eyebrow="Admin"
       title="Products"
     >
-      <div className="mb-5 flex flex-col gap-3 rounded-lg border border-stone-200 bg-white p-4 shadow-sm shadow-stone-300/30 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm shadow-stone-400/10 lg:flex-row lg:items-end lg:justify-between">
         <form className="flex flex-1 flex-col gap-3 sm:flex-row" onSubmit={(event) => {
           event.preventDefault()
           setQuery(searchInput.trim())
@@ -658,14 +660,14 @@ export function AdminProductsPage() {
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase text-slate-500">
+              <thead className="border-b border-stone-200 bg-stone-50/60 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Product</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Price</th>
-                  <th className="px-4 py-3">DPI</th>
-                  <th className="px-4 py-3">Stock</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-5 py-3">Product</th>
+                  <th className="px-5 py-3">Category</th>
+                  <th className="px-5 py-3">Price</th>
+                  <th className="px-5 py-3">DPI</th>
+                  <th className="px-5 py-3">Stock</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
@@ -674,50 +676,55 @@ export function AdminProductsPage() {
                   const imageUrl = primaryProductImageUrl(product)
 
                   return (
-                    <tr key={product.id}>
-                      <td className="px-4 py-3">
+                    <tr
+                      className="transition-colors hover:bg-stone-50/60"
+                      key={product.id}
+                    >
+                      <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <img
                             alt=""
-                            className="h-12 w-12 rounded-lg bg-stone-50 object-contain p-1"
+                            className="h-12 w-12 rounded-xl bg-gradient-to-br from-stone-50 via-white to-stone-100 object-contain p-1.5 shadow-sm shadow-stone-400/10"
                             onError={(event) => {
                               event.currentTarget.src = fallbackProductImageUrl
                             }}
                             src={imageUrl}
                           />
                           <div className="min-w-0">
-                            <p className="truncate font-semibold text-slate-950">
+                            <p className="truncate font-bold text-slate-950">
                               {product.name}
                             </p>
-                            <p className="mt-1 truncate text-xs text-slate-500">
+                            <p className="mt-0.5 truncate text-xs text-slate-500">
                               {product.slug}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 capitalize text-slate-700">
+                      <td className="px-5 py-3 capitalize text-slate-700">
                         {product.category}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-950">
+                      <td className="px-5 py-3 font-bold text-slate-950">
                         {formatCents(product.priceCents, product.currency)}
                       </td>
-                      <td className="px-4 py-3 text-slate-700">
+                      <td className="px-5 py-3 text-slate-700">
                         {product.dpi.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3">
                         <Badge variant={stock.variant}>{stock.label}</Badge>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-5 py-3 text-right">
                         <div className="inline-flex gap-2">
                           <LinkButton
+                            aria-label={`View ${product.name}`}
                             leftIcon={<ExternalLink aria-hidden="true" size={16} />}
                             size="sm"
                             to={`/products/${product.slug}`}
-                            variant="secondary"
+                            variant="ghost"
                           >
                             View
                           </LinkButton>
                           <Button
+                            aria-label={`Edit ${product.name}`}
                             leftIcon={<Edit3 aria-hidden="true" size={16} />}
                             onClick={() => startEdit(product)}
                             size="sm"
@@ -726,13 +733,14 @@ export function AdminProductsPage() {
                             Edit
                           </Button>
                           <Button
+                            aria-label={`Delete ${product.name}`}
                             disabled={deletingProductId === product.id}
                             leftIcon={<Trash2 aria-hidden="true" size={16} />}
                             onClick={() => void handleDelete(product)}
                             size="sm"
                             variant="danger"
                           >
-                            {deletingProductId === product.id ? 'Deleting...' : 'Delete'}
+                            {deletingProductId === product.id ? 'Deleting…' : 'Delete'}
                           </Button>
                         </div>
                       </td>
