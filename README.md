@@ -1,6 +1,6 @@
 # Clicky-Store
 
-Clicky-Store is a small e-commerce project for gaming and office mice. The project brief in `plan/plan.pdf` asks for a client-server web store with a REST API, user accounts, product browsing, cart management, order placement, online payment handling or simulation, admin management, responsive UI, security basics, testing, and documentation.
+Clicky-Store is a small e-commerce project for gaming and office mice. It is built as a client-server web store with a REST API, user accounts, product browsing, cart management, order placement, simulated payment handling, admin management, responsive UI, security basics, testing, and documentation.
 
 This repository is starting with the backend and container foundation using:
 
@@ -11,9 +11,9 @@ This repository is starting with the backend and container foundation using:
 
 ## Current Status
 
-Implemented backend features:
+Implemented features:
 
-- Public product listing and product details
+- Public product listing, search/filtering, and product details by ID or slug
 - Customer registration and login
 - HMAC-signed bearer tokens
 - Basic login rate limiting
@@ -22,13 +22,16 @@ Implemented backend features:
 - Authenticated order creation with pending simulated payment status
 - Authenticated payment simulation for pending orders
 - Admin product management
+- Admin JPEG/PNG product image upload, metadata editing, primary-image selection, reordering, and deletion
 - Admin order listing
 - Admin user listing, inspection, and role updates
-- React storefront for browsing, product details, auth, cart, checkout, orders, and admin screens
+- React storefront for browsing, product galleries, auth, cart, checkout, orders, and admin screens
+- Polished responsive storefront and admin layout using Tailwind CSS
 - Health check endpoint
 - Multi-stage Dockerfile and `compose.yaml`
 - GitHub Actions CI for format checks, tests, vet, and Docker build
-- PostgreSQL persistence for users, products, carts, and orders when `DATABASE_URL` is set
+- PostgreSQL persistence for users, products, product galleries, carts, and orders when `DATABASE_URL` is set
+- Local upload storage served under `/uploads`
 - Go production serving for the React build with SPA route fallback
 
 The API uses PostgreSQL when `DATABASE_URL` is configured. If `DATABASE_URL` is empty, the server falls back to the in-memory store for lightweight local development and tests.
@@ -82,6 +85,8 @@ AUTH_SECRET="replace-me" docker compose up --build
 
 Development mode (`APP_ENV=development`) provides demo defaults for `AUTH_SECRET` and the seeded admin account. Outside development, set a non-demo `AUTH_SECRET`; admin seeding only runs when `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` are all configured.
 
+Uploaded product files are stored outside the React build. Docker Compose mounts `${UPLOAD_DATA_PATH:-./data/uploads}` into `/app/data/uploads`, and the server publishes generated image URLs under `/uploads`. Uploads accept JPEG and PNG only, with default limits of 10 images per product, 4 MiB per image, and 48 MiB per multipart request.
+
 ## API Overview
 
 More detailed API and setup documentation is available in:
@@ -99,6 +104,7 @@ Public endpoints:
 GET  /healthz
 GET  /api/v1/products
 GET  /api/v1/products/{productId}
+GET  /api/v1/products/slug/{slug}
 POST /api/v1/auth/register
 POST /api/v1/auth/login
 ```
@@ -123,6 +129,10 @@ GET    /api/v1/admin/products
 POST   /api/v1/admin/products
 PATCH  /api/v1/admin/products/{productId}
 DELETE /api/v1/admin/products/{productId}
+POST   /api/v1/admin/products/{productId}/images
+PATCH  /api/v1/admin/products/{productId}/images/order
+PATCH  /api/v1/admin/products/{productId}/images/{imageId}
+DELETE /api/v1/admin/products/{productId}/images/{imageId}
 GET    /api/v1/admin/orders
 GET    /api/v1/admin/users
 GET    /api/v1/admin/users/{userId}
@@ -149,6 +159,12 @@ List products:
 
 ```sh
 curl http://localhost:8080/api/v1/products
+```
+
+Get a product by slug:
+
+```sh
+curl http://localhost:8080/api/v1/products/slug/viper-x1-gaming-mouse
 ```
 
 Add to cart:
@@ -182,8 +198,8 @@ Use `"failure"` to mark the pending simulated payment as failed.
 
 ## Planned Next Steps
 
-- Polish the storefront layout (hero, category sidebar, sorting controls, responsive review)
 - Define an uploaded-image cleanup policy on product/image deletion
+- Expand mouse-specific product specs such as sensor, weight, switch type, polling rate, dimensions, and accessories
 - Seed the catalog with real Polish retailer data via the upcoming scraper
 
 ## Project Structure
@@ -193,13 +209,14 @@ cmd/server/               Go HTTP server composition root
 internal/adapters/db/     Current in-memory database adapter
 internal/adapters/db/postgres PostgreSQL adapter and embedded migrations
 internal/adapters/http/v1 REST API v1 handlers and request DTOs
+internal/adapters/uploads Local product image upload storage
 internal/core/domains/    Domain models and shared domain errors
 internal/core/ports/      Storage interfaces
 internal/frontend/        React build serving adapter (FRONTEND_DIST_DIR aware)
 internal/service/         Application use cases and auth helpers
 internal/web/             Shared HTTP JSON and middleware helpers
 frontend/                 React + Vite + TypeScript + Tailwind source app
+frontend/public/assets/products Seed product SVGs included in the Vite build
 compose.yaml              Local API and database services
 Dockerfile                Multi-stage React and Go production image
-plan/                     Local project brief files, ignored by git
 ```

@@ -56,6 +56,8 @@ The server creates the upload directory on startup and serves files under `UPLOA
 
 Current server-side image validation accepts JPEG and PNG only, checks file extension, MIME/content sniffing, decoded image headers, and maximum size. Keep request-size limits aligned at the reverse proxy with `MAX_PRODUCT_UPLOAD_BYTES`.
 
+Back up upload storage together with PostgreSQL, because product gallery metadata and files are stored separately. Deleting a product image currently removes database metadata; a deliberate disk cleanup/orphan-retention policy is still pending, so production-like deployments should monitor upload volume growth.
+
 ## Secrets
 
 Do not reuse development values:

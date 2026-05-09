@@ -37,6 +37,22 @@ npm run dev
 
 The Vite dev server proxies `/api`, `/assets`, `/uploads`, and `/healthz` to `http://localhost:8080`.
 
+The main React routes are:
+
+```txt
+/
+/products/:slug
+/cart
+/checkout
+/orders
+/admin
+/admin/products
+/admin/orders
+/admin/users
+```
+
+Customer cart, checkout, and orders routes require login. Admin routes require an admin account server-side; frontend route guards are only a user-experience layer.
+
 To test the production-style Go static serving path locally without Docker:
 
 ```sh
@@ -72,6 +88,8 @@ MAX_PRODUCT_UPLOAD_BYTES=50331648
 ```
 
 The storage layer accepts only JPEG and PNG files, validates extension, sniffed MIME type, and decoded image headers, and generates server-side filenames under `/uploads/products/...`.
+
+When testing image uploads, verify both drag-and-drop and the file picker in the admin product editor. Uploaded images should appear on product cards, product detail galleries, cart lines, and the admin product table. Deleting an image currently removes gallery metadata; uploaded-file cleanup on disk remains a planned follow-up.
 
 ## Useful Commands
 

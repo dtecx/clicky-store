@@ -72,6 +72,7 @@ The repository currently has:
 - React admin product editing includes drag-and-drop/select image uploads, previews, primary-image updates, alt text editing, reordering, deletion, and max-count feedback.
 - React storefront uses uploaded gallery images everywhere they apply: product cards, the dedicated product page (interactive `ProductGallery` with keyboard-navigable thumbnails), cart lines, the admin product table, and the home hero, with admin-supplied alt text propagated through cards/cart and the legacy `imageUrl` plus generic SVG retained as ordered fallbacks.
 - Phase 17 polish is complete across customer and admin: sticky header with scroll shadow, gradient hero, value-prop strip, category card grid, sticky filter bar with live count, hover-lift product cards with image zoom, breadcrumb-led product page with sticky buy rail, trust strip, and a related-products strip, refined cart/checkout summaries, order cards with prominent payment-simulation actions. Admin has a shared sidebar layout (`AdminLayout`), dashboard with toned stat cards and a pending-payments callout, refined hover-row tables across products/orders/users, and consistent rounded-2xl card surfaces with stone-tinted shadows. UI primitives include a `Skeleton` family used for grid loading.
+- Phase 18 documentation and final checks are complete: README, development/deployment docs, API examples, and OpenAPI now describe the React storefront, slug product pages, gallery/image upload APIs, upload env vars/storage, validation rules, and the remaining uploaded-file cleanup gap. Latest local checks passed: `gofmt -l .`, `go test ./...`, `go vet ./...`, `docker compose config`, `npm run lint`, `npm run build`, and `docker build -t clicky-store:test .`.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
@@ -90,7 +91,7 @@ The production Docker image serves the React app through the Go server. The lega
 - Run `go test ./...` before finalizing backend changes.
 - Run `go vet ./...` before finalizing backend changes when Go tooling is available.
 - Run frontend build/type/lint checks once the React frontend exists.
-- Do not commit `.env`, generated build output, secrets, `data/`, uploaded product images, database files, or files under `plan/`.
+- Do not commit `.env`, generated build output, secrets, `data/`, uploaded product images, or database files.
 - Do not commit `frontend/dist/` unless the repository intentionally changes to committed static assets. Prefer Docker/CI builds.
 - Keep handlers independent from PostgreSQL details.
 - Keep service code dependent on interfaces from `internal/core/ports`.
@@ -1139,6 +1140,8 @@ git commit -m "refactor: polish react storefront experience"
 ### Phase 18: Documentation and Final Checks
 
 Goal: update docs and verify everything.
+
+Current status: completed. README, `docs/development.md`, `docs/deployment.md`, `docs/api-examples.md`, and `docs/openapi.yaml` document the completed React storefront, direct product slug routes, admin gallery upload/management APIs, upload storage environment variables, image validation behavior, Docker/Compose workflow, and the current uploaded-file cleanup limitation. Verification passed locally with `gofmt -l .`, `go test ./...`, `go vet ./...`, `docker compose config`, `npm run lint`, `npm run build`, and `docker build -t clicky-store:test .`.
 
 Suggested changes:
 

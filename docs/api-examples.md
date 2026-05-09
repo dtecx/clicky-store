@@ -88,6 +88,8 @@ curl -X POST http://localhost:8080/api/v1/admin/products/prod-gaming-viper/image
   -F "images=@/path/to/mouse-side.jpg"
 ```
 
+Uploads must use the `images` multipart field. The backend accepts JPEG and PNG only, rejects SVG/WebP/GIF/PDF/unknown files, validates decoded image headers, and enforces the configured per-image, request, and max-image limits.
+
 Mark an image as primary:
 
 ```sh
@@ -105,6 +107,15 @@ curl -X PATCH http://localhost:8080/api/v1/admin/products/prod-gaming-viper/imag
   -H "Authorization: Bearer <admin-token>" \
   -d '{"imageIds":["<first-image-id>","<second-image-id>"]}'
 ```
+
+Delete image metadata:
+
+```sh
+curl -X DELETE http://localhost:8080/api/v1/admin/products/prod-gaming-viper/images/<image-id> \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+Current deletion behavior removes image metadata from the product gallery. Uploaded-file cleanup policy is still a documented project gap, so deployments should keep upload storage on a managed volume and plan periodic orphan cleanup until that policy is implemented.
 
 ## Cart
 
