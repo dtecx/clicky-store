@@ -56,3 +56,9 @@ export type CreateProductRequest = {
  * missing fields as no-ops, so each field is optional.
  */
 export type UpdateProductRequest = Partial<CreateProductRequest>
+
+export type ProductImageUpdateRequest = {
+  altText?: string
+  sortOrder?: number
+  isPrimary?: boolean
+}

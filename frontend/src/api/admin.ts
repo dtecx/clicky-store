@@ -4,10 +4,12 @@ import type {
   CreateProductRequest,
   Product,
   ProductFilter,
+  ProductImage,
+  ProductImageUpdateRequest,
   UpdateProductRequest,
 } from '../types/product'
 import type { User, UserFilter } from '../types/user'
-import { apiFetch } from './client'
+import { apiFetch, apiFetchForm } from './client'
 
 export async function listAdminProducts(filter: ProductFilter = {}): Promise<Product[]> {
   const data = await apiFetch<{ products: Product[] }>('/admin/products', {
@@ -42,6 +44,62 @@ export async function deleteProduct(productId: string): Promise<void> {
   await apiFetch<void>(`/admin/products/${encodeURIComponent(productId)}`, {
     method: 'DELETE',
   })
+}
+
+export async function uploadProductImages(
+  productId: string,
+  files: File[],
+): Promise<ProductImage[]> {
+  const formData = new FormData()
+  files.forEach((file) => {
+    formData.append('images', file)
+  })
+
+  const data = await apiFetchForm<{ images: ProductImage[] }>(
+    `/admin/products/${encodeURIComponent(productId)}/images`,
+    formData,
+    { method: 'POST' },
+  )
+  return data.images ?? []
+}
+
+export async function reorderProductImages(
+  productId: string,
+  imageIds: string[],
+): Promise<ProductImage[]> {
+  const data = await apiFetch<{ images: ProductImage[] }>(
+    `/admin/products/${encodeURIComponent(productId)}/images/order`,
+    {
+      method: 'PATCH',
+      body: { imageIds },
+    },
+  )
+  return data.images ?? []
+}
+
+export async function updateProductImage(
+  productId: string,
+  imageId: string,
+  payload: ProductImageUpdateRequest,
+): Promise<ProductImage> {
+  const data = await apiFetch<{ image: ProductImage }>(
+    `/admin/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(imageId)}`,
+    {
+      method: 'PATCH',
+      body: payload,
+    },
+  )
+  return data.image
+}
+
+export async function deleteProductImage(
+  productId: string,
+  imageId: string,
+): Promise<void> {
+  await apiFetch<void>(
+    `/admin/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(imageId)}`,
+    { method: 'DELETE' },
+  )
 }
 
 export async function listAdminOrders(): Promise<Order[]> {

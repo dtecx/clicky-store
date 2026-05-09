@@ -15,6 +15,7 @@ import {
   listAdminProducts,
   updateProduct,
 } from '../api/admin'
+import { ProductImageManager } from '../components/admin/ProductImageManager'
 import { PageShell } from '../components/layout/PageShell'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -23,7 +24,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LinkButton } from '../components/ui/LinkButton'
 import { LoadingState } from '../components/ui/LoadingState'
-import type { CreateProductRequest, Product } from '../types/product'
+import type { CreateProductRequest, Product, ProductImage } from '../types/product'
 import { cn } from '../utils/cn'
 import { errorMessage } from '../utils/errors'
 import { formatCents } from '../utils/money'
@@ -226,6 +227,12 @@ export function AdminProductsPage() {
   }, [category, query, reloadToken])
 
   const visibleProducts = useMemo(() => products ?? [], [products])
+  const editorProduct = useMemo(() => {
+    if (editor?.mode !== 'edit') {
+      return null
+    }
+    return products?.find((product) => product.id === editor.productId) ?? null
+  }, [editor, products])
 
   function startCreate() {
     setEditor({ form: emptyProductForm(), mode: 'create', slugTouched: false })
@@ -365,6 +372,38 @@ export function AdminProductsPage() {
     } finally {
       setDeletingProductId(null)
     }
+  }
+
+  function handleImagesChange(productId: string, images: ProductImage[]) {
+    const primaryImage = images.find((image) => image.isPrimary) ?? images[0]
+    const imageUrl = primaryImage?.url ?? ''
+
+    setProducts((current) =>
+      current
+        ? current.map((product) =>
+            product.id === productId
+              ? {
+                  ...product,
+                  imageUrl,
+                  images,
+                }
+              : product,
+          )
+        : current,
+    )
+    setEditor((current) => {
+      if (!current || current.mode !== 'edit' || current.productId !== productId) {
+        return current
+      }
+
+      return {
+        ...current,
+        form: {
+          ...current.form,
+          imageUrl,
+        },
+      }
+    })
   }
 
   return (
@@ -581,6 +620,13 @@ export function AdminProductsPage() {
                 Ergonomic
               </label>
             </div>
+
+            {editor.mode === 'edit' && editorProduct ? (
+              <ProductImageManager
+                onImagesChange={(images) => handleImagesChange(editor.productId, images)}
+                product={editorProduct}
+              />
+            ) : null}
 
             <div className="flex flex-wrap gap-3 border-t border-stone-200 pt-5">
               <Button

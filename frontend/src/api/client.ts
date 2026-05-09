@@ -38,7 +38,7 @@ export type RequestOptions = {
   headers?: Record<string, string>
 }
 
-function buildUrl(path: string, query?: RequestOptions['query']): string {
+export function buildApiUrl(path: string, query?: RequestOptions['query']): string {
   const trimmedPath = path.startsWith('/') ? path : `/${path}`
   const url = `${baseUrl}${trimmedPath}`
   if (!query) {
@@ -53,6 +53,14 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
   }
   const search = params.toString()
   return search ? `${url}?${search}` : url
+}
+
+function authHeaders(anonymous?: boolean): Record<string, string> {
+  if (!anonymous && authToken) {
+    return { Authorization: `Bearer ${authToken}` }
+  }
+
+  return {}
 }
 
 /**
@@ -74,16 +82,73 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     payload = JSON.stringify(body)
   }
 
-  if (!anonymous && authToken) {
-    finalHeaders['Authorization'] = `Bearer ${authToken}`
+  Object.assign(finalHeaders, authHeaders(anonymous))
+
+  let response: Response
+  try {
+    response = await fetch(buildApiUrl(path, query), {
+      method,
+      headers: finalHeaders,
+      body: payload,
+      signal,
+    })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw err
+    }
+    throw new ApiError('Network error, please check your connection.', 0)
+  }
+
+  if (response.status === 204) {
+    return undefined as T
+  }
+
+  const text = await response.text()
+  let parsed: unknown = undefined
+  if (text.length > 0) {
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      // Fall through; non-JSON responses become generic errors.
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      parsed && typeof parsed === 'object' && 'error' in parsed
+        ? String((parsed as ApiErrorBody).error)
+        : `Request failed with status ${response.status}`
+    throw new ApiError(message, response.status)
+  }
+
+  return parsed as T
+}
+
+export async function apiFetchForm<T>(
+  path: string,
+  formData: FormData,
+  options: Pick<RequestOptions, 'method' | 'query' | 'signal' | 'anonymous' | 'headers'> = {},
+): Promise<T> {
+  const {
+    method = 'POST',
+    query,
+    signal,
+    anonymous,
+    headers = {},
+  } = options
+
+  const finalHeaders: Record<string, string> = {
+    Accept: 'application/json',
+    ...headers,
+    ...authHeaders(anonymous),
   }
 
   let response: Response
   try {
-    response = await fetch(buildUrl(path, query), {
+    response = await fetch(buildApiUrl(path, query), {
       method,
       headers: finalHeaders,
-      body: payload,
+      body: formData,
       signal,
     })
   } catch (err) {
