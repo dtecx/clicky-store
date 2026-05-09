@@ -1,7 +1,10 @@
+// Package frontend serves the production React build for the storefront and
+// admin UI. The Go server expects a Vite build output directory pointed at by
+// FRONTEND_DIST_DIR; in development the React app is served by `npm run dev`
+// and proxied to the Go API directly.
 package frontend
 
 import (
-	"embed"
 	"io/fs"
 	"net/http"
 	"os"
@@ -9,31 +12,28 @@ import (
 	"strings"
 )
 
-//go:embed static
-var staticFiles embed.FS
-
 const distDirEnv = "FRONTEND_DIST_DIR"
 
-// Handler returns an HTTP handler that serves the configured frontend with SPA
+// Handler returns an HTTP handler that serves the React frontend with SPA
 // fallback semantics. When FRONTEND_DIST_DIR points at a Vite build directory,
-// those files are served first. Otherwise the embedded legacy frontend is used.
+// those files are served; unknown paths under the React-owned prefixes (such
+// as `/products/{slug}` or `/admin`) fall back to `index.html` so the client
+// router can take over.
 //
-// Files that exist on disk are served as-is; unknown
-// paths under `/products/`, `/cart`, `/checkout`, `/orders`, `/login`,
-// `/register`, and `/admin` fall back to `index.html` so React Router can
-// handle the route on the client. API/health/upload paths are mounted on
-// other prefixes by the caller, so they never reach this handler.
+// API, health, and upload paths are mounted on other prefixes by the caller,
+// so they never reach this handler.
+//
+// When FRONTEND_DIST_DIR is unset or empty, the handler returns a small text
+// placeholder pointing developers at the frontend dev server. This keeps the
+// Go binary runnable for backend smoke tests without tying it to an embedded
+// SPA copy.
 func Handler() http.Handler {
-	legacyFiles, err := fs.Sub(staticFiles, "static")
-	if err != nil {
-		panic(err)
+	distFiles, ok := distFSFromEnv()
+	if !ok {
+		return http.HandlerFunc(serveMissingDist)
 	}
 
-	if distFiles, ok := distFSFromEnv(); ok {
-		return newHandler(distFiles, legacyFiles, isLegacyProductAsset)
-	}
-
-	return newHandler(legacyFiles, nil, nil)
+	return newDistHandler(distFiles)
 }
 
 func distFSFromEnv() (fs.FS, bool) {
@@ -50,12 +50,8 @@ func distFSFromEnv() (fs.FS, bool) {
 	return files, true
 }
 
-func newHandler(primaryFiles fs.FS, fallbackFiles fs.FS, allowFallback func(string) bool) http.Handler {
-	primaryServer := http.FileServer(http.FS(primaryFiles))
-	var fallbackServer http.Handler
-	if fallbackFiles != nil {
-		fallbackServer = http.FileServer(http.FS(fallbackFiles))
-	}
+func newDistHandler(distFiles fs.FS) http.Handler {
+	fileServer := http.FileServer(http.FS(distFiles))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		urlPath := r.URL.Path
@@ -63,44 +59,35 @@ func newHandler(primaryFiles fs.FS, fallbackFiles fs.FS, allowFallback func(stri
 		// `http.FileServer` already serves index.html for `/`; no fallback
 		// needed there.
 		if urlPath == "/" {
-			primaryServer.ServeHTTP(w, r)
+			fileServer.ServeHTTP(w, r)
 			return
 		}
 
 		clean := strings.TrimPrefix(path.Clean(urlPath), "/")
 		if clean == "" {
-			primaryServer.ServeHTTP(w, r)
+			fileServer.ServeHTTP(w, r)
 			return
 		}
 
-		if fileExists(primaryFiles, clean) {
-			primaryServer.ServeHTTP(w, r)
-			return
-		}
-
-		if fallbackServer != nil && allowFallback != nil && allowFallback(clean) && fileExists(fallbackFiles, clean) {
-			fallbackServer.ServeHTTP(w, r)
+		if fileExists(distFiles, clean) {
+			fileServer.ServeHTTP(w, r)
 			return
 		}
 
 		if isFrontendRoute(urlPath) {
-			serveIndex(w, r, primaryFiles)
+			serveIndex(w, r, distFiles)
 			return
 		}
 
 		// Unknown path with no SPA prefix: defer to the file server, which
 		// will produce a 404 in a way consistent with prior behavior.
-		primaryServer.ServeHTTP(w, r)
+		fileServer.ServeHTTP(w, r)
 	})
 }
 
 func fileExists(files fs.FS, name string) bool {
 	_, err := fs.Stat(files, name)
 	return err == nil
-}
-
-func isLegacyProductAsset(name string) bool {
-	return strings.HasPrefix(name, "assets/products/")
 }
 
 // frontendPrefixes lists URL prefixes owned by the React app. Direct reloads
@@ -145,4 +132,22 @@ func serveIndex(w http.ResponseWriter, _ *http.Request, files fs.FS) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
+}
+
+const missingDistMessage = `Clicky-Store frontend is not configured.
+
+Set FRONTEND_DIST_DIR to a Vite build directory (e.g. /app/frontend/dist)
+or run the React dev server from ./frontend with ` + "`npm run dev`" + ` and
+let it proxy API/uploads/asset traffic to this server.
+`
+
+func serveMissingDist(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" && !isFrontendRoute(r.URL.Path) {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(missingDistMessage))
 }

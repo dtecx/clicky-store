@@ -182,8 +182,9 @@ Use `"failure"` to mark the pending simulated payment as failed.
 
 ## Planned Next Steps
 
-- Display uploaded galleries across product cards, details, cart lines, and admin tables
-- Remove the legacy static frontend after the React app covers every required flow and image path
+- Polish the storefront layout (hero, category sidebar, sorting controls, responsive review)
+- Define an uploaded-image cleanup policy on product/image deletion
+- Seed the catalog with real Polish retailer data via the upcoming scraper
 
 ## Project Structure
 
@@ -194,7 +195,7 @@ internal/adapters/db/postgres PostgreSQL adapter and embedded migrations
 internal/adapters/http/v1 REST API v1 handlers and request DTOs
 internal/core/domains/    Domain models and shared domain errors
 internal/core/ports/      Storage interfaces
-internal/frontend/        Static frontend serving adapter and temporary legacy assets
+internal/frontend/        React build serving adapter (FRONTEND_DIST_DIR aware)
 internal/service/         Application use cases and auth helpers
 internal/web/             Shared HTTP JSON and middleware helpers
 frontend/                 React + Vite + TypeScript + Tailwind source app

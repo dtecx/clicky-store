@@ -46,7 +46,7 @@ The production Docker image builds the Vite React app in a Node stage, builds th
 
 `FRONTEND_DIST_DIR` tells the Go server where to find that build. In Docker/Compose it defaults to `/app/frontend/dist`. When the variable points at a valid Vite build directory, Go serves the React app and falls back to `index.html` for direct reloads of frontend routes such as `/products/:slug`, `/cart`, `/orders`, and `/admin/products`.
 
-The embedded legacy static frontend remains only as a temporary fallback and as the source for current demo product SVGs until uploaded product image support replaces those assets.
+The legacy embedded HTML/CSS/JS frontend has been removed. Seed product SVGs now live in `frontend/public/assets/products/` and are shipped by the Vite build, so they continue to resolve at `/assets/products/<file>.svg` once `FRONTEND_DIST_DIR` is configured. If the variable is unset the Go server returns a small text placeholder pointing operators at the build step instead of a stale legacy SPA.
 
 ## Uploaded Product Files
 

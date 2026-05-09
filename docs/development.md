@@ -46,7 +46,7 @@ cd ..
 FRONTEND_DIST_DIR=frontend/dist go run ./cmd/server
 ```
 
-When `FRONTEND_DIST_DIR` is set, Go serves the Vite build and falls back to React `index.html` for frontend routes such as `/products/viper-x1-gaming-mouse` or `/admin/products`. If it is not set, the embedded legacy static frontend is still available as a temporary fallback during the migration.
+When `FRONTEND_DIST_DIR` is set, Go serves the Vite build and falls back to React `index.html` for frontend routes such as `/products/viper-x1-gaming-mouse` or `/admin/products`. If it is not set, the Go server returns a small text placeholder pointing developers at `npm run dev` or a built `frontend/dist`, since the legacy embedded HTML/CSS/JS frontend has been removed. Seed product SVGs live in `frontend/public/assets/products/` and ship with the Vite build.
 
 The default development admin account is:
 
@@ -134,5 +134,5 @@ POSTGRES_DATA_PATH=/private/tmp/clicky-store-pgdata docker compose up -d db
 - Keep handlers independent from database details.
 - Keep service code depending on `internal/core/ports`.
 - Keep new frontend code in `frontend/` with React, Vite, TypeScript, and Tailwind CSS.
-- Keep the legacy embedded frontend until React plus uploaded image support fully replace it.
+- Production runs on the React build only. Set `FRONTEND_DIST_DIR` for Go-served deployments or run `npm run dev` for local UI work.
 - Do not commit `.env`, generated build output, `frontend/dist/`, `frontend/node_modules/`, `data/`, or files under `plan/`.

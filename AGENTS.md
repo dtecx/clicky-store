@@ -63,7 +63,7 @@ The repository currently has:
 - Admin product, order, and user management.
 - API, development, and deployment documentation.
 - GitHub Actions CI for formatting, tests, vet, frontend lint/build, and Docker build.
-- Go frontend serving adapter that can serve the React `frontend/dist` build via `FRONTEND_DIST_DIR`, with embedded legacy static files retained as temporary fallback assets.
+- Go frontend serving adapter that serves the React `frontend/dist` build via `FRONTEND_DIST_DIR` and returns a small text placeholder when that variable is unset. The legacy embedded HTML/CSS/JS frontend has been removed; seed product SVGs were moved to `frontend/public/assets/products/` so they ride along with the Vite build.
 - Multi-stage Dockerfile that builds the React frontend and Go backend, then copies `frontend/dist` into the runtime image.
 - React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, customer orders, and admin dashboard/product/order/user flows.
 - React admin pages are backend-backed for dashboard metrics, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates.
@@ -75,7 +75,7 @@ The repository currently has:
 
 Important frontend limitation:
 
-The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Uploaded-file cleanup policy on product/image deletion is still pending.
+The production Docker image serves the React app through the Go server. The legacy embedded static frontend has been removed; only the React build under `frontend/dist` is served. Seed product SVGs are shipped via `frontend/public/assets/products/`. Uploaded-file cleanup policy on product/image deletion is still pending.
 
 ---
 
@@ -96,11 +96,11 @@ The production Docker image now serves the React app through the Go server. The 
 - Preserve the existing REST API shape unless a deliberate versioned change is required.
 - Return consistent JSON errors shaped as `{"error":"message"}`.
 - Escape or safely render all user-controlled frontend content.
-- Do not store uploaded files inside `internal/frontend/static/assets/products`; that directory is only for seed/demo embedded assets.
+- Seed product images live in `frontend/public/assets/products/`. Do not put runtime-uploaded files there.
 - New product images must be uploaded through the admin UI/API and stored in a runtime upload directory.
 - Do not add Next.js. The backend is Go and the frontend should be a Vite SPA unless the user explicitly requests otherwise.
 - Do not rewrite backend and frontend at the same time.
-- Do not delete the old static frontend until the React frontend has working replacements for the customer and admin flows.
+- Do not reintroduce the legacy embedded HTML/CSS/JS frontend. The React app is the only frontend.
 
 ---
 
@@ -176,7 +176,7 @@ Do not:
 
 Current backend should remain Go.
 
-Target frontend should live outside `internal/frontend/static`:
+The React frontend lives under `frontend/`:
 
 ```text
 frontend/
@@ -288,9 +288,9 @@ internal/service/                   Application use cases, auth, password hashin
 internal/adapters/db/               In-memory store and store contract tests
 internal/adapters/db/postgres/      PostgreSQL store, helpers, migrations
 internal/adapters/http/v1/          REST API v1 handlers, requests, auth middleware, rate limiting
-internal/frontend/                  Embedded frontend handler and static files
-internal/frontend/static/           Current legacy HTML/CSS/JS and embedded demo assets
+internal/frontend/                  Frontend serving adapter (FRONTEND_DIST_DIR aware)
 frontend/                           React + Vite + TypeScript + Tailwind source app
+frontend/public/assets/products/    Seed product SVGs shipped with the Vite build
 internal/web/                       Shared HTTP JSON, CORS, logging, middleware helpers
 docs/                               API, development, and deployment documentation
 compose.yaml                        Local API and PostgreSQL services
@@ -302,9 +302,7 @@ Target architecture after React migration:
 
 ```text
 frontend/                           React + Vite + TypeScript + Tailwind source app
-internal/frontend/                  Go static frontend serving adapter
-internal/frontend/static/           Temporary legacy frontend until removed
-internal/frontend/dist/             Optional copied React build output
+internal/frontend/                  Go React-build serving adapter
 ```
 
 ---
@@ -741,7 +739,7 @@ Suggested changes:
 - Add `npm` scripts.
 - Update `.gitignore`.
 - Update CI to build frontend.
-- Do not remove `internal/frontend/static` yet.
+- Phase 16 has already deleted `internal/frontend/static/`; do not reintroduce it.
 
 Suggested commit:
 
@@ -934,7 +932,7 @@ git commit -m "feat: rebuild admin dashboard in react"
 
 Goal: make production use the new React frontend.
 
-Current status: Docker builds `frontend/dist`, copies it into the runtime image, and sets `FRONTEND_DIST_DIR=/app/frontend/dist`. The Go frontend handler serves that React build with SPA route fallback while keeping embedded legacy product SVG assets available under `/assets/products/...`.
+Current status: Docker builds `frontend/dist`, copies it into the runtime image, and sets `FRONTEND_DIST_DIR=/app/frontend/dist`. The Go frontend handler serves that React build with SPA route fallback. Seed product SVGs live in `frontend/public/assets/products/` so the Vite build keeps them available under `/assets/products/...`; nothing is embedded in the Go binary.
 
 Suggested changes:
 
@@ -1082,6 +1080,8 @@ git commit -m "feat: display product image galleries"
 ### Phase 16: Remove Legacy Static Frontend
 
 Goal: remove old custom HTML/CSS/JS only after React fully replaces it.
+
+Current status: completed. The legacy `index.html`, `app.js`, and `styles.css` are gone, the seed product SVGs were moved into `frontend/public/assets/products/`, and `internal/frontend/frontend.go` no longer embeds anything — it serves `FRONTEND_DIST_DIR` and returns a small placeholder when the variable is unset. Frontend tests now use a temp dist directory plus `fstest.MapFS`.
 
 Requirements before deletion:
 
