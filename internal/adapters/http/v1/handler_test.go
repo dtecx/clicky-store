@@ -3,12 +3,18 @@ package v1_test
 import (
 	"bytes"
 	"encoding/json"
+	"image"
+	"image/color"
+	"image/png"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"clicky-store/internal/adapters/db"
 	httpv1 "clicky-store/internal/adapters/http/v1"
+	"clicky-store/internal/adapters/uploads"
 	"clicky-store/internal/core/domains"
 	"clicky-store/internal/service"
 )
@@ -51,11 +57,47 @@ type userResponse struct {
 	User domains.User `json:"user"`
 }
 
+type imagesResponse struct {
+	Images []domains.ProductImage `json:"images"`
+}
+
+type imageResponse struct {
+	Image domains.ProductImage `json:"image"`
+}
+
 type errorResponse struct {
 	Error string `json:"error"`
 }
 
 func newAPITestServer(t *testing.T) *apiTestServer {
+	t.Helper()
+
+	return newAPITestServerWithHandler(t, func(appService *service.Service) *httpv1.Handler {
+		return httpv1.NewHandler(appService)
+	})
+}
+
+func newUploadAPITestServer(t *testing.T, maxImages int, maxUploadBytes int64, maxImageBytes int64) *apiTestServer {
+	t.Helper()
+
+	uploadStore, err := uploads.NewLocalStore(uploads.Config{
+		Dir:                  t.TempDir(),
+		URLPrefix:            "/uploads",
+		MaxProductImageBytes: maxImageBytes,
+	})
+	if err != nil {
+		t.Fatalf("new upload store: %v", err)
+	}
+
+	return newAPITestServerWithHandler(t, func(appService *service.Service) *httpv1.Handler {
+		return httpv1.NewHandler(
+			appService,
+			httpv1.WithProductImageUploads(uploadStore, maxImages, maxUploadBytes),
+		)
+	})
+}
+
+func newAPITestServerWithHandler(t *testing.T, buildHandler func(*service.Service) *httpv1.Handler) *apiTestServer {
 	t.Helper()
 
 	store := db.NewMemoryStore()
@@ -66,7 +108,7 @@ func newAPITestServer(t *testing.T) *apiTestServer {
 
 	return &apiTestServer{
 		t:       t,
-		handler: httpv1.NewHandler(appService).Routes(),
+		handler: buildHandler(appService).Routes(),
 	}
 }
 
@@ -91,6 +133,46 @@ func (s *apiTestServer) request(method, path string, body any, token string) *ht
 	res := httptest.NewRecorder()
 	s.handler.ServeHTTP(res, req)
 	return res
+}
+
+func (s *apiTestServer) requestMultipart(method, path string, files map[string][]byte, token string) *httptest.ResponseRecorder {
+	s.t.Helper()
+
+	var payload bytes.Buffer
+	writer := multipart.NewWriter(&payload)
+	for filename, body := range files {
+		part, err := writer.CreateFormFile("images", filename)
+		if err != nil {
+			s.t.Fatalf("create multipart file: %v", err)
+		}
+		if _, err := part.Write(body); err != nil {
+			s.t.Fatalf("write multipart file: %v", err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		s.t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(method, path, &payload)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	res := httptest.NewRecorder()
+	s.handler.ServeHTTP(res, req)
+	return res
+}
+
+func adminToken(t *testing.T, server *apiTestServer) string {
+	t.Helper()
+
+	adminLoginRes := server.request(http.MethodPost, "/api/v1/auth/login", map[string]any{
+		"email":    "admin@clicky.local",
+		"password": "admin12345",
+	}, "")
+	assertStatus(t, adminLoginRes, http.StatusOK)
+	return decodeResponse[authResponse](t, adminLoginRes).Token
 }
 
 func decodeResponse[T any](t *testing.T, res *httptest.ResponseRecorder) T {
@@ -377,6 +459,161 @@ func TestAdminProductManagementRequiresAdmin(t *testing.T) {
 	assertStatus(t, adminOrdersRes, http.StatusOK)
 }
 
+func TestAdminProductImageManagement(t *testing.T) {
+	server := newUploadAPITestServer(t, 3, 1024*1024, 1024*1024)
+
+	unauthenticatedRes := server.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.png": testProductPNG(t)},
+		"",
+	)
+	assertStatus(t, unauthenticatedRes, http.StatusUnauthorized)
+
+	registerRes := server.request(http.MethodPost, "/api/v1/auth/register", map[string]any{
+		"name":     "Upload Customer",
+		"email":    "upload-customer@example.com",
+		"password": "password123",
+	}, "")
+	assertStatus(t, registerRes, http.StatusCreated)
+	customer := decodeResponse[authResponse](t, registerRes)
+
+	forbiddenRes := server.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.png": testProductPNG(t)},
+		customer.Token,
+	)
+	assertStatus(t, forbiddenRes, http.StatusForbidden)
+
+	admin := adminToken(t, server)
+	uploadRes := server.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.png": testProductPNG(t)},
+		admin,
+	)
+	assertStatus(t, uploadRes, http.StatusCreated)
+	uploaded := decodeResponse[imagesResponse](t, uploadRes)
+	if len(uploaded.Images) != 2 {
+		t.Fatalf("uploaded images = %+v, want existing seed image and uploaded image", uploaded.Images)
+	}
+
+	var seedImage domains.ProductImage
+	var uploadedImage domains.ProductImage
+	for _, image := range uploaded.Images {
+		switch {
+		case strings.HasPrefix(image.URL, "/uploads/products/prod-gaming-viper/img_"):
+			uploadedImage = image
+		default:
+			seedImage = image
+		}
+	}
+	if uploadedImage.ID == "" || seedImage.ID == "" {
+		t.Fatalf("images after upload = %+v, want seed and uploaded images", uploaded.Images)
+	}
+	if uploadedImage.IsPrimary {
+		t.Fatalf("uploaded image = %+v, want existing primary image to remain primary", uploadedImage)
+	}
+
+	primary := true
+	altText := "Admin uploaded hero"
+	updateRes := server.request(http.MethodPatch, "/api/v1/admin/products/prod-gaming-viper/images/"+uploadedImage.ID, map[string]any{
+		"altText":   altText,
+		"isPrimary": primary,
+	}, admin)
+	assertStatus(t, updateRes, http.StatusOK)
+	updatedImage := decodeResponse[imageResponse](t, updateRes)
+	if !updatedImage.Image.IsPrimary || updatedImage.Image.AltText != altText {
+		t.Fatalf("updated image = %+v, want primary image with updated alt text", updatedImage.Image)
+	}
+
+	detailRes := server.request(http.MethodGet, "/api/v1/products/prod-gaming-viper", nil, "")
+	assertStatus(t, detailRes, http.StatusOK)
+	detail := decodeResponse[productResponse](t, detailRes)
+	if detail.Product.ImageURL != uploadedImage.URL {
+		t.Fatalf("product imageUrl = %q, want uploaded primary URL %q", detail.Product.ImageURL, uploadedImage.URL)
+	}
+
+	orderRes := server.request(http.MethodPatch, "/api/v1/admin/products/prod-gaming-viper/images/order", map[string]any{
+		"imageIds": []string{uploadedImage.ID, seedImage.ID},
+	}, admin)
+	assertStatus(t, orderRes, http.StatusOK)
+	ordered := decodeResponse[imagesResponse](t, orderRes)
+	if len(ordered.Images) != 2 || ordered.Images[0].ID != uploadedImage.ID || ordered.Images[0].SortOrder != 0 {
+		t.Fatalf("ordered images = %+v, want uploaded image first", ordered.Images)
+	}
+
+	deleteRes := server.request(http.MethodDelete, "/api/v1/admin/products/prod-gaming-viper/images/"+uploadedImage.ID, nil, admin)
+	assertStatus(t, deleteRes, http.StatusNoContent)
+
+	afterDeleteRes := server.request(http.MethodGet, "/api/v1/products/prod-gaming-viper", nil, "")
+	assertStatus(t, afterDeleteRes, http.StatusOK)
+	afterDelete := decodeResponse[productResponse](t, afterDeleteRes)
+	if len(afterDelete.Product.Images) != 1 || afterDelete.Product.Images[0].ID != seedImage.ID {
+		t.Fatalf("product after image delete = %+v, want only seed image", afterDelete.Product.Images)
+	}
+}
+
+func TestAdminProductImageUploadValidation(t *testing.T) {
+	adminServer := newUploadAPITestServer(t, 3, 1024*1024, 1024*1024)
+	admin := adminToken(t, adminServer)
+
+	missingProductRes := adminServer.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod_missing/images",
+		map[string][]byte{"mouse.png": testProductPNG(t)},
+		admin,
+	)
+	assertStatus(t, missingProductRes, http.StatusNotFound)
+
+	invalidTypeRes := adminServer.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.gif": []byte("not a png")},
+		admin,
+	)
+	assertStatus(t, invalidTypeRes, http.StatusBadRequest)
+
+	invalidImageRes := adminServer.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.png": []byte("not a png")},
+		admin,
+	)
+	assertStatus(t, invalidImageRes, http.StatusBadRequest)
+
+	tooManyServer := newUploadAPITestServer(t, 1, 1024*1024, 1024*1024)
+	tooManyAdmin := adminToken(t, tooManyServer)
+	tooManyRes := tooManyServer.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.png": testProductPNG(t)},
+		tooManyAdmin,
+	)
+	assertStatus(t, tooManyRes, http.StatusBadRequest)
+
+	oversizedFileServer := newUploadAPITestServer(t, 3, 1024*1024, 8)
+	oversizedFileAdmin := adminToken(t, oversizedFileServer)
+	oversizedFileRes := oversizedFileServer.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.png": testProductPNG(t)},
+		oversizedFileAdmin,
+	)
+	assertStatus(t, oversizedFileRes, http.StatusBadRequest)
+
+	oversizedRequestServer := newUploadAPITestServer(t, 3, 32, 1024*1024)
+	oversizedRequestAdmin := adminToken(t, oversizedRequestServer)
+	oversizedRequestRes := oversizedRequestServer.requestMultipart(
+		http.MethodPost,
+		"/api/v1/admin/products/prod-gaming-viper/images",
+		map[string][]byte{"mouse.png": testProductPNG(t)},
+		oversizedRequestAdmin,
+	)
+	assertStatus(t, oversizedRequestRes, http.StatusBadRequest)
+}
+
 func TestAdminProductValidation(t *testing.T) {
 	server := newAPITestServer(t)
 
@@ -474,4 +711,22 @@ func TestAdminUserManagementRequiresAdmin(t *testing.T) {
 
 	missingUserRes := server.request(http.MethodGet, "/api/v1/admin/users/usr_missing", nil, admin.Token)
 	assertStatus(t, missingUserRes, http.StatusNotFound)
+}
+
+func testProductPNG(t *testing.T) []byte {
+	t.Helper()
+
+	img := image.NewRGBA(image.Rect(0, 0, 2, 2))
+	for y := range 2 {
+		for x := range 2 {
+			img.Set(x, y, color.RGBA{R: uint8(90 + x), G: uint8(120 + y), B: 190, A: 255})
+		}
+	}
+
+	var buffer bytes.Buffer
+	if err := png.Encode(&buffer, img); err != nil {
+		t.Fatalf("encode png: %v", err)
+	}
+
+	return buffer.Bytes()
 }

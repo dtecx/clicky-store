@@ -68,11 +68,12 @@ The repository currently has:
 - React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, customer orders, and admin dashboard/product/order/user flows.
 - React admin pages are backend-backed for dashboard metrics, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates.
 - Product responses now include an `images` gallery array backed by in-memory and PostgreSQL stores, with `imageUrl` retained as the compatibility primary-image fallback.
+- Runtime upload storage config, local filesystem serving, and admin product image upload/reorder/update/delete APIs exist.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
 
-The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Runtime upload storage, upload APIs, and admin image-management UI are still pending.
+The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Admin image-management UI is still pending.
 
 ---
 
@@ -339,6 +340,7 @@ Backend/platform features:
 - Config validation for non-development secrets.
 - Login rate limiting.
 - Docker Compose local environment.
+- Runtime upload directory creation and uploaded-file serving under `/uploads`.
 - CI for Go formatting, tests, vet, and Docker image build.
 
 ---
@@ -350,9 +352,9 @@ Address these before adding unrelated features:
 1. Product media persistence supports galleries, but the legacy `imageUrl` field still remains as a compatibility fallback.
 2. Demo product images are embedded SVG files under static assets.
 3. There is no admin drag-and-drop/select image upload flow.
-4. There is no runtime upload directory or uploaded file serving.
-5. There is no admin product image upload/reorder/delete API yet.
-6. There is no enforced limit of up to 10 images per product.
+4. Runtime upload storage exists, but uploaded file cleanup on product/image deletion still needs a deliberate policy.
+5. Admin image APIs exist, but the React admin UI does not use them yet.
+6. The up-to-10 image limit is enforced by the admin API but not yet surfaced in the React UI.
 7. Go production serving now serves React `index.html` for frontend route reloads when `FRONTEND_DIST_DIR` points at a Vite build.
 8. Admin product/order/user pages are backend-backed in React, but image management is still pending.
 9. Product detail pages need richer gallery/spec/related-product polish once product images exist.
@@ -982,6 +984,8 @@ git commit -m "feat: persist product image galleries"
 
 Goal: validate and store admin-uploaded JPG/PNG images safely.
 
+Current status: completed. Config now includes upload directory, URL prefix, and image/count/request limits; the server initializes local upload storage, creates the upload directory, serves uploaded files under `/uploads`, validates JPEG/PNG extension, MIME sniffing, decoded image headers, file size, and safe product path segments, and Compose mounts persistent upload storage.
+
 Suggested changes:
 
 - Add upload config to `internal/config`.
@@ -1005,6 +1009,8 @@ git commit -m "feat: add product image upload storage"
 ### Phase 13: Add Admin Image Upload API
 
 Goal: admin can upload, delete, reorder, and mark product images.
+
+Current status: completed. Admin-only routes now support multipart uploads, image metadata/primary updates, ordering, and image metadata deletion under `/api/v1/admin/products/{productId}/images...`. Upload validation covers authentication/authorization, missing products, JPEG/PNG type checks, per-image size, multipart request size, max image count, and success behavior.
 
 Suggested changes:
 

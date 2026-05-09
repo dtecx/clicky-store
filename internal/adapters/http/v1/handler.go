@@ -3,31 +3,66 @@ package v1
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"clicky-store/internal/core/domains"
+	"clicky-store/internal/core/ports"
 	"clicky-store/internal/service"
 	"clicky-store/internal/web"
 )
 
 const apiPrefix = "/api/v1"
 
+const (
+	defaultMaxProductImages      = 10
+	defaultMaxProductUploadBytes = 48 * 1024 * 1024
+	productImageUploadField      = "images"
+)
+
 type contextKey string
 
 const userContextKey contextKey = "user"
 
 type Handler struct {
-	service      *service.Service
-	loginLimiter *loginRateLimiter
+	service               *service.Service
+	loginLimiter          *loginRateLimiter
+	productImageFiles     ports.ProductImageFileStore
+	maxProductImages      int
+	maxProductUploadBytes int64
 }
 
-func NewHandler(service *service.Service) *Handler {
-	return &Handler{
-		service:      service,
-		loginLimiter: newLoginRateLimiter(loginRateLimitMaxFailures, loginRateLimitWindow),
+type HandlerOption func(*Handler)
+
+func WithProductImageUploads(fileStore ports.ProductImageFileStore, maxImages int, maxUploadBytes int64) HandlerOption {
+	return func(h *Handler) {
+		h.productImageFiles = fileStore
+		if maxImages > 0 {
+			h.maxProductImages = maxImages
+		}
+		if maxUploadBytes > 0 {
+			h.maxProductUploadBytes = maxUploadBytes
+		}
 	}
+}
+
+func NewHandler(service *service.Service, opts ...HandlerOption) *Handler {
+	h := &Handler{
+		service:               service,
+		loginLimiter:          newLoginRateLimiter(loginRateLimitMaxFailures, loginRateLimitWindow),
+		maxProductImages:      defaultMaxProductImages,
+		maxProductUploadBytes: defaultMaxProductUploadBytes,
+	}
+
+	for _, opt := range opts {
+		if opt != nil {
+			opt(h)
+		}
+	}
+
+	return h
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -370,9 +405,21 @@ func (h *Handler) handleAdminProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleAdminProduct(w http.ResponseWriter, r *http.Request) {
-	productID := strings.TrimPrefix(r.URL.Path, apiPrefix+"/admin/products/")
-	if productID == "" || strings.Contains(productID, "/") {
+	rest := strings.TrimPrefix(r.URL.Path, apiPrefix+"/admin/products/")
+	parts := strings.Split(rest, "/")
+	productID := strings.TrimSpace(parts[0])
+	if productID == "" {
 		web.WriteError(w, http.StatusNotFound, "product not found")
+		return
+	}
+
+	if len(parts) > 1 {
+		if parts[1] == "images" {
+			h.handleAdminProductImages(w, r, productID, parts[2:])
+			return
+		}
+
+		web.WriteError(w, http.StatusNotFound, "product route not found")
 		return
 	}
 
@@ -399,6 +446,153 @@ func (h *Handler) handleAdminProduct(w http.ResponseWriter, r *http.Request) {
 	default:
 		web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
+}
+
+func (h *Handler) handleAdminProductImages(w http.ResponseWriter, r *http.Request, productID string, parts []string) {
+	if len(parts) == 0 {
+		if r.Method != http.MethodPost {
+			web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		h.handleAdminProductImageUpload(w, r, productID)
+		return
+	}
+
+	if len(parts) != 1 || parts[0] == "" {
+		web.WriteError(w, http.StatusNotFound, "product image route not found")
+		return
+	}
+
+	if parts[0] == "order" {
+		if r.Method != http.MethodPatch {
+			web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		h.handleAdminProductImageOrder(w, r, productID)
+		return
+	}
+
+	imageID := strings.TrimSpace(parts[0])
+	switch r.Method {
+	case http.MethodPatch:
+		h.handleAdminProductImageUpdate(w, r, productID, imageID)
+	case http.MethodDelete:
+		err := h.service.DeleteProductImage(productID, imageID)
+		if err != nil {
+			writeDomainError(w, err, "could not delete product image")
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		web.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+	}
+}
+
+func (h *Handler) handleAdminProductImageUpload(w http.ResponseWriter, r *http.Request, productID string) {
+	if h.productImageFiles == nil {
+		web.WriteError(w, http.StatusInternalServerError, "product image upload storage is not configured")
+		return
+	}
+
+	product, err := h.service.GetProduct(productID)
+	if err != nil {
+		writeDomainError(w, err, "product not found")
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, h.maxProductUploadBytes)
+	if err := r.ParseMultipartForm(h.maxProductUploadBytes); err != nil {
+		web.WriteError(w, http.StatusBadRequest, "uploaded images are too large or malformed")
+		return
+	}
+	if r.MultipartForm != nil {
+		defer r.MultipartForm.RemoveAll()
+	}
+	if r.MultipartForm == nil {
+		web.WriteError(w, http.StatusBadRequest, "multipart form data is required")
+		return
+	}
+
+	files := r.MultipartForm.File[productImageUploadField]
+	if len(files) == 0 {
+		web.WriteError(w, http.StatusBadRequest, "at least one product image is required")
+		return
+	}
+	if len(product.Images)+len(files) > h.maxProductImages {
+		web.WriteError(w, http.StatusBadRequest, fmt.Sprintf("a product can have at most %d images", h.maxProductImages))
+		return
+	}
+
+	images := make([]domains.ProductImage, 0, len(files))
+	for _, fileHeader := range files {
+		file, err := fileHeader.Open()
+		if err != nil {
+			web.WriteError(w, http.StatusBadRequest, "could not read uploaded image")
+			return
+		}
+
+		storedFile, err := h.productImageFiles.SaveProductImage(productID, fileHeader.Filename, file)
+		closeErr := file.Close()
+		if err != nil {
+			writeProductImageUploadError(w, err)
+			return
+		}
+		if closeErr != nil {
+			web.WriteError(w, http.StatusBadRequest, "could not read uploaded image")
+			return
+		}
+
+		images = append(images, domains.ProductImage{
+			URL:     storedFile.URL,
+			AltText: product.Name,
+		})
+	}
+
+	createdImages, err := h.service.CreateProductImages(productID, images)
+	if err != nil {
+		writeDomainError(w, err, "could not save product images")
+		return
+	}
+
+	web.WriteJSON(w, http.StatusCreated, map[string]any{"images": createdImages})
+}
+
+func (h *Handler) handleAdminProductImageOrder(w http.ResponseWriter, r *http.Request, productID string) {
+	var req struct {
+		ImageIDs []string `json:"imageIds"`
+	}
+	if err := web.ReadJSON(r, &req); err != nil {
+		web.WriteError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+	if len(req.ImageIDs) == 0 {
+		web.WriteError(w, http.StatusBadRequest, "imageIds are required")
+		return
+	}
+
+	images, err := h.service.ReorderProductImages(productID, req.ImageIDs)
+	if err != nil {
+		writeDomainError(w, err, "could not reorder product images")
+		return
+	}
+
+	web.WriteJSON(w, http.StatusOK, map[string]any{"images": images})
+}
+
+func (h *Handler) handleAdminProductImageUpdate(w http.ResponseWriter, r *http.Request, productID, imageID string) {
+	var req productImageUpdateRequest
+	if err := web.ReadJSON(r, &req); err != nil {
+		web.WriteError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+
+	image, err := h.service.UpdateProductImage(productID, imageID, req.toProductImageUpdate())
+	if err != nil {
+		writeDomainError(w, err, "could not update product image")
+		return
+	}
+
+	web.WriteJSON(w, http.StatusOK, map[string]any{"image": image})
 }
 
 func (h *Handler) handleAdminOrders(w http.ResponseWriter, r *http.Request) {
@@ -512,5 +706,20 @@ func writeDomainError(w http.ResponseWriter, err error, fallback string) {
 		web.WriteError(w, http.StatusConflict, "requested quantity is not available")
 	default:
 		web.WriteError(w, http.StatusInternalServerError, fallback)
+	}
+}
+
+func writeProductImageUploadError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, ports.ErrUnsupportedProductImageType):
+		web.WriteError(w, http.StatusBadRequest, "only jpeg and png product images are supported")
+	case errors.Is(err, ports.ErrProductImageUploadTooLarge):
+		web.WriteError(w, http.StatusBadRequest, "product image is too large")
+	case errors.Is(err, ports.ErrInvalidProductImageUpload):
+		web.WriteError(w, http.StatusBadRequest, "uploaded file is not a valid product image")
+	case errors.Is(err, ports.ErrInvalidProductUpload):
+		web.WriteError(w, http.StatusBadRequest, "invalid product image upload")
+	default:
+		web.WriteError(w, http.StatusInternalServerError, "could not store product image")
 	}
 }

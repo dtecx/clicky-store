@@ -182,7 +182,6 @@ Use `"failure"` to mark the pending simulated payment as failed.
 
 ## Planned Next Steps
 
-- Add admin-only product image upload storage and API endpoints
 - Add drag-and-drop product image management in React
 - Display uploaded galleries across product cards, details, cart lines, and admin tables
 - Remove the legacy static frontend after the React app covers every required flow and image path

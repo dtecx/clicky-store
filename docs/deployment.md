@@ -15,6 +15,11 @@ ADMIN_EMAIL=<initial-admin-email>
 ADMIN_PASSWORD=<initial-admin-password>
 FRONTEND_ORIGIN=<public-origin>
 FRONTEND_DIST_DIR=/app/frontend/dist
+UPLOAD_DIR=/app/data/uploads
+UPLOAD_URL_PREFIX=/uploads
+MAX_PRODUCT_IMAGES=10
+MAX_PRODUCT_IMAGE_BYTES=4194304
+MAX_PRODUCT_UPLOAD_BYTES=50331648
 ```
 
 The server refuses to start outside development when `AUTH_SECRET` is missing or still uses the development demo value.
@@ -42,6 +47,14 @@ The production Docker image builds the Vite React app in a Node stage, builds th
 `FRONTEND_DIST_DIR` tells the Go server where to find that build. In Docker/Compose it defaults to `/app/frontend/dist`. When the variable points at a valid Vite build directory, Go serves the React app and falls back to `index.html` for direct reloads of frontend routes such as `/products/:slug`, `/cart`, `/orders`, and `/admin/products`.
 
 The embedded legacy static frontend remains only as a temporary fallback and as the source for current demo product SVGs until uploaded product image support replaces those assets.
+
+## Uploaded Product Files
+
+Uploaded product files are stored outside the embedded frontend. In Docker/Compose, mount a persistent volume at `UPLOAD_DIR`; the provided Compose file maps `${UPLOAD_DATA_PATH:-./data/uploads}` to `/app/data/uploads`.
+
+The server creates the upload directory on startup and serves files under `UPLOAD_URL_PREFIX`, defaulting to `/uploads`. Do not expose the local filesystem path in API responses; store and return only public URLs such as `/uploads/products/<product-id>/<generated-file>.jpg`.
+
+Current server-side image validation accepts JPEG and PNG only, checks file extension, MIME/content sniffing, decoded image headers, and maximum size. Keep request-size limits aligned at the reverse proxy with `MAX_PRODUCT_UPLOAD_BYTES`.
 
 ## Secrets
 
@@ -72,5 +85,5 @@ Still recommended before production use:
 - Add edge/proxy-level request rate limits for broader abuse protection.
 - Review CSRF assumptions if the frontend is served from a different origin.
 - Review CORS policy for the final deployment origin.
-- Add request-size limits at the reverse proxy.
+- Add or align request-size limits at the reverse proxy.
 - Add structured audit logging for admin actions.

@@ -306,6 +306,106 @@ paths:
       responses:
         "204":
           description: Deleted
+  /admin/products/{productId}/images:
+    post:
+      summary: Upload product images as admin
+      description: Accepts JPEG and PNG files in the `images` multipart field. A product can have at most 10 total images.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - images
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "201":
+          $ref: "#/components/responses/ProductImages"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /admin/products/{productId}/images/order:
+    patch:
+      summary: Reorder product images as admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - imageIds
+              properties:
+                imageIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/ProductImages"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /admin/products/{productId}/images/{imageId}:
+    patch:
+      summary: Update product image metadata or primary status as admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+        - $ref: "#/components/parameters/ImageId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductImageUpdateRequest"
+      responses:
+        "200":
+          description: Updated product image
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    $ref: "#/components/schemas/ProductImage"
+        "400":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      summary: Delete product image metadata as admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+        - $ref: "#/components/parameters/ImageId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/Error"
   /admin/orders:
     get:
       summary: List all orders as admin
@@ -385,6 +485,12 @@ components:
       required: true
       schema:
         type: string
+    ImageId:
+      in: path
+      name: imageId
+      required: true
+      schema:
+        type: string
     OrderId:
       in: path
       name: orderId
@@ -433,6 +539,17 @@ components:
                 type: array
                 items:
                   $ref: "#/components/schemas/Order"
+    ProductImages:
+      description: Product images
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              images:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductImage"
   schemas:
     Error:
       type: object
@@ -566,6 +683,16 @@ components:
         createdAt:
           type: string
           format: date-time
+    ProductImageUpdateRequest:
+      type: object
+      properties:
+        altText:
+          type: string
+        sortOrder:
+          type: integer
+          minimum: 0
+        isPrimary:
+          type: boolean
     CartItemRequest:
       type: object
       required:

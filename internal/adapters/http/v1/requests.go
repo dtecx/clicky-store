@@ -66,6 +66,20 @@ func (req productUpdateRequest) toProductUpdate() domains.ProductUpdate {
 	}
 }
 
+type productImageUpdateRequest struct {
+	AltText   *string `json:"altText"`
+	SortOrder *int    `json:"sortOrder"`
+	IsPrimary *bool   `json:"isPrimary"`
+}
+
+func (req productImageUpdateRequest) toProductImageUpdate() domains.ProductImageUpdate {
+	return domains.ProductImageUpdate{
+		AltText:   trimStringPointer(req.AltText),
+		SortOrder: req.SortOrder,
+		IsPrimary: req.IsPrimary,
+	}
+}
+
 func trimStringPointer(value *string) *string {
 	if value == nil {
 		return nil

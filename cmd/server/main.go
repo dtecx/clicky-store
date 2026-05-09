@@ -11,6 +11,7 @@ import (
 	"clicky-store/internal/adapters/db"
 	dbpostgres "clicky-store/internal/adapters/db/postgres"
 	httpv1 "clicky-store/internal/adapters/http/v1"
+	"clicky-store/internal/adapters/uploads"
 	"clicky-store/internal/config"
 	"clicky-store/internal/core/ports"
 	"clicky-store/internal/frontend"
@@ -43,6 +44,17 @@ func main() {
 		store = postgresStore
 	}
 
+	uploadStore, err := uploads.NewLocalStore(uploads.Config{
+		Dir:                  cfg.UploadDir,
+		URLPrefix:            cfg.UploadURLPrefix,
+		MaxProductImageBytes: cfg.MaxProductImageBytes,
+	})
+	if err != nil {
+		logger.Error("upload storage initialization failed", "error", err)
+		os.Exit(1)
+	}
+	logger.Info("using local upload storage", "dir", cfg.UploadDir, "urlPrefix", cfg.UploadURLPrefix)
+
 	appService := service.New(store, cfg.AuthSecret)
 
 	if cfg.HasAdminSeed() {
@@ -53,12 +65,18 @@ func main() {
 		logger.Warn("admin seed skipped; ADMIN_NAME, ADMIN_EMAIL, and ADMIN_PASSWORD must all be set")
 	}
 
-	api := httpv1.NewHandler(appService)
+	api := httpv1.NewHandler(
+		appService,
+		httpv1.WithProductImageUploads(uploadStore, cfg.MaxProductImages, cfg.MaxProductUploadBytes),
+	)
 
 	mux := http.NewServeMux()
 	apiRoutes := api.Routes()
+	uploadHandler := uploadStore.Handler()
 	mux.Handle("/api/v1/", apiRoutes)
 	mux.Handle("/healthz", apiRoutes)
+	mux.Handle(cfg.UploadURLPrefix, uploadHandler)
+	mux.Handle(cfg.UploadURLPrefix+"/", uploadHandler)
 	mux.Handle("/", frontend.Handler())
 
 	handler := web.Chain(

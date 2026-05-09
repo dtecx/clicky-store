@@ -56,7 +56,7 @@ Get a product by customer-facing slug:
 curl http://localhost:8080/api/v1/products/slug/viper-x1-gaming-mouse
 ```
 
-Product responses include both the temporary `imageUrl` compatibility field and an `images` gallery array. Until admin uploads are added, seeded products expose their demo SVG as the primary gallery image.
+Product responses include both the temporary `imageUrl` compatibility field and an `images` gallery array. Seeded products expose their demo SVG as the primary gallery image until an uploaded image is marked primary.
 
 Create a product as admin:
 
@@ -76,7 +76,34 @@ curl -X POST http://localhost:8080/api/v1/admin/products \
     "ergonomic":true,
     "stock":10,
     "imageUrl":"/assets/products/product-generic.svg"
-  }'
+}'
+```
+
+Upload product images as admin:
+
+```sh
+curl -X POST http://localhost:8080/api/v1/admin/products/prod-gaming-viper/images \
+  -H "Authorization: Bearer <admin-token>" \
+  -F "images=@/path/to/mouse-front.png" \
+  -F "images=@/path/to/mouse-side.jpg"
+```
+
+Mark an image as primary:
+
+```sh
+curl -X PATCH http://localhost:8080/api/v1/admin/products/prod-gaming-viper/images/<image-id> \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin-token>" \
+  -d '{"isPrimary":true,"altText":"Viper X1 front angle"}'
+```
+
+Reorder product images:
+
+```sh
+curl -X PATCH http://localhost:8080/api/v1/admin/products/prod-gaming-viper/images/order \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin-token>" \
+  -d '{"imageIds":["<first-image-id>","<second-image-id>"]}'
 ```
 
 ## Cart

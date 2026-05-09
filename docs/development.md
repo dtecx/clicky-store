@@ -61,6 +61,18 @@ When `DATABASE_URL` is set, the server uses PostgreSQL and runs embedded migrati
 
 When `DATABASE_URL` is empty, the server falls back to the in-memory store. Use that only for lightweight local development or tests, because data is lost on restart.
 
+Uploaded product files are served from `UPLOAD_URL_PREFIX`, which defaults to `/uploads`. The local filesystem storage root defaults to `./data/uploads` for direct Go runs and `/app/data/uploads` in Docker Compose. Compose mounts `${UPLOAD_DATA_PATH:-./data/uploads}` into the server container so uploaded files survive container restarts.
+
+Product image upload limits are configured with:
+
+```txt
+MAX_PRODUCT_IMAGES=10
+MAX_PRODUCT_IMAGE_BYTES=4194304
+MAX_PRODUCT_UPLOAD_BYTES=50331648
+```
+
+The storage layer accepts only JPEG and PNG files, validates extension, sniffed MIME type, and decoded image headers, and generates server-side filenames under `/uploads/products/...`.
+
 ## Useful Commands
 
 Run tests:

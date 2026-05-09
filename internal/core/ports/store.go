@@ -1,6 +1,18 @@
 package ports
 
-import "clicky-store/internal/core/domains"
+import (
+	"errors"
+	"io"
+
+	"clicky-store/internal/core/domains"
+)
+
+var (
+	ErrInvalidProductUpload        = errors.New("invalid product upload")
+	ErrInvalidProductImageUpload   = errors.New("invalid product image upload")
+	ErrUnsupportedProductImageType = errors.New("unsupported product image type")
+	ErrProductImageUploadTooLarge  = errors.New("product image upload is too large")
+)
 
 type UserStore interface {
 	CreateUser(user domains.User) (domains.User, error)
@@ -25,6 +37,20 @@ type ProductImageStore interface {
 	UpdateProductImage(productID, imageID string, update domains.ProductImageUpdate) (domains.ProductImage, error)
 	ReorderProductImages(productID string, imageIDs []string) ([]domains.ProductImage, error)
 	DeleteProductImage(productID, imageID string) error
+}
+
+type ProductImageFile struct {
+	ProductID   string
+	Filename    string
+	URL         string
+	ContentType string
+	SizeBytes   int64
+	Width       int
+	Height      int
+}
+
+type ProductImageFileStore interface {
+	SaveProductImage(productID, originalFilename string, reader io.Reader) (ProductImageFile, error)
 }
 
 type CartStore interface {
