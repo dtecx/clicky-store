@@ -1,6 +1,7 @@
-import { ShoppingCart } from 'lucide-react'
+import { ArrowRight, ShoppingCart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../../types/product'
+import { cn } from '../../utils/cn'
 import { formatCents } from '../../utils/money'
 import {
   fallbackProductImageUrl,
@@ -9,14 +10,10 @@ import {
 } from '../../utils/productImages'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
-import { Card } from '../ui/Card'
 
 type ProductCardProps = {
-  /** Product to display. */
   product: Product
-  /** Called when the customer presses the quick add-to-cart button. */
   onAddToCart?: (product: Product) => void
-  /** Disables the add-to-cart button (e.g., while a request is pending). */
   isAdding?: boolean
 }
 
@@ -45,25 +42,37 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
   const detailHref = `/products/${product.slug}`
   const imageUrl = primaryProductImageUrl(product)
   const imageAlt = primaryProductImageAlt(product)
+  const dpiLabel = formatDpi(product.dpi)
   const traits = [
     product.wireless ? 'Wireless' : 'Wired',
     product.ergonomic ? 'Ergonomic' : null,
   ].filter((trait): trait is string => Boolean(trait))
+  const isSoldOut = product.stock <= 0
 
   function handleAdd() {
-    onAddToCart?.(product)
+    if (!isSoldOut) {
+      onAddToCart?.(product)
+    }
   }
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden">
+    <article
+      className={cn(
+        'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm shadow-stone-400/10 transition-all duration-200',
+        'hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md hover:shadow-stone-400/20',
+      )}
+    >
       <Link
         aria-label={`View ${product.name}`}
-        className="block bg-stone-50 p-5"
+        className="relative block overflow-hidden bg-gradient-to-br from-stone-50 via-white to-stone-100 p-5"
         to={detailHref}
       >
+        <div className="absolute left-4 top-4 flex flex-col gap-1.5">
+          <Badge variant={stock.variant}>{stock.label}</Badge>
+        </div>
         <img
           alt={imageAlt}
-          className="mx-auto aspect-square h-44 w-full max-w-56 object-contain"
+          className="mx-auto aspect-square h-44 w-full max-w-56 object-contain transition-transform duration-300 ease-out group-hover:scale-105"
           loading="lazy"
           onError={(event) => {
             event.currentTarget.src = fallbackProductImageUrl
@@ -71,46 +80,64 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
           src={imageUrl}
         />
       </Link>
-      <div className="flex flex-1 flex-col gap-4 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <Link
-              className="block truncate text-lg font-bold text-slate-950 hover:text-emerald-800"
-              to={detailHref}
-            >
-              {product.name}
-            </Link>
-            <p className="mt-1 text-sm capitalize text-slate-600">
-              {product.category}
-              {formatDpi(product.dpi) ? ` · ${formatDpi(product.dpi)}` : ''}
-            </p>
-          </div>
-          <Badge variant={stock.variant}>{stock.label}</Badge>
+      <div className="flex flex-1 flex-col gap-3 px-5 pb-5 pt-4">
+        <div className="space-y-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800">
+            {product.category}
+            {dpiLabel ? ` · ${dpiLabel}` : ''}
+          </p>
+          <Link
+            className="block truncate text-base font-bold text-slate-950 transition-colors group-hover:text-emerald-800"
+            to={detailHref}
+          >
+            {product.name}
+          </Link>
         </div>
 
         {traits.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {traits.map((trait) => (
-              <Badge key={trait}>{trait}</Badge>
+              <span
+                className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600"
+                key={trait}
+              >
+                {trait}
+              </span>
             ))}
           </div>
         ) : null}
 
-        <div className="mt-auto flex items-center justify-between gap-3 pt-2">
-          <p className="text-xl font-bold text-slate-950">
-            {formatCents(product.priceCents, product.currency)}
-          </p>
-          <Button
-            disabled={product.stock <= 0 || isAdding}
-            leftIcon={<ShoppingCart aria-hidden="true" size={17} />}
-            onClick={handleAdd}
-            size="sm"
-            type="button"
-          >
-            {product.stock <= 0 ? 'Sold out' : isAdding ? 'Adding…' : 'Add'}
-          </Button>
+        <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Price
+            </p>
+            <p className="mt-0.5 text-xl font-bold text-slate-950">
+              {formatCents(product.priceCents, product.currency)}
+            </p>
+          </div>
+          {isSoldOut ? (
+            <Link
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-bold uppercase tracking-wide text-slate-700 transition-colors hover:bg-stone-50"
+              to={detailHref}
+            >
+              Notify
+              <ArrowRight aria-hidden="true" size={14} />
+            </Link>
+          ) : (
+            <Button
+              aria-label={`Add ${product.name} to cart`}
+              disabled={isAdding}
+              leftIcon={<ShoppingCart aria-hidden="true" size={16} />}
+              onClick={handleAdd}
+              size="sm"
+              type="button"
+            >
+              {isAdding ? 'Adding…' : 'Add'}
+            </Button>
+          )}
         </div>
       </div>
-    </Card>
+    </article>
   )
 }

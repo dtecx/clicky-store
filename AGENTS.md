@@ -71,6 +71,7 @@ The repository currently has:
 - Runtime upload storage config, local filesystem serving, and admin product image upload/reorder/update/delete APIs exist.
 - React admin product editing includes drag-and-drop/select image uploads, previews, primary-image updates, alt text editing, reordering, deletion, and max-count feedback.
 - React storefront uses uploaded gallery images everywhere they apply: product cards, the dedicated product page (interactive `ProductGallery` with keyboard-navigable thumbnails), cart lines, the admin product table, and the home hero, with admin-supplied alt text propagated through cards/cart and the legacy `imageUrl` plus generic SVG retained as ordered fallbacks.
+- Phase 17 customer storefront polish is in: sticky header with scroll shadow, gradient hero, value-prop strip, category card grid, sticky filter bar with live count, hover-lift product cards with image zoom, breadcrumb-led product page with sticky buy rail and trust strip, refined cart/checkout summaries, and order cards with prominent payment-simulation actions. UI primitives now include a `Skeleton` family used for grid loading.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
@@ -350,14 +351,13 @@ Backend/platform features:
 Address these before adding unrelated features:
 
 1. Product media persistence supports galleries, but the legacy `imageUrl` field still remains as a compatibility fallback.
-2. Demo product images are embedded SVG files under static assets.
-3. Uploaded-file cleanup on product/image deletion still needs a deliberate policy (Phase 15 wired galleries through the storefront but did not introduce orphan-cleanup behavior).
-4. Go production serving now serves React `index.html` for frontend route reloads when `FRONTEND_DIST_DIR` points at a Vite build.
-5. Admin product/order/user pages are backend-backed in React; image management should still receive browser QA against the Go server.
-6. Product detail page now shows an interactive `ProductGallery`, but related-product polish and richer specs/sections still need work.
-7. Product specs are too limited for a real mouse shop.
-8. Related-product suggestions, hero polish, and category sidebar (Phase 17) are still pending.
-9. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
+2. Seed product images live in `frontend/public/assets/products/` as SVG files; richer product art still depends on the upcoming retailer scraper (Phase 19).
+3. Uploaded-file cleanup on product/image deletion still needs a deliberate policy.
+4. Admin product/order/user pages are backend-backed in React; image management and the new layout polish should still receive browser QA against the Go server.
+5. Product specs are too limited for a real mouse shop (sensor model, weight, switch type, polling rate, dimensions, included accessories are all missing fields).
+6. Related-product suggestions on the product detail page are still pending; the new sticky buy rail leaves room for a related-products strip below it.
+7. Admin dashboard polish (sidebar, table density, status hierarchy) is still pending — Phase 17 focused on the customer storefront.
+8. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
 
 ---
 
@@ -1111,6 +1111,8 @@ If Go needs an embedded directory, replace legacy static files with copied/gener
 ### Phase 17: Full E-Shop Layout Polish
 
 Goal: make the UI match a real shop.
+
+Current status: customer storefront polished. Header is sticky with a scroll shadow, refined search, account chip, and cart badge with stock count. Footer rebuilt as a four-column block with shop/account/support links and a fine-print row. Home hero now has a gradient backdrop, featured-product card, prominent CTAs, and a value-prop strip. Category selector is a four-card grid; filter/sort row is sticky and shows live result count. ProductCard has a hover lift, image zoom, and prominent stock + price. ProductPage uses breadcrumbs, gallery + sticky right rail with quantity stepper, trust badges, refined spec table. Cart and checkout use sticky summaries, refined empty/error states, and `Skeleton` shimmer placeholders for grid loading. Orders cards expose pending payment actions in an amber callout. Admin dashboard polish is still pending and tracked separately.
 
 Suggested changes:
 

@@ -28,10 +28,10 @@ export function CartLine({
   const canIncrease = line.quantity < product.stock && !isPending
 
   return (
-    <article className="grid gap-4 border-b border-stone-200 p-4 last:border-b-0 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:p-5">
+    <article className="grid gap-4 border-b border-stone-200 p-4 last:border-b-0 sm:grid-cols-[6.5rem_minmax(0,1fr)_auto] sm:items-center sm:p-5">
       <Link
         aria-label={`View ${product.name}`}
-        className="flex aspect-square w-28 items-center justify-center rounded-lg bg-stone-50 p-3"
+        className="flex aspect-square w-24 items-center justify-center rounded-xl bg-gradient-to-br from-stone-50 via-white to-stone-100 p-3 shadow-sm shadow-stone-400/10 transition-transform hover:scale-[1.02] sm:w-26"
         to={`/products/${product.slug}`}
       >
         <img
@@ -46,15 +46,18 @@ export function CartLine({
       </Link>
 
       <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800">
+          {product.category}
+        </p>
         <Link
-          className="text-lg font-bold text-slate-950 hover:text-emerald-800"
+          className="mt-1 block truncate text-base font-bold text-slate-950 transition-colors hover:text-emerald-800"
           to={`/products/${product.slug}`}
         >
           {product.name}
         </Link>
-        <p className="mt-1 text-sm capitalize text-slate-600">{product.category}</p>
-        <p className="mt-3 text-sm text-slate-600">
-          {formatCents(product.priceCents, product.currency)} each
+        <p className="mt-2 text-sm text-slate-600">
+          {formatCents(product.priceCents, product.currency)}{' '}
+          <span className="text-slate-400">each</span>
         </p>
         {line.quantity >= product.stock ? (
           <p className="mt-2 text-xs font-semibold text-amber-800">
@@ -68,10 +71,10 @@ export function CartLine({
           {formatCents(line.subtotalCents, product.currency)}
         </p>
         <div className="flex items-center gap-2">
-          <div className="flex h-10 items-center rounded-lg border border-stone-300 bg-white">
+          <div className="flex h-10 items-center rounded-lg border border-stone-300 bg-white shadow-sm shadow-stone-400/10">
             <button
               aria-label={`Decrease ${product.name} quantity`}
-              className="flex h-10 w-10 items-center justify-center text-slate-700 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
+              className="flex h-10 w-10 items-center justify-center text-slate-700 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
               disabled={!canDecrease}
               onClick={() => onQuantityChange(line.quantity - 1)}
               type="button"
@@ -81,7 +84,7 @@ export function CartLine({
             <span className="w-9 text-center text-sm font-semibold">{line.quantity}</span>
             <button
               aria-label={`Increase ${product.name} quantity`}
-              className="flex h-10 w-10 items-center justify-center text-slate-700 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
+              className="flex h-10 w-10 items-center justify-center text-slate-700 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
               disabled={!canIncrease}
               onClick={() => onQuantityChange(line.quantity + 1)}
               type="button"
@@ -91,7 +94,7 @@ export function CartLine({
           </div>
           <button
             aria-label={`Remove ${product.name}`}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isPending}
             onClick={onRemove}
             type="button"

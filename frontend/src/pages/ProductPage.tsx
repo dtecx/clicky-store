@@ -1,4 +1,14 @@
-import { CheckCircle2, Minus, Plus, ShoppingCart } from 'lucide-react'
+import {
+  CheckCircle2,
+  ChevronRight,
+  Edit3,
+  Headphones,
+  Minus,
+  Plus,
+  ShieldCheck,
+  ShoppingCart,
+  Truck,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getProductBySlug } from '../api/products'
@@ -26,6 +36,12 @@ function formatDpi(dpi: number): string {
   }
   return `${dpi.toLocaleString()} DPI`
 }
+
+const trustItems = [
+  { icon: Truck, label: 'Free shipping over 200 PLN' },
+  { icon: ShieldCheck, label: '2-year manufacturer warranty' },
+  { icon: Headphones, label: 'Email support, real humans' },
+]
 
 export function ProductPage() {
   const { slug } = useParams()
@@ -164,23 +180,35 @@ export function ProductPage() {
   }
 
   return (
-    <PageShell title={product.name}>
-      <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-        <Link className="hover:text-slate-950" to="/">
-          Home
-        </Link>
-        <span>/</span>
-        <span className="capitalize">{product.category}</span>
-        <span>/</span>
-        <span className="font-semibold text-slate-950">{product.name}</span>
-      </nav>
-
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+    <PageShell
+      breadcrumbs={
+        <nav
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500"
+        >
+          <Link className="transition-colors hover:text-slate-950" to="/">
+            Store
+          </Link>
+          <ChevronRight aria-hidden="true" size={14} />
+          <Link
+            className="capitalize transition-colors hover:text-slate-950"
+            to={`/?category=${product.category}`}
+          >
+            {product.category}
+          </Link>
+          <ChevronRight aria-hidden="true" size={14} />
+          <span className="font-semibold text-slate-900">{product.name}</span>
+        </nav>
+      }
+      hideHeader
+      title={product.name}
+    >
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:items-start">
         <ProductGallery product={product} />
 
-        <div className="space-y-6">
+        <aside className="space-y-6 lg:sticky lg:top-32">
           <div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge className="capitalize" variant="accent">
                 {product.category}
               </Badge>
@@ -189,30 +217,39 @@ export function ProductPage() {
                 <Badge key={trait}>{trait}</Badge>
               ))}
             </div>
-            <p className="mt-5 text-3xl font-bold text-slate-950">
-              {formatCents(product.priceCents, product.currency)}
-            </p>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              {product.name}
+            </h1>
+            <div className="mt-3 flex items-baseline gap-3">
+              <p className="text-3xl font-bold text-slate-950">
+                {formatCents(product.priceCents, product.currency)}
+              </p>
+              <p className="text-sm text-slate-500">incl. VAT</p>
+            </div>
             <p className="mt-4 text-base leading-7 text-slate-600">
               {product.description}
             </p>
           </div>
 
           <Card className="p-5">
-            <div className="flex flex-wrap items-center gap-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              Quantity
+            </p>
+            <div className="mt-2 flex flex-wrap items-stretch gap-3">
               <div className="flex h-12 items-center rounded-lg border border-stone-300 bg-white">
                 <button
                   aria-label="Decrease quantity"
-                  className="flex h-12 w-12 items-center justify-center text-slate-700 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
+                  className="flex h-12 w-12 items-center justify-center text-slate-700 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
                   disabled={!canAddToCart || quantity <= 1 || isAdding}
                   onClick={() => adjustQuantity(-1)}
                   type="button"
                 >
                   <Minus aria-hidden="true" size={18} />
                 </button>
-                <span className="w-10 text-center font-semibold">{quantity}</span>
+                <span className="w-10 text-center text-base font-bold">{quantity}</span>
                 <button
                   aria-label="Increase quantity"
-                  className="flex h-12 w-12 items-center justify-center text-slate-700 hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
+                  className="flex h-12 w-12 items-center justify-center text-slate-700 transition-colors hover:text-slate-950 disabled:cursor-not-allowed disabled:text-slate-300"
                   disabled={!canAddToCart || quantity >= maxQuantity || isAdding}
                   onClick={() => adjustQuantity(1)}
                   type="button"
@@ -221,7 +258,7 @@ export function ProductPage() {
                 </button>
               </div>
               <Button
-                className="flex-1"
+                className="flex-1 min-w-44"
                 disabled={!canAddToCart || isAdding}
                 leftIcon={<ShoppingCart aria-hidden="true" size={18} />}
                 onClick={handleAddToCart}
@@ -229,7 +266,7 @@ export function ProductPage() {
               >
                 {canAddToCart
                   ? isAdding
-                    ? 'Adding...'
+                    ? 'Adding…'
                     : authStatus === 'authenticated'
                       ? 'Add to cart'
                       : 'Login to add'
@@ -237,7 +274,7 @@ export function ProductPage() {
               </Button>
             </div>
             {addNotice ? (
-              <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-800">
+              <p className="mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold text-emerald-800">
                 <CheckCircle2 aria-hidden="true" size={17} />
                 {addNotice}
                 <Link className="underline underline-offset-2" to="/cart">
@@ -248,62 +285,82 @@ export function ProductPage() {
             {addError ? (
               <p className="mt-4 text-sm font-semibold text-red-700">{addError}</p>
             ) : null}
+
+            <ul className="mt-5 space-y-2 border-t border-stone-200 pt-4 text-sm text-slate-600">
+              {trustItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <li className="flex items-center gap-2" key={item.label}>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                      <Icon aria-hidden="true" size={15} />
+                    </span>
+                    {item.label}
+                  </li>
+                )
+              })}
+            </ul>
           </Card>
 
           {isAdmin ? (
-            <LinkButton to="/admin/products" variant="secondary">
+            <LinkButton
+              leftIcon={<Edit3 aria-hidden="true" size={16} />}
+              to="/admin/products"
+              variant="secondary"
+            >
               Manage products
             </LinkButton>
           ) : null}
 
           <Card className="overflow-hidden">
+            <header className="border-b border-stone-200 bg-stone-50 px-5 py-3">
+              <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700">
+                Specifications
+              </h2>
+            </header>
             <table className="w-full text-left text-sm">
               <tbody className="divide-y divide-stone-200">
-                <tr>
-                  <th className="w-40 bg-stone-50 px-4 py-3 font-semibold text-slate-700">
-                    Sensor
-                  </th>
-                  <td className="px-4 py-3 text-slate-950">
-                    {formatDpi(product.dpi) || '-'}
-                  </td>
-                </tr>
-                <tr>
-                  <th className="bg-stone-50 px-4 py-3 font-semibold text-slate-700">
-                    Category
-                  </th>
-                  <td className="px-4 py-3 capitalize text-slate-950">
-                    {product.category}
-                  </td>
-                </tr>
-                <tr>
-                  <th className="bg-stone-50 px-4 py-3 font-semibold text-slate-700">
-                    Connectivity
-                  </th>
-                  <td className="px-4 py-3 text-slate-950">
-                    {product.wireless ? 'Wireless' : 'Wired'}
-                  </td>
-                </tr>
-                <tr>
-                  <th className="bg-stone-50 px-4 py-3 font-semibold text-slate-700">
-                    Shape
-                  </th>
-                  <td className="px-4 py-3 text-slate-950">
-                    {product.ergonomic ? 'Ergonomic' : 'Symmetric'}
-                  </td>
-                </tr>
-                <tr>
-                  <th className="bg-stone-50 px-4 py-3 font-semibold text-slate-700">
-                    Stock
-                  </th>
-                  <td className="px-4 py-3 text-slate-950">
-                    {product.stock > 0 ? `${product.stock} available` : 'Out of stock'}
-                  </td>
-                </tr>
+                <SpecRow label="Sensor" value={formatDpi(product.dpi) || '—'} />
+                <SpecRow label="Category" value={product.category} valueClassName="capitalize" />
+                <SpecRow
+                  label="Connectivity"
+                  value={product.wireless ? 'Wireless' : 'Wired'}
+                />
+                <SpecRow
+                  label="Shape"
+                  value={product.ergonomic ? 'Ergonomic' : 'Symmetric'}
+                />
+                <SpecRow
+                  label="Stock"
+                  value={
+                    product.stock > 0 ? `${product.stock} available` : 'Out of stock'
+                  }
+                />
               </tbody>
             </table>
           </Card>
-        </div>
+        </aside>
       </div>
     </PageShell>
+  )
+}
+
+function SpecRow({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string
+  value: string
+  valueClassName?: string
+}) {
+  return (
+    <tr>
+      <th className="w-40 bg-stone-50/60 px-5 py-3 text-left font-semibold text-slate-700">
+        {label}
+      </th>
+      <td className={`px-5 py-3 text-slate-950 ${valueClassName ?? ''}`.trim()}>
+        {value}
+      </td>
+    </tr>
   )
 }

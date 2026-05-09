@@ -1,7 +1,9 @@
-import { ShoppingBag } from 'lucide-react'
+import { ArrowLeft, ShoppingBag } from 'lucide-react'
+import { useState } from 'react'
 import { CartLine } from '../components/cart/CartLine'
 import { CartSummary } from '../components/cart/CartSummary'
 import { PageShell } from '../components/layout/PageShell'
+import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
@@ -9,7 +11,6 @@ import { LinkButton } from '../components/ui/LinkButton'
 import { LoadingState } from '../components/ui/LoadingState'
 import { useCart } from '../state/useCart'
 import { errorMessage } from '../utils/errors'
-import { useState } from 'react'
 
 export function CartPage() {
   const { cart, error, itemCount, status, setQuantity, removeItem, refresh } = useCart()
@@ -52,7 +53,11 @@ export function CartPage() {
     return (
       <PageShell title="Cart">
         <ErrorState
-          action={<button className="font-semibold underline" onClick={() => void refresh()} type="button">Try again</button>}
+          action={
+            <Button onClick={() => void refresh()} variant="secondary">
+              Try again
+            </Button>
+          }
           message={error ?? 'Could not load cart.'}
           title="Cart unavailable"
         />
@@ -62,26 +67,27 @@ export function CartPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <PageShell title="Cart">
+      <PageShell title="Your cart">
         <EmptyState
           action={<LinkButton to="/">Continue shopping</LinkButton>}
-          icon={<ShoppingBag aria-hidden="true" size={22} />}
+          icon={<ShoppingBag aria-hidden="true" size={24} />}
           title="Your cart is empty"
         >
-          No products selected.
+          Add a mouse from the catalog and it'll show up here, ready to check out.
         </EmptyState>
       </PageShell>
     )
   }
 
   return (
-    <PageShell title="Cart">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <PageShell
+      description={`${itemCount} ${itemCount === 1 ? 'item' : 'items'} ready to check out.`}
+      title="Your cart"
+    >
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-4">
           {actionError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-              {actionError}
-            </div>
+            <ErrorState message={actionError} title="Cart update failed" />
           ) : null}
           <Card className="overflow-hidden">
             {cart.items.map((line) => (
@@ -96,8 +102,15 @@ export function CartPage() {
               />
             ))}
           </Card>
+          <LinkButton
+            leftIcon={<ArrowLeft aria-hidden="true" size={16} />}
+            to="/"
+            variant="ghost"
+          >
+            Keep shopping
+          </LinkButton>
         </div>
-        <aside>
+        <aside className="lg:sticky lg:top-32">
           <CartSummary
             currency={cart.currency}
             itemCount={itemCount}

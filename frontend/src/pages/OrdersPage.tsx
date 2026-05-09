@@ -121,7 +121,7 @@ export function OrdersPage() {
       <PageShell title="Orders">
         <EmptyState
           action={<LinkButton to="/">Shop mice</LinkButton>}
-          icon={<ReceiptText aria-hidden="true" size={22} />}
+          icon={<ReceiptText aria-hidden="true" size={24} />}
           title="No orders yet"
         >
           Orders placed at checkout will show up here.
@@ -131,12 +131,13 @@ export function OrdersPage() {
   }
 
   return (
-    <PageShell title="Orders">
+    <PageShell
+      description={`${visibleOrders.length} ${visibleOrders.length === 1 ? 'order' : 'orders'} placed.`}
+      title="Orders"
+    >
       <div className="space-y-5">
         {actionError ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {actionError}
-          </div>
+          <ErrorState message={actionError} title="Payment update failed" />
         ) : null}
         {visibleOrders.map((order) => {
           const details = statusDetails(order)
@@ -149,59 +150,70 @@ export function OrdersPage() {
 
           return (
             <Card
-              className={isHighlighted ? 'border-emerald-400 ring-2 ring-emerald-200' : ''}
+              className={
+                isHighlighted
+                  ? 'border-emerald-400 ring-2 ring-emerald-200'
+                  : ''
+              }
               key={order.id}
             >
-              <div className="flex flex-col gap-4 border-b border-stone-200 p-5 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-bold text-slate-950">
-                      Order {order.id}
-                    </h2>
+              <div className="flex flex-col gap-4 border-b border-stone-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Order
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-bold text-slate-950">{order.id}</h2>
                     <Badge variant={details.variant}>
-                      <span className="mr-1 inline-flex">{details.icon}</span>
+                      <span className="inline-flex">{details.icon}</span>
                       {details.label}
                     </Badge>
                   </div>
-                  <p className="mt-2 text-sm text-slate-600">
-                    {formatDateTime(order.createdAt)}
+                  <p className="mt-1 text-sm text-slate-600">
+                    Placed {formatDateTime(order.createdAt)}
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-slate-950">
-                  {formatCents(order.totalCents, order.currency)}
-                </p>
+                <div className="text-right">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    Total
+                  </p>
+                  <p className="mt-1 text-2xl font-bold text-slate-950">
+                    {formatCents(order.totalCents, order.currency)}
+                  </p>
+                </div>
               </div>
 
-              <div className="divide-y divide-stone-200">
+              <ul className="divide-y divide-stone-200">
                 {order.items.map((item) => (
-                  <div
+                  <li
                     className="flex items-start justify-between gap-4 px-5 py-4"
                     key={`${order.id}-${item.productId}`}
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-950">
-                        {item.name}
-                      </p>
+                      <p className="truncate font-semibold text-slate-950">{item.name}</p>
                       <p className="mt-1 text-sm text-slate-600">
-                        Qty {item.quantity} x {formatCents(item.unitPriceCents, order.currency)}
+                        Qty {item.quantity} × {formatCents(item.unitPriceCents, order.currency)}
                       </p>
                     </div>
-                    <p className="font-semibold text-slate-950">
+                    <p className="font-bold text-slate-950">
                       {formatCents(item.subtotalCents, order.currency)}
                     </p>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
               {isPending ? (
-                <div className="flex flex-wrap gap-3 border-t border-stone-200 p-5">
+                <div className="flex flex-wrap gap-3 border-t border-stone-200 bg-amber-50/40 px-5 py-4">
+                  <p className="w-full text-sm font-semibold text-amber-900">
+                    Simulated payment is still pending — confirm or fail it below.
+                  </p>
                   <Button
                     disabled={Boolean(pendingAction)}
                     leftIcon={<CheckCircle2 aria-hidden="true" size={17} />}
                     onClick={() => void handlePayment(order.id, 'success')}
                     variant="primary"
                   >
-                    {successPending ? 'Confirming...' : 'Confirm payment'}
+                    {successPending ? 'Confirming…' : 'Confirm payment'}
                   </Button>
                   <Button
                     disabled={Boolean(pendingAction)}
@@ -209,7 +221,7 @@ export function OrdersPage() {
                     onClick={() => void handlePayment(order.id, 'failure')}
                     variant="secondary"
                   >
-                    {failurePending ? 'Failing...' : 'Fail payment'}
+                    {failurePending ? 'Failing…' : 'Fail payment'}
                   </Button>
                 </div>
               ) : null}
