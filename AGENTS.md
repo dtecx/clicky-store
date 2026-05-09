@@ -70,11 +70,12 @@ The repository currently has:
 - Product responses now include an `images` gallery array backed by in-memory and PostgreSQL stores, with `imageUrl` retained as the compatibility primary-image fallback.
 - Runtime upload storage config, local filesystem serving, and admin product image upload/reorder/update/delete APIs exist.
 - React admin product editing includes drag-and-drop/select image uploads, previews, primary-image updates, alt text editing, reordering, deletion, and max-count feedback.
+- React storefront uses uploaded gallery images everywhere they apply: product cards, the dedicated product page (interactive `ProductGallery` with keyboard-navigable thumbnails), cart lines, the admin product table, and the home hero, with admin-supplied alt text propagated through cards/cart and the legacy `imageUrl` plus generic SVG retained as ordered fallbacks.
 - Seed/demo product images currently stored as embedded SVG assets.
 
 Important frontend limitation:
 
-The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Storefront gallery polish and uploaded-file cleanup policy are still pending.
+The production Docker image now serves the React app through the Go server. The project still retains the legacy embedded static frontend as a temporary fallback and for current demo product SVG assets. Uploaded-file cleanup policy on product/image deletion is still pending.
 
 ---
 
@@ -352,15 +353,13 @@ Address these before adding unrelated features:
 
 1. Product media persistence supports galleries, but the legacy `imageUrl` field still remains as a compatibility fallback.
 2. Demo product images are embedded SVG files under static assets.
-3. Uploaded image management is admin-only; storefront gallery polish is still pending.
-4. Uploaded-file cleanup on product/image deletion still needs a deliberate policy.
-5. Product detail gallery thumbnails render but do not yet switch the main image interactively.
-6. Storefront gallery polish and related image-aware layout work are still pending.
-7. Go production serving now serves React `index.html` for frontend route reloads when `FRONTEND_DIST_DIR` points at a Vite build.
-8. Admin product/order/user pages are backend-backed in React; image management should still receive browser QA against the Go server.
-9. Product detail pages need richer gallery/spec/related-product polish once product images exist.
-10. Product specs are too limited for a real mouse shop.
-11. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
+3. Uploaded-file cleanup on product/image deletion still needs a deliberate policy (Phase 15 wired galleries through the storefront but did not introduce orphan-cleanup behavior).
+4. Go production serving now serves React `index.html` for frontend route reloads when `FRONTEND_DIST_DIR` points at a Vite build.
+5. Admin product/order/user pages are backend-backed in React; image management should still receive browser QA against the Go server.
+6. Product detail page now shows an interactive `ProductGallery`, but related-product polish and richer specs/sections still need work.
+7. Product specs are too limited for a real mouse shop.
+8. Related-product suggestions, hero polish, and category sidebar (Phase 17) are still pending.
+9. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
 
 ---
 
@@ -1060,6 +1059,8 @@ git commit -m "feat: add react product image uploader"
 ### Phase 15: Use Galleries Across Storefront
 
 Goal: customer UI uses uploaded product images everywhere.
+
+Current status: completed. Product cards, the product detail page, cart lines, and the admin product table all use `primaryProductImageUrl` with `onError` fallback to the generic asset; admin-supplied alt text is propagated. The product detail page now renders an interactive `ProductGallery` that swaps the main image when a thumbnail is clicked or activated via keyboard, and gallery entries fall through `images` → `imageUrl` → generic SVG.
 
 Suggested changes:
 

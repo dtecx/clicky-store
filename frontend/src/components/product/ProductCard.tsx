@@ -4,6 +4,7 @@ import type { Product } from '../../types/product'
 import { formatCents } from '../../utils/money'
 import {
   fallbackProductImageUrl,
+  primaryProductImageAlt,
   primaryProductImageUrl,
 } from '../../utils/productImages'
 import { Badge } from '../ui/Badge'
@@ -43,6 +44,7 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
   const stock = stockBadge(product.stock)
   const detailHref = `/products/${product.slug}`
   const imageUrl = primaryProductImageUrl(product)
+  const imageAlt = primaryProductImageAlt(product)
   const traits = [
     product.wireless ? 'Wireless' : 'Wired',
     product.ergonomic ? 'Ergonomic' : null,
@@ -60,7 +62,7 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
         to={detailHref}
       >
         <img
-          alt={product.name}
+          alt={imageAlt}
           className="mx-auto aspect-square h-44 w-full max-w-56 object-contain"
           loading="lazy"
           onError={(event) => {

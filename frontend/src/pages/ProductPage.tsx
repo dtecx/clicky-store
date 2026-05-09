@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getProductBySlug } from '../api/products'
 import { PageShell } from '../components/layout/PageShell'
+import { ProductGallery } from '../components/product/ProductGallery'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -15,10 +16,6 @@ import { useCart } from '../state/useCart'
 import type { Product } from '../types/product'
 import { errorMessage, isApiErrorWithStatus } from '../utils/errors'
 import { formatCents } from '../utils/money'
-import {
-  fallbackProductImageUrl,
-  productGalleryImageUrls,
-} from '../utils/productImages'
 
 function formatDpi(dpi: number): string {
   if (!Number.isFinite(dpi) || dpi <= 0) {
@@ -130,8 +127,6 @@ export function ProductPage() {
       : product.stock <= 5
         ? { label: `Only ${product.stock} left`, variant: 'warning' as const }
         : { label: 'In stock', variant: 'success' as const }
-  const galleryImages = productGalleryImageUrls(product)
-  const mainImageUrl = galleryImages[0] ?? fallbackProductImageUrl
   const maxQuantity = Math.max(1, product.stock)
   const canAddToCart = product.stock > 0
 
@@ -181,35 +176,7 @@ export function ProductPage() {
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
-        <div className="space-y-4">
-          <Card className="flex min-h-[26rem] items-center justify-center bg-white p-6">
-            <img
-              alt={product.name}
-              className="max-h-[22rem] w-full object-contain"
-              onError={(event) => {
-                event.currentTarget.src = fallbackProductImageUrl
-              }}
-              src={mainImageUrl}
-            />
-          </Card>
-          {galleryImages.length > 1 ? (
-            <div className="grid grid-cols-4 gap-3">
-              {galleryImages.map((imageUrl) => (
-                <button
-                  className="flex aspect-square items-center justify-center rounded-lg border border-stone-300 bg-white p-2 hover:border-emerald-700"
-                  key={imageUrl}
-                  type="button"
-                >
-                  <img
-                    alt=""
-                    className="h-full w-full object-contain"
-                    src={imageUrl}
-                  />
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <ProductGallery product={product} />
 
         <div className="space-y-6">
           <div>

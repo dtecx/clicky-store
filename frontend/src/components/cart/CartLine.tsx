@@ -4,6 +4,7 @@ import type { CartLine as CartLineType } from '../../types/cart'
 import { formatCents } from '../../utils/money'
 import {
   fallbackProductImageUrl,
+  primaryProductImageAlt,
   primaryProductImageUrl,
 } from '../../utils/productImages'
 
@@ -22,6 +23,7 @@ export function CartLine({
 }: CartLineProps) {
   const { product } = line
   const imageUrl = primaryProductImageUrl(product)
+  const imageAlt = primaryProductImageAlt(product)
   const canDecrease = line.quantity > 1 && !isPending
   const canIncrease = line.quantity < product.stock && !isPending
 
@@ -33,7 +35,7 @@ export function CartLine({
         to={`/products/${product.slug}`}
       >
         <img
-          alt={product.name}
+          alt={imageAlt}
           className="h-full w-full object-contain"
           loading="lazy"
           onError={(event) => {
