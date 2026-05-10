@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 const shopLinks = [
   { label: 'Gaming mice', to: '/?category=gaming' },
   { label: 'Office mice', to: '/?category=office' },
-  { label: 'Travel picks', to: '/?category=travel' },
   { label: 'All products', to: '/' },
 ]
 

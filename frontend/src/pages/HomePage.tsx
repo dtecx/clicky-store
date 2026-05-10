@@ -31,7 +31,6 @@ const categories: { description: string; label: string; value: string }[] = [
   { description: 'Everything in stock', label: 'All', value: '' },
   { description: 'High-DPI competitive picks', label: 'Gaming', value: 'gaming' },
   { description: 'Quiet, ergonomic desk mice', label: 'Office', value: 'office' },
-  { description: 'Compact pointers for the road', label: 'Travel', value: 'travel' },
 ]
 
 const sortOptions = [

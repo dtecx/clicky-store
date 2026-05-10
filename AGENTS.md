@@ -8,7 +8,7 @@ This file is the source of truth for future AI/code-agent work in this repositor
 
 ## Project Intent
 
-Clicky-Store is an educational e-commerce web application for gaming and office mice.
+Clicky-Store is an educational e-commerce web application for **gaming and office mice** (two categories only — see Phase 20).
 
 The project should satisfy the expected online-shop requirements:
 
@@ -27,15 +27,13 @@ The project should satisfy the expected online-shop requirements:
 - Tests and documentation.
 - Docker-based local/deployment workflow.
 
-The backend is already more than a skeleton. Treat the current repository as a working MVP with persistence, auth, customer flows, admin flows, docs, CI, and a React frontend served by Go in production builds.
-
-The next major direction is to turn the UI into a real e-shop frontend using:
+The frontend stack is locked in:
 
 ```text
 React + Vite + TypeScript + Tailwind CSS
 ```
 
-Do not continue the old Bootstrap-only plan unless the user explicitly reverses this decision.
+Do not introduce a different framework (Next.js, Remix, Nuxt, etc.) unless the user explicitly reverses this decision.
 
 ---
 
@@ -55,7 +53,7 @@ The repository currently has:
 - `internal/config` for environment loading and production secret validation.
 - Bcrypt password hashing through `golang.org/x/crypto`.
 - `pgx` PostgreSQL driver.
-- Public product listing and product details.
+- Public product listing and product details (by ID and slug).
 - Customer registration and login.
 - HMAC-signed bearer-token style auth.
 - Login failure rate limiting.
@@ -63,22 +61,30 @@ The repository currently has:
 - Admin product, order, and user management.
 - API, development, and deployment documentation.
 - GitHub Actions CI for formatting, tests, vet, frontend lint/build, and Docker build.
-- Go frontend serving adapter that serves the React `frontend/dist` build via `FRONTEND_DIST_DIR` and returns a small text placeholder when that variable is unset. The legacy embedded HTML/CSS/JS frontend has been removed; seed product SVGs were moved to `frontend/public/assets/products/` so they ride along with the Vite build.
+- Go frontend serving adapter that serves the React `frontend/dist` build via `FRONTEND_DIST_DIR` and returns a small text placeholder when that variable is unset. The legacy embedded HTML/CSS/JS frontend is gone; seed product SVGs live in `frontend/public/assets/products/`.
 - Multi-stage Dockerfile that builds the React frontend and Go backend, then copies `frontend/dist` into the runtime image.
 - React + Vite + TypeScript + Tailwind CSS app in `frontend/`, with typed API helpers, auth state, backend-backed product listing/detail, cart, checkout, customer orders, and admin dashboard/product/order/user flows.
-- React admin pages are backend-backed for dashboard metrics, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates.
-- Product responses now include an `images` gallery array backed by in-memory and PostgreSQL stores, with `imageUrl` retained as the compatibility primary-image fallback.
+- Product responses include an `images` gallery array backed by in-memory and PostgreSQL stores. `imageUrl` remains as the compatibility primary-image fallback.
 - Runtime upload storage config, local filesystem serving, and admin product image upload/reorder/update/delete APIs exist.
 - React admin product editing includes drag-and-drop/select image uploads, previews, primary-image updates, alt text editing, reordering, deletion, and max-count feedback.
-- React storefront uses uploaded gallery images everywhere they apply: product cards, the dedicated product page (interactive `ProductGallery` with keyboard-navigable thumbnails), cart lines, the admin product table, and the home hero, with admin-supplied alt text propagated through cards/cart and the legacy `imageUrl` plus generic SVG retained as ordered fallbacks.
-- Phase 17 polish is complete across customer and admin: sticky header with scroll shadow, gradient hero, value-prop strip, category card grid, sticky filter bar with live count, hover-lift product cards with image zoom, breadcrumb-led product page with sticky buy rail, trust strip, and a related-products strip, refined cart/checkout summaries, order cards with prominent payment-simulation actions. Admin has a shared sidebar layout (`AdminLayout`), dashboard with toned stat cards and a pending-payments callout, refined hover-row tables across products/orders/users, and consistent rounded-2xl card surfaces with stone-tinted shadows. UI primitives include a `Skeleton` family used for grid loading.
-- Phase 18 documentation and final checks are complete: README, development/deployment docs, API examples, and OpenAPI now describe the React storefront, slug product pages, gallery/image upload APIs, upload env vars/storage, validation rules, and the remaining uploaded-file cleanup gap. Latest local checks passed: `gofmt -l .`, `go test ./...`, `go vet ./...`, `docker compose config`, `npm run lint`, `npm run build`, and `docker build -t clicky-store:test .`.
-- Phase 19 now uses a curated demo catalog initializer instead of a live retailer scraper. `init/init.json` contains 10 real mouse products with Polish descriptions and relative image paths. `internal/initcatalog` validates the whole JSON file plus local JPG/PNG files under `init/img/{slug}/...`; if anything is missing or invalid, startup leaves the original four fallback products in place.
-- Seed/demo fallback product images currently use SVG assets. Phase 19 demo images are local, ignored files under `init/img/` and are copied into runtime upload storage only after validation passes.
+- React storefront uses uploaded gallery images everywhere they apply (cards, product page gallery, cart lines, admin table, home hero).
+- Phases 17 and 18 polish/documentation passes are complete.
+- Phase 19 uses a curated demo catalog initializer (`init/init.json` + `init/img/{slug}/...`) instead of a live retailer scraper. Validation rejects malformed JSON and any non-decodable, oversized, or wrong-extension image; on any failure, the original four fallback products remain in place.
 
 Important frontend limitation:
 
-The production Docker image serves the React app through the Go server. The legacy embedded static frontend has been removed; only the React build under `frontend/dist` is served. Seed product SVGs are shipped via `frontend/public/assets/products/`. Optional Phase 19 demo images are loaded from `init/img/` and copied into `UPLOAD_DIR` only when `init/init.json` and all referenced files validate. Uploaded-file cleanup policy on product/image deletion is still pending.
+The production Docker image serves the React app through the Go server. Only the React build under `frontend/dist` is served in production. Seed product SVGs ship via `frontend/public/assets/products/`. Optional Phase 19 demo images are loaded from `init/img/` and copied into `UPLOAD_DIR` only when `init/init.json` and all referenced files validate. Uploaded-file cleanup policy on product/image deletion is still pending.
+
+---
+
+## Active Workstream
+
+The next two phases are mandatory and should ship together as one cohesive update because they touch overlapping files:
+
+1. **Phase 20 — Remove the "travel" category** (data, validation, UI, demo data, docs).
+2. **Phase 21 — UI redesign for accessibility, responsiveness, and modern look** (storefront and admin).
+
+Phase 20 is small but unblocks Phase 21 (no need to redesign filter chips or category cards that are about to disappear). Do Phase 20 first, ship it, then start Phase 21.
 
 ---
 
@@ -86,15 +92,15 @@ The production Docker image serves the React app through the Go server. The lega
 
 - Keep commits small, focused, and meaningful.
 - Prefer one feature branch per large work area.
-- Do not mix database migrations, API changes, UI migration, docs, and Docker changes in one giant commit.
+- Do not mix database migrations, API changes, UI redesign, docs, and Docker changes in one giant commit.
 - Keep the repository buildable and testable after every meaningful step.
 - Run `gofmt` on Go files before committing.
 - Run `go test ./...` before finalizing backend changes.
 - Run `go vet ./...` before finalizing backend changes when Go tooling is available.
-- Run frontend build/type/lint checks once the React frontend exists.
+- Run `npm run lint` and `npm run build` (in `frontend/`) before finalizing frontend changes.
 - Do not commit `.env`, generated build output, secrets, `data/`, uploaded product images, or database files.
 - Do not commit local Phase 19 demo photos under `init/img/`; only commit `init/init.json`, docs, and placeholder files.
-- Do not commit `frontend/dist/` unless the repository intentionally changes to committed static assets. Prefer Docker/CI builds.
+- Do not commit `frontend/dist/` unless the repository intentionally changes to committed static assets.
 - Keep handlers independent from PostgreSQL details.
 - Keep service code dependent on interfaces from `internal/core/ports`.
 - Preserve the existing REST API shape unless a deliberate versioned change is required.
@@ -104,7 +110,314 @@ The production Docker image serves the React app through the Go server. The lega
 - New product images must be uploaded through the admin UI/API and stored in a runtime upload directory.
 - Do not add Next.js. The backend is Go and the frontend should be a Vite SPA unless the user explicitly requests otherwise.
 - Do not rewrite backend and frontend at the same time.
-- Do not reintroduce the legacy embedded HTML/CSS/JS frontend. The React app is the only frontend.
+- Do not reintroduce the legacy embedded HTML/CSS/JS frontend.
+- **Do not reintroduce the "travel" category.** The catalog has exactly two categories: `gaming` and `office`.
+
+---
+
+## Phase 20 — Remove "travel" Category
+
+### Goal
+
+Eliminate every reference to the `travel` category from the frontend (and any stray docs / demo data) so the product catalog is exclusively `gaming` and `office`. The backend `internal/initcatalog` already restricts allowed categories to those two; this phase brings the rest of the project in line.
+
+### Findings (audit before edits)
+
+| Area | File | What to change |
+|------|------|----------------|
+| Storefront filter | `frontend/src/pages/HomePage.tsx` | Drop the `Travel` entry from the `categories` array. |
+| Admin form | `frontend/src/pages/AdminProductsPage.tsx` | Drop the `Travel` entry from `categoryOptions`. |
+| Footer nav | `frontend/src/components/layout/Footer.tsx` | Remove the `Travel picks` link from `shopLinks`. |
+| Demo data | `frontend/src/pages/demoProducts.ts` | Remove the `TravelClick Mini` entry. (File appears unused — delete it if no imports remain.) |
+| Backend fallback (existing seed) | `internal/adapters/db/memory.go` and `internal/adapters/db/postgres/migrations/000001_init.up.sql` | The product `prod-office-travel` ("TravelClick Compact") is already categorized as `office` and is fine to keep. Do not touch its ID, slug, or category — that would break existing PostgreSQL data and the `internal/initcatalog` fallback ID map. |
+| Catalog mapping | `internal/initcatalog/catalog.go` | The fallback ID-to-slug map references `prod-office-travel` → `travelclick-compact`. Leave it alone for the same reason. |
+| README | `README.md` | Already says "gaming and office mice" — no change required, but re-read to be sure no stray "travel" wording is reintroduced. |
+| OpenAPI / docs | `docs/openapi.yaml`, `docs/api-examples.md`, `docs/development.md`, `docs/deployment.md` | Grep for `travel` (case-insensitive); update any user-facing copy. The legacy product description containing the word "travel" can stay (it describes a portable office mouse), but no UI category called "travel" should remain in docs. |
+
+### Verification gates
+
+- `grep -ri "travel" frontend/src` returns zero matches **outside** of test fixtures (and even those should be removed).
+- `grep -ri --include="*.{md,yaml,yml,json}" "category.*travel\|'travel'\|\"travel\"" .` returns zero hits in customer/admin user copy.
+- `npm run lint` and `npm run build` succeed with no new warnings.
+- `go test ./...` and `go vet ./...` still pass (these should be unaffected).
+
+### Suggested commit
+
+```sh
+git add frontend AGENTS.md docs README.md
+git commit -m "feat: drop travel category, keep gaming and office only"
+```
+
+---
+
+## Phase 21 — UI Redesign
+
+### Goal
+
+Make the storefront and admin look and feel like a polished, modern, accessible 2026-era e-shop. Fix every reported defect:
+
+1. **Overflow on small screens** — header, sticky filter bar, product cards, admin tables clip or wrap awkwardly below ~380 px.
+2. **Poor contrast** — secondary/tertiary text (e.g. stone-300 over stone-100, emerald hints on white, hero subhead) is hard to read.
+3. **Dead buttons** — Footer support/account links (`Shipping & returns`, `Warranty`, `Contact`, `FAQ`) all link to `/`. Either give them real targets or remove them.
+4. **Inconsistent spacing/radii/typography** — the current design mixes 2xl/lg radii, mixed font weights, and uneven section padding.
+5. **Generic look** — gradient hero is OK but lacks rhythm; product cards lack a clear visual hierarchy; admin tables look like vanilla bootstrap.
+
+### Design system (lock in before redesigning components)
+
+Create a single source of truth in `frontend/src/styles/` (or directly in `tailwind.config.{ts,js}` if simpler) so colors and radii are consistent.
+
+#### Color tokens (light theme, WCAG AA compliant)
+
+```text
+surface-base       = stone-50    (#FAFAF9)   page background
+surface-raised     = white       (#FFFFFF)   cards, sticky bars
+surface-sunken     = stone-100   (#F5F5F4)   hover backdrops, table headers
+border-subtle      = stone-200   (#E7E5E4)
+border-strong     = stone-300   (#D6D3D1)
+text-primary       = slate-950   (#020617)   body and headings
+text-secondary    = slate-600   (#475569)   captions, helper text  (≥4.5:1 on white)
+text-muted         = slate-500   (#64748B)   only on white/stone-50
+accent             = emerald-600 (#059669)   primary action, in-stock
+accent-hover       = emerald-700 (#047857)
+accent-soft-bg    = emerald-50  (#ECFDF5)
+accent-soft-text  = emerald-800 (#065F46)   ≥7:1 on emerald-50
+danger             = red-600     (#DC2626)
+danger-soft-bg    = red-50      (#FEF2F2)
+danger-soft-text  = red-700     (#B91C1C)
+warning            = amber-500   (#F59E0B)
+warning-soft-bg   = amber-50    (#FFFBEB)
+warning-soft-text = amber-800   (#92400E)
+focus-ring         = emerald-500/40
+```
+
+Hard rule: **no `text-stone-300` or `text-slate-400` on white or stone-50 surfaces** for anything except decorative icons (must have `aria-hidden="true"`). Helper text uses `text-slate-600` minimum. Disabled text uses `text-slate-400` only when paired with `bg-stone-100` or darker.
+
+#### Spacing scale
+
+Tailwind defaults are fine. Stick to multiples of 4 (Tailwind's `*-1` through `*-12`). Page sections use `py-12` (mobile) / `py-16` (desktop). Cards use `p-4` (mobile) / `p-6` (desktop). Avoid arbitrary `py-7`/`px-5` mixes — pick `4`/`6`/`8`.
+
+#### Radius scale
+
+```text
+radius-sm = rounded-md   (6px)   — chips, tiny badges
+radius-md = rounded-lg   (8px)   — inputs, buttons
+radius-lg = rounded-xl   (12px)  — small cards, list rows
+radius-xl = rounded-2xl  (16px)  — hero cards, product cards, admin panels
+radius-pill = rounded-full        — avatars, status dots
+```
+
+Pick **one** radius per surface type and stick with it. Today the codebase mixes `rounded-2xl` and `rounded-xl` on the same kind of element.
+
+#### Typography
+
+```text
+font-sans = Inter, system-ui (Tailwind default stack is fine; consider adding Inter Variable via @fontsource/inter)
+display   = text-4xl/5xl/6xl, font-bold, tracking-tight  (hero only)
+h1        = text-3xl  font-bold tracking-tight
+h2        = text-2xl  font-bold tracking-tight
+h3        = text-lg   font-semibold
+body      = text-sm   leading-6
+caption   = text-xs   leading-5  uppercase tracking-[0.14em]
+```
+
+Drop `font-bold` from body copy. The current cards use bold for both title and price — keep bold on price only, use `font-semibold` on title.
+
+#### Responsive breakpoints
+
+```text
+< 380 px : single column, horizontal scroll only inside admin tables (with `-mx-4 overflow-x-auto`)
+sm  640 : two-column product grid
+md  768 : sticky filter goes inline
+lg  1024: three-column product grid; admin sidebar permanent
+xl  1280: four-column product grid
+2xl 1536: cap at max-w-7xl
+```
+
+Hard rule: **no element may overflow the viewport at 360 px width**. Test in DevTools with the iPhone SE preset before merging.
+
+### Component-level redesign tasks
+
+Each item is a single PR-sized change. Do them in this order so context flows naturally and the app stays runnable.
+
+#### 21.1 — Tailwind config and base styles
+
+- Add a `theme.extend.colors` block that aliases the tokens above (`surface`, `accent`, `danger`, `warning`).
+- Add `theme.extend.fontFamily.sans = ['Inter Variable', 'system-ui', ...]`.
+- Install `@fontsource-variable/inter` and import it once in `src/main.tsx`.
+- Trim `src/index.css` to: `@tailwind base; @tailwind components; @tailwind utilities;` plus a global `:focus-visible` ring helper.
+- Add a `body { @apply bg-surface-base text-text-primary antialiased; }` rule.
+
+#### 21.2 — UI primitives audit
+
+`frontend/src/components/ui/` already has Button, Card, Badge, EmptyState, ErrorState, LoadingState, LinkButton, Skeleton.
+
+- **Button**: ensure `variant` covers `primary | secondary | ghost | danger | outline`; `size` covers `sm | md | lg`; primary uses `bg-emerald-600 hover:bg-emerald-700 text-white`; ghost has visible hover state on white (`hover:bg-stone-100`); disabled gets `opacity-60 cursor-not-allowed`. All variants reach 4.5:1 contrast.
+- **Card**: standardize on `rounded-2xl border border-stone-200 bg-white shadow-sm`. Remove ad-hoc shadows in pages.
+- **Badge**: lock variants to the soft-bg + soft-text token pairs above.
+- Add a new `Container` component (`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`) and use it on every page so horizontal padding is consistent.
+
+#### 21.3 — Header / mobile navigation
+
+Current header overflows below 480 px (logo + search + cart badge + login link).
+
+- Below `md`, hide the inline search input and replace it with an icon button that toggles a full-width drawer.
+- Replace the multi-link account block with a single avatar/menu button on mobile.
+- Cart badge becomes an icon-only button on mobile (count as superscript).
+- Ensure the header stays sticky with `backdrop-blur` and a subtle `border-b` once scrolled (it already does this — verify after refactor).
+- Admin shortcut link only renders for admin users (already does — keep).
+- Make the entire header keyboard-navigable (`tab` cycle, `aria-current="page"` on active link).
+
+#### 21.4 — Footer
+
+Currently has 4 columns of links, several pointing at `/`.
+
+- Cut **Support** column entirely (Shipping/Warranty/Contact/FAQ are placeholders going nowhere — leaving dead links is worse than not showing them).
+- Replace with a 3-column layout: Brand + tagline | Shop | Account.
+- All remaining links must resolve. Keep `?category=gaming` and `?category=office` deep-links (no `?category=travel`).
+- Stack columns vertically on mobile (`grid grid-cols-1 sm:grid-cols-3`).
+
+#### 21.5 — Home / storefront hero + value props
+
+- Replace the radial-gradient hero with a cleaner two-column layout: copy left, single product image right, on a slate-950 background. Keep the gradient text accent on the second h1 line but tone down opacity.
+- Hero subhead must be `text-stone-100` (not `stone-200`) — verifies AA contrast on slate-950.
+- Reduce hero vertical padding on mobile (`py-12` instead of `py-16`).
+- Value props strip: keep four icons but switch to a tighter `flex` row on `md+` and a 2x2 grid on mobile.
+
+#### 21.6 — Category row
+
+- After Phase 20 there are exactly three options: All / Gaming / Office. A 4-up grid no longer makes sense — switch to a horizontal pill bar (`flex gap-2`) that scrolls on small screens.
+- Active state: solid slate-950 background, white text.
+- Inactive: white background, slate-700 text, hover lifts to stone-50.
+
+#### 21.7 — Sticky filter bar
+
+- Currently sits at `top-[68px]`; hard-coding the offset breaks when the header height changes. Use `top-16` (matches a 64 px header) and standardize the header to `h-16`.
+- On mobile (`< sm`), search and sort each get a full row instead of side-by-side.
+- Make sure the bar's background contrasts against the page (`bg-white/85` over `bg-stone-50` page works; the current `bg-stone-100/85` over `bg-stone-50` is too low contrast).
+
+#### 21.8 — Product grid + product card
+
+- Card: `rounded-2xl border border-stone-200 bg-white p-4 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition`. Image area uses `aspect-square` (not fixed height) so it never clips.
+- Title: 1–2 line clamp (`line-clamp-2`), `font-semibold text-base`.
+- Price block: `font-bold text-lg text-slate-950` and stock badge to its right.
+- "Add to cart" button is full width on mobile, auto on desktop.
+- Quick-add must show a loading spinner (re-use `Spinner` from Skeleton family) and a success toast.
+
+#### 21.9 — Product detail page
+
+- Two-column layout `lg:grid-cols-[1fr_360px]`. Right rail (price + buy box) becomes a sticky `top-24` card.
+- On mobile, buy box becomes a fixed bottom bar (`fixed inset-x-0 bottom-0 bg-white border-t shadow-lg p-4`) with price + Add-to-cart. Add `pb-28` to the page on mobile so content isn't hidden behind it.
+- Specs table: real `<dl>` semantic markup, two columns on mobile (key / value), zebra rows.
+- Related products strip stays but limit to 4 items and reuse the new product card.
+
+#### 21.10 — Cart, Checkout, Orders
+
+- Cart line: image (16x16 mobile, 20x20 desktop), name, qty stepper (`-` / number / `+`), unit price, line total, remove icon. On mobile collapse into two rows.
+- Cart summary: sticky on `lg+`, full-width below.
+- Checkout: collapse into one column on mobile, two columns on desktop. Add a clear "Place order" CTA bar that's always visible.
+- Orders page: card layout (already exists) — tighten spacing, make status badge prominent, payment-simulation buttons become a button group with loading states.
+
+#### 21.11 — Auth pages (Login / Register)
+
+- Centered card, `max-w-md`, `p-6 sm:p-8`.
+- Inputs have explicit `<label>` (currently using `sr-only` in some places — fine, but make sure errors are announced via `aria-describedby`).
+- Show server error inline with red soft tokens.
+
+#### 21.12 — Admin shell
+
+- Sidebar (`AdminLayout`) collapses to a top tab bar below `lg` so it doesn't eat the screen.
+- Sidebar items use icons + labels with active state (`bg-slate-950 text-white rounded-lg`).
+- Admin dashboard stat cards: switch to 4 equal cards with the metric, label, and a tiny sparkline placeholder (no chart yet — just visual rhythm).
+
+#### 21.13 — Admin tables (products / orders / users)
+
+- Wrap every `<table>` in `-mx-4 sm:mx-0 overflow-x-auto` so horizontal scroll works on mobile.
+- Sticky header row inside the scroll container (`thead.sticky.top-0.bg-stone-50`).
+- Replace the "Edit | View | Delete" three-button row with a single overflow menu (`MoreHorizontal` icon -> dropdown) on mobile; keep inline buttons on `lg+`.
+- Add zebra striping (`even:bg-stone-50/40`) and increase row padding to `py-3`.
+
+#### 21.14 — Forms (admin product editor)
+
+- Group fields into sections: Identity (name, slug), Catalog (category, price, currency), Specs (DPI, wireless, ergonomic, stock), Media (image manager).
+- Use `<fieldset>` + `<legend>` semantically; visually render legend as `caption` token text.
+- Make the form scrollable inside its card (`max-h-[80vh] overflow-y-auto`) on small screens, so the action footer never escapes the viewport.
+- Replace the free-text Category input with a `<select>` bound to the same two-option list (gaming / office) used by the filter — this prevents typos that bypass the backend whitelist.
+
+#### 21.15 — Empty / loading / error states
+
+- All three states already exist as components; audit every page and make sure they are rendered (some pages currently show a blank flash before data arrives).
+- Skeletons use `bg-stone-200` (current `stone-100` is too faint on `stone-50`).
+
+#### 21.16 — Accessibility pass
+
+- All interactive elements must have a `:focus-visible` ring (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2`).
+- All images must have meaningful or empty `alt` (decorative `alt=""` is fine).
+- All icon-only buttons must have `aria-label`.
+- Color is never the only indicator (stock state pairs color with text + icon).
+- Run Lighthouse a11y audit; target ≥95.
+
+#### 21.17 — Responsive QA pass
+
+Test these widths in DevTools and on real devices when possible:
+
+```text
+360  (small Android)
+390  (iPhone 14)
+640  (small tablet portrait)
+768  (iPad portrait)
+1024 (laptop)
+1440 (desktop)
+```
+
+Verify on every page:
+
+- No horizontal scroll on the page itself.
+- Sticky elements don't overlap content.
+- Tap targets ≥ 40 px tall.
+- Text remains legible (≥14 px body, ≥12 px caption).
+
+#### 21.18 — Build + lint + tests
+
+Final gate before declaring Phase 21 done:
+
+```sh
+cd frontend
+npm ci
+npm run lint
+npm run build
+
+cd ..
+gofmt -l .
+go test ./...
+go vet ./...
+docker compose config
+docker build -t clicky-store:test .
+```
+
+### Phase 21 commit plan
+
+Use one commit per numbered subsection above so reviews stay small:
+
+```text
+21.1  refactor(frontend): introduce tailwind design tokens
+21.2  refactor(frontend): tighten ui primitives
+21.3  refactor(frontend): redesign header with mobile drawer
+21.4  refactor(frontend): trim footer dead links
+21.5  refactor(frontend): redesign hero and value props
+21.6  refactor(frontend): redesign category row as pill bar
+21.7  refactor(frontend): fix sticky filter offset and contrast
+21.8  refactor(frontend): redesign product card and grid
+21.9  refactor(frontend): redesign product detail page
+21.10 refactor(frontend): redesign cart, checkout, orders
+21.11 refactor(frontend): redesign auth pages
+21.12 refactor(frontend): redesign admin shell and dashboard
+21.13 refactor(frontend): make admin tables responsive
+21.14 refactor(frontend): restructure admin product editor
+21.15 refactor(frontend): unify empty/loading/error states
+21.16 refactor(frontend): a11y pass on focus, labels, contrast
+21.17 chore(frontend): responsive QA fixes
+21.18 chore: docs and final checks for ui redesign
+```
 
 ---
 
@@ -116,7 +429,7 @@ Use:
 React + Vite + TypeScript + Tailwind CSS
 ```
 
-Recommended supporting frontend libraries:
+Recommended supporting frontend libraries (already installed):
 
 ```text
 react-router-dom
@@ -124,36 +437,20 @@ lucide-react
 clsx
 ```
 
-Optional later libraries:
+New dependencies allowed for Phase 21:
+
+```text
+@fontsource-variable/inter   (one-line import in main.tsx)
+```
+
+Optional later libraries (do **not** add until they solve a real, observed problem):
 
 ```text
 react-hook-form
 zod
 zustand
+@radix-ui/react-dropdown-menu  (only if 21.13 overflow menu becomes painful with raw button + popover)
 ```
-
-Avoid adding optional libraries until they solve a real problem. Plain React state and typed API helpers are enough for the first migration phase.
-
-### Why React Now
-
-The project is already complex enough that plain JavaScript plus Bootstrap would still leave too much manual DOM/state management.
-
-The frontend now needs:
-
-- Dedicated product pages.
-- Product image galleries.
-- Admin image upload with drag-and-drop and previews.
-- Auth state.
-- Cart state.
-- Checkout state.
-- Payment simulation state.
-- Admin product forms.
-- Admin user/order tables.
-- Loading/error/empty states.
-- Route-based pages.
-- Reusable layouts and UI parts.
-
-Bootstrap mainly solves styling. React solves structure, state, routing, and reusable UI.
 
 ### Tailwind Usage Rules
 
@@ -163,9 +460,10 @@ Do:
 
 - Use Tailwind utility classes for layout and components.
 - Keep shared UI as React components.
-- Use small helper functions for class composition where useful.
+- Use small helper functions for class composition (`cn()` from `utils/cn.ts`).
 - Keep global CSS minimal.
 - Use responsive utilities deliberately.
+- Use the design tokens from Phase 21.1 — do not invent new colors per page.
 
 Do not:
 
@@ -173,6 +471,7 @@ Do not:
 - Scatter repeated long class strings everywhere if a component would be cleaner.
 - Use Bootstrap and Tailwind together as competing layout systems.
 - Add a large component library unless the user asks.
+- Use `text-stone-300`, `text-slate-300`, or `text-slate-400` for body text on light surfaces.
 
 ---
 
@@ -188,10 +487,12 @@ frontend/
   package-lock.json
   tsconfig.json
   vite.config.ts
+  tailwind.config.ts
   index.html
   src/
     main.tsx
     App.tsx
+    index.css
     api/
       client.ts
       auth.ts
@@ -205,6 +506,7 @@ frontend/
         Header.tsx
         Footer.tsx
         PageShell.tsx
+        Container.tsx           ← new in 21.2
         ProtectedRoute.tsx
         AdminRoute.tsx
       ui/
@@ -218,6 +520,7 @@ frontend/
         EmptyState.tsx
         LoadingState.tsx
         ErrorState.tsx
+        Skeleton.tsx
       product/
         ProductCard.tsx
         ProductGrid.tsx
@@ -266,18 +569,11 @@ frontend/
       dates.ts
       slugs.ts
       errors.ts
+      cn.ts
+      productImages.ts
 ```
 
-The Go server should eventually serve the React build output.
-
-Recommended final static serving direction:
-
-```text
-frontend/dist/             generated by Vite
-internal/frontend/dist/    optional copy target during Docker build
-```
-
-Do not keep long-term application code inside one giant `app.js`.
+The Go server serves the React build output; this is already wired up.
 
 ---
 
@@ -285,6 +581,7 @@ Do not keep long-term application code inside one giant `app.js`.
 
 ```text
 cmd/server/                         Go HTTP server composition root
+cmd/initcatalog/                    Manual validator for init/init.json
 internal/config/                    Environment loading and validation
 internal/core/domains/              Domain models, constants, validation, shared domain errors
 internal/core/ports/                Store interfaces
@@ -292,23 +589,17 @@ internal/service/                   Application use cases, auth, password hashin
 internal/adapters/db/               In-memory store and store contract tests
 internal/adapters/db/postgres/      PostgreSQL store, helpers, migrations
 internal/adapters/http/v1/          REST API v1 handlers, requests, auth middleware, rate limiting
+internal/adapters/uploads/          Local product image upload storage
 internal/initcatalog/               Optional validated demo catalog loader/seeder
 internal/frontend/                  Frontend serving adapter (FRONTEND_DIST_DIR aware)
+internal/web/                       Shared HTTP JSON, CORS, logging, middleware helpers
 frontend/                           React + Vite + TypeScript + Tailwind source app
 frontend/public/assets/products/    Seed product SVGs shipped with the Vite build
 init/                               Phase 19 demo catalog JSON and ignored local image source folder
-internal/web/                       Shared HTTP JSON, CORS, logging, middleware helpers
 docs/                               API, development, and deployment documentation
 compose.yaml                        Local API and PostgreSQL services
-Dockerfile                          Production-style Go API image
+Dockerfile                          Multi-stage React + Go production image
 .github/workflows/ci.yml            CI checks
-```
-
-Target architecture after React migration:
-
-```text
-frontend/                           React + Vite + TypeScript + Tailwind source app
-internal/frontend/                  Go React-build serving adapter
 ```
 
 ---
@@ -317,7 +608,7 @@ internal/frontend/                  Go React-build serving adapter
 
 Customer-facing features:
 
-- Browse products.
+- Browse products (gaming + office only after Phase 20).
 - Filter/search products.
 - View basic product details.
 - Register and log in.
@@ -338,7 +629,7 @@ Admin-facing features:
 Backend/platform features:
 
 - PostgreSQL persistence for users, products, carts, and orders when `DATABASE_URL` is configured.
-- Product image gallery persistence in memory and PostgreSQL, with seeded `imageUrl` values mirrored as primary gallery images.
+- Product image gallery persistence in memory and PostgreSQL.
 - In-memory fallback for lightweight development/tests.
 - Transactional checkout behavior in store implementations.
 - Store contract tests.
@@ -355,12 +646,12 @@ Backend/platform features:
 
 Address these before adding unrelated features:
 
-1. Product media persistence supports galleries, but the legacy `imageUrl` field still remains as a compatibility fallback.
+1. Product media persistence supports galleries, but the legacy `imageUrl` field still remains as a compatibility fallback. Plan its removal once Phase 21 ships and all UI paths use `images[]`.
 2. Phase 19 demo catalog JSON exists, but richer product art still depends on manually adding valid JPG/PNG files under `init/img/{slug}/` for the referenced paths.
 3. Uploaded-file cleanup on product/image deletion still needs a deliberate policy.
-4. Admin product/order/user pages are backend-backed in React; image management and the new layout polish should still receive browser QA against the Go server.
-5. Product specs are too limited for a real mouse shop (sensor model, weight, switch type, polling rate, dimensions, included accessories are all missing fields).
-6. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
+4. Product specs are too limited for a real mouse shop (sensor model, weight, switch type, polling rate, dimensions, included accessories are all missing fields). Consider tackling alongside Phase 21.14 form restructuring.
+5. Documentation must be updated whenever API, environment, upload storage, Docker workflow, or frontend workflow changes.
+6. The frontend has no automated tests yet; consider adding lightweight Vitest coverage for the design tokens / button variants once Phase 21.1 lands.
 
 ---
 
@@ -370,9 +661,10 @@ The storefront should feel like an actual online shop, not only an API demo.
 
 Required customer UI areas:
 
-- Header/navbar with logo, search, cart badge, account/login state, and admin link for admins.
+- Header/navbar with logo, search (drawer on mobile), cart badge, account/login state, and admin link for admins.
 - Home/store page with hero section.
-- Product category/filter/sorting controls.
+- Two-category filter (gaming + office) plus an "All" option.
+- Sorting controls.
 - Product grid with cards.
 - Product cards with main image, price, stock badge, short specs, and quick add-to-cart.
 - Dedicated product detail page for every mouse.
@@ -382,14 +674,14 @@ Required customer UI areas:
 - Cart page with image thumbnails, quantity controls, totals, and checkout action.
 - Checkout page with order summary.
 - Orders page with order cards and payment simulation action for pending orders.
-- Responsive mobile/tablet/desktop layout.
+- Responsive mobile/tablet/desktop layout (no horizontal page scroll at 360 px).
 - Loading, empty, and error states for every page.
 
 Required admin UI areas:
 
-- Admin layout/sidebar or clearly separated admin dashboard.
+- Admin layout with sidebar (collapses to top tab bar on mobile).
 - Product table/cards with search/filter.
-- Product create/edit form.
+- Product create/edit form with sectioned layout.
 - Drag-and-drop/select image uploader for product images.
 - Product image preview gallery with delete/reorder/primary-image behavior.
 - Orders table with status badges and filtering.
@@ -402,7 +694,7 @@ Required admin UI areas:
 
 Every mouse must have its own dedicated product page.
 
-Preferred frontend route:
+Frontend route:
 
 ```text
 /products/:slug
@@ -410,12 +702,11 @@ Preferred frontend route:
 
 Implementation notes:
 
-- Use `react-router-dom`.
-- Update the Go frontend handler so product routes can reload and still serve the React `index.html`.
-- Keep `/api/v1/...`, `/healthz`, `/assets/...`, and `/uploads/...` separate from frontend route fallback.
-- Add product lookup by slug or ensure the frontend can load product detail directly without downloading all products first.
-- Keep product ID stable for API mutations.
-- Use slug for customer-facing URLs.
+- `react-router-dom` is already wired up.
+- The Go frontend handler already serves `index.html` for unknown frontend routes.
+- `/api/v1/...`, `/healthz`, `/assets/...`, and `/uploads/...` are kept separate from the frontend route fallback.
+- Backend lookup by slug is implemented (`GET /api/v1/products/slug/{slug}`).
+- Product ID stays stable for API mutations; slug is the customer-facing identifier.
 
 Minimum product page content:
 
@@ -424,12 +715,12 @@ Minimum product page content:
 - Product title.
 - Price and currency.
 - Stock status.
-- Add-to-cart button.
+- Add-to-cart button (sticky bottom on mobile, sticky right rail on desktop).
 - Quantity selector.
 - Short selling points.
 - Full description.
 - Specs table.
-- Similar/related products if practical.
+- Similar/related products (max 4).
 - Admin edit shortcut for admin users.
 
 ---
@@ -460,7 +751,7 @@ Functional rules:
 - Keep old images unless explicitly deleted.
 - Deleting a product should either delete its image metadata and files or clearly document orphan cleanup behavior.
 
-Suggested environment variables:
+Environment variables (already in use):
 
 ```text
 UPLOAD_DIR=./data/uploads
@@ -470,21 +761,19 @@ MAX_PRODUCT_IMAGE_BYTES=4194304
 MAX_PRODUCT_UPLOAD_BYTES=50331648
 ```
 
-Suggested Docker/Compose volume:
+Compose volume:
 
 ```yaml
 ${UPLOAD_DATA_PATH:-./data/uploads}:/app/data/uploads
 ```
 
-The server should create the upload directory on startup if it does not exist.
+The server creates the upload directory on startup if it does not exist.
 
 ---
 
 ## Product Image Data Model
 
-Add product image support without breaking existing products.
-
-Suggested Go domain model:
+Already implemented:
 
 ```go
 type ProductImage struct {
@@ -496,101 +785,73 @@ type ProductImage struct {
     IsPrimary bool      `json:"isPrimary"`
     CreatedAt time.Time `json:"createdAt"`
 }
-```
 
-Suggested product model direction:
-
-```go
 type Product struct {
     ID          string         `json:"id"`
     Name        string         `json:"name"`
     Slug        string         `json:"slug"`
     Description string         `json:"description"`
-    Category    string         `json:"category"`
+    Category    string         `json:"category"`     // "gaming" | "office"
     PriceCents  int            `json:"priceCents"`
     Currency    string         `json:"currency"`
     DPI         int            `json:"dpi"`
     Wireless    bool           `json:"wireless"`
     Ergonomic   bool           `json:"ergonomic"`
     Stock       int            `json:"stock"`
-    ImageURL    string         `json:"imageUrl"` // temporary compatibility fallback
+    ImageURL    string         `json:"imageUrl"` // compatibility fallback only
     Images      []ProductImage `json:"images"`
     CreatedAt   time.Time      `json:"createdAt"`
     UpdatedAt   time.Time      `json:"updatedAt"`
 }
 ```
 
-Keep `ImageURL` temporarily as a compatibility/fallback field. Prefer `Images` for new React UI code. Remove `ImageURL` only after UI, API docs, tests, and seed data no longer depend on it.
+`ImageURL` stays for compatibility. Removal of `ImageURL` is tracked under "Known Gaps and Technical Debt".
 
-Suggested migration:
-
-```text
-internal/adapters/db/postgres/migrations/000002_product_images.up.sql
-internal/adapters/db/postgres/migrations/000002_product_images.down.sql
-```
-
-Suggested table shape:
-
-```sql
-CREATE TABLE product_images (
-    id TEXT PRIMARY KEY,
-    product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    url TEXT NOT NULL,
-    alt_text TEXT NOT NULL DEFAULT '',
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX product_images_product_id_sort_idx
-    ON product_images (product_id, sort_order, created_at);
-```
-
-Optional migration behavior:
-
-- Convert existing `products.image_url` into one `product_images` row per product.
-- Keep `products.image_url` synced to the primary image until compatibility cleanup is done.
+Migration files live under `internal/adapters/db/postgres/migrations/`.
 
 ---
 
-## Suggested API Additions
+## API Surface
 
-Keep existing API endpoints stable.
-
-Add these endpoints:
+Public:
 
 ```text
-GET    /api/v1/products/slug/{slug}
+GET  /healthz
+GET  /api/v1/products
+GET  /api/v1/products/{productId}
+GET  /api/v1/products/slug/{slug}
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+```
+
+Customer (Bearer token required):
+
+```text
+GET    /api/v1/me
+GET    /api/v1/cart
+POST   /api/v1/cart/items
+PATCH  /api/v1/cart/items/{productId}
+DELETE /api/v1/cart/items/{productId}
+GET    /api/v1/orders
+POST   /api/v1/orders
+POST   /api/v1/orders/{orderId}/payment/simulate
+```
+
+Admin (admin role required):
+
+```text
+GET    /api/v1/admin/products
+POST   /api/v1/admin/products
+PATCH  /api/v1/admin/products/{productId}
+DELETE /api/v1/admin/products/{productId}
 POST   /api/v1/admin/products/{productId}/images
 PATCH  /api/v1/admin/products/{productId}/images/order
 PATCH  /api/v1/admin/products/{productId}/images/{imageId}
 DELETE /api/v1/admin/products/{productId}/images/{imageId}
-```
-
-Upload endpoint:
-
-```text
-POST /api/v1/admin/products/{productId}/images
-Content-Type: multipart/form-data
-field name: images
-```
-
-Recommended response:
-
-```json
-{
-  "images": [
-    {
-      "id": "img_...",
-      "productId": "prod_...",
-      "url": "/uploads/products/...",
-      "altText": "Viper X1 Gaming Mouse",
-      "sortOrder": 0,
-      "isPrimary": true,
-      "createdAt": "..."
-    }
-  ]
-}
+GET    /api/v1/admin/orders
+GET    /api/v1/admin/users
+GET    /api/v1/admin/users/{userId}
+PATCH  /api/v1/admin/users/{userId}
 ```
 
 Validation rules:
@@ -602,6 +863,7 @@ Validation rules:
 - Invalid file type receives `400`.
 - Oversized file receives `400`.
 - Internal storage/database failure receives `500` with a safe error message.
+- Product `category` field is restricted to `gaming` or `office`. Backend rejects anything else.
 
 ---
 
@@ -622,32 +884,20 @@ Validation rules:
 - Do not put business rules only in the frontend; backend remains authoritative.
 - Keep frontend validation user-friendly but duplicate critical checks on the backend.
 - Do not use `dangerouslySetInnerHTML` unless there is a very strong reason.
-- Use Tailwind for layout and styling.
+- Use Tailwind for layout and styling — with the Phase 21 design tokens.
 - Keep `src/index.css` small and mostly for Tailwind directives/global defaults.
-
-Suggested initial frontend commands:
-
-```sh
-npm create vite@latest frontend -- --template react-ts
-cd frontend
-npm install
-npm install react-router-dom lucide-react clsx
-npm install -D tailwindcss @tailwindcss/vite
-```
-
-Use the current Tailwind/Vite setup recommended by the installed Tailwind version. Do not copy outdated Tailwind configuration blindly.
 
 ---
 
 ## React Frontend Environment
 
-Recommended frontend environment variable:
+Frontend environment variable:
 
 ```text
 VITE_API_BASE_URL=/api/v1
 ```
 
-For local dev with Vite proxy, configure `frontend/vite.config.ts` so API calls can proxy to the Go server.
+For local dev with Vite proxy, `frontend/vite.config.ts` proxies `/api/v1`, `/uploads`, and `/healthz` to the Go server.
 
 Suggested dev flow:
 
@@ -657,7 +907,7 @@ Terminal 2: go run ./cmd/server
 Terminal 3: cd frontend && npm run dev
 ```
 
-Suggested final production flow:
+Production flow:
 
 ```text
 Docker builds React frontend.
@@ -672,7 +922,7 @@ Go serves the React app and API from one container.
 
 Current Dockerfile is a multi-stage build that builds React with Node, builds the Go backend, and copies `frontend/dist` into the runtime image.
 
-Recommended stages:
+Stages:
 
 ```text
 frontend-build:
@@ -683,12 +933,12 @@ frontend-build:
 
 backend-build:
   golang image
-  go test optional only in CI, not necessarily in Docker build
   go build ./cmd/server
 
 runtime:
   copy Go binary
   copy frontend dist to a path served by internal/frontend
+  copy init/ for optional demo catalog seeding
 ```
 
 Do not rely on a globally installed Node or Vite inside the Go image.
@@ -697,531 +947,36 @@ Do not rely on a globally installed Node or Vite inside the Go image.
 
 ## Implementation Roadmap
 
-### Phase 0: Sanity Check Current Repo
-
-Goal: verify baseline before rewriting UI or adding image uploads.
-
-Run:
-
-```sh
-git status --short
-go test ./...
-go vet ./...
-docker compose config
-```
-
-Commit only if files change.
-
----
-
-### Phase 1: Rewrite `AGENTS.md`
-
-Goal: document the React direction and remove the old Bootstrap-first plan.
-
-Suggested commit:
-
-```sh
-git add AGENTS.md
-git commit -m "docs: switch frontend roadmap to react"
-```
-
----
-
-### Phase 2: Add React App Skeleton
-
-Goal: add Vite React TypeScript app without replacing the old frontend yet.
-
-Suggested changes:
-
-- Add `frontend/`.
-- Add React + TypeScript + Vite.
-- Add Tailwind.
-- Add React Router.
-- Add basic app shell.
-- Add placeholder pages.
-- Add `npm` scripts.
-- Update `.gitignore`.
-- Update CI to build frontend.
-- Phase 16 has already deleted `internal/frontend/static/`; do not reintroduce it.
-
-Suggested commit:
-
-```sh
-git add frontend .gitignore .github/workflows/ci.yml
-git commit -m "feat: add react frontend skeleton"
-```
-
----
-
-### Phase 3: Add Typed API Client
-
-Goal: connect React to existing API without changing backend behavior.
-
-Suggested changes:
-
-- Add `frontend/src/api/client.ts`.
-- Add typed auth/products/cart/orders/admin API modules.
-- Add shared error normalization.
-- Add API response types.
-- Use `VITE_API_BASE_URL`.
-- Add loading/error helpers.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "feat: add typed frontend api client"
-```
-
----
-
-### Phase 4: Rebuild Auth and Layout
-
-Goal: make login/register/session state work in React.
-
-Suggested changes:
-
-- Add `AuthProvider`.
-- Add login page.
-- Add register page.
-- Add logout.
-- Add protected route helper.
-- Add admin route helper.
-- Add header/navbar with account/cart/admin state.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "feat: rebuild auth flow in react"
-```
-
----
-
-### Phase 5: Rebuild Product Listing
-
-Goal: replace product browsing UI in React.
-
-Suggested changes:
-
-- Add home/store page.
-- Add product grid.
-- Add reusable product cards.
-- Add search/filter/sort UI.
-- Add stock and price badges.
-- Add quick add-to-cart.
-- Add loading/empty/error states.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "feat: rebuild product listing in react"
-```
-
----
-
-### Phase 6: Add Product Slug Routes
-
-Goal: every mouse gets a dedicated reloadable page.
-
-Current status: backend slug lookup, the React `/products/:slug` route, and Go production serving for direct React route reloads exist.
-
-Suggested backend changes:
-
-- Add slug field if missing.
-- Add slug generation/validation.
-- Add store lookup by slug or API support for lookup by slug.
-- Add `GET /api/v1/products/slug/{slug}`.
-- Add tests for slug lookup and not-found behavior.
-- Update frontend fallback so direct reload of `/products/{slug}` serves React `index.html`.
-
-Suggested frontend changes:
-
-- Add `/products/:slug` route.
-- Link product cards to product pages.
-- Add product detail page shell.
-
-Suggested commit:
-
-```sh
-git add internal frontend docs
-git commit -m "feat: add product slug routes"
-```
-
----
-
-### Phase 7: Build Product Detail Page
-
-Goal: make product pages look like actual e-shop pages.
-
-Current status: initial React product detail page exists with slug fetch, fallback image, price, stock, quantity, add-to-cart, specs, and admin shortcut. Gallery/related-product polish should wait for product image support.
-
-Suggested changes:
-
-- Product gallery area with fallback image.
-- Product title, price, stock, quantity, add-to-cart.
-- Specs table.
-- Description section.
-- Related products if practical.
-- Admin edit shortcut for admin users.
-- Responsive layout.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "feat: build react product detail page"
-```
-
----
-
-### Phase 8: Rebuild Cart, Checkout, and Orders
-
-Goal: make the full customer purchase flow work in React.
-
-Current status: initial React cart provider, cart page, checkout page, order creation, customer orders page, and payment simulation controls exist.
-
-Suggested changes:
-
-- Cart page.
-- Quantity update controls.
-- Remove item control.
-- Cart summary.
-- Checkout page.
-- Order creation flow.
-- Orders page.
-- Payment simulation button for pending orders.
-- Status badges.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "feat: rebuild cart checkout and orders in react"
-```
-
----
-
-### Phase 9: Rebuild Admin UI
-
-Goal: rebuild current admin functionality before adding image features.
-
-Current status: React admin dashboard, product CRUD, order browsing/filtering, user browsing/filtering, and guarded role updates are backend-backed. Product image upload/management still belongs to later image phases.
-
-Suggested changes:
-
-- Admin dashboard shell.
-- Admin products page.
-- Product create/edit form.
-- Product delete confirmation.
-- Admin orders page.
-- Admin users page.
-- Role update controls.
-- Table/card responsive layouts.
-- Search/filter controls.
-- Status badges.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "feat: rebuild admin dashboard in react"
-```
-
----
-
-### Phase 10: Serve React Build from Go
-
-Goal: make production use the new React frontend.
-
-Current status: Docker builds `frontend/dist`, copies it into the runtime image, and sets `FRONTEND_DIST_DIR=/app/frontend/dist`. The Go frontend handler serves that React build with SPA route fallback. Seed product SVGs live in `frontend/public/assets/products/` so the Vite build keeps them available under `/assets/products/...`; nothing is embedded in the Go binary.
-
-Suggested changes:
-
-- Update Go frontend serving adapter.
-- Serve React `index.html` for frontend routes.
-- Keep `/api/v1`, `/healthz`, `/assets`, and `/uploads` separate.
-- Update Dockerfile to build frontend and copy `dist`.
-- Update compose if needed.
-- Keep old static frontend temporarily or remove only after React coverage is complete.
-
-Suggested commit:
-
-```sh
-git add Dockerfile internal/frontend compose.yaml docs
-git commit -m "chore: serve react frontend from go"
-```
-
----
-
-### Phase 11: Add Product Image Persistence Model
-
-Goal: support multiple images per product in memory and PostgreSQL.
-
-Current status: completed. Products now include `Images []ProductImage`, the store interface includes gallery operations, in-memory and PostgreSQL adapters persist galleries, existing `imageUrl` values are mirrored into primary images, cart/product API responses include galleries, and contract tests cover create, primary update, reorder, delete, and validation behavior.
-
-Suggested changes:
-
-- Add `ProductImage` domain model.
-- Add `Images []ProductImage` to `Product`.
-- Add product image methods to store interface.
-- Add memory store image support.
-- Add PostgreSQL migration/table.
-- Add PostgreSQL image methods.
-- Keep existing `ImageURL` compatibility fallback.
-- Add contract tests.
-
-Suggested commit:
-
-```sh
-git add internal
-git commit -m "feat: persist product image galleries"
-```
-
----
-
-### Phase 12: Add Upload Storage Service
-
-Goal: validate and store admin-uploaded JPG/PNG images safely.
-
-Current status: completed. Config now includes upload directory, URL prefix, and image/count/request limits; the server initializes local upload storage, creates the upload directory, serves uploaded files under `/uploads`, validates JPEG/PNG extension, MIME sniffing, decoded image headers, file size, and safe product path segments, and Compose mounts persistent upload storage.
-
-Suggested changes:
-
-- Add upload config to `internal/config`.
-- Add upload storage package, for example `internal/adapters/uploads`.
-- Create upload directory on startup.
-- Generate safe filenames.
-- Validate file size, extension, MIME, and image header.
-- Serve uploaded files under `/uploads/`.
-- Add upload volume to Compose.
-- Add `.env.example` entries.
-
-Suggested commit:
-
-```sh
-git add internal compose.yaml .env.example docs
-git commit -m "feat: add product image upload storage"
-```
-
----
-
-### Phase 13: Add Admin Image Upload API
-
-Goal: admin can upload, delete, reorder, and mark product images.
-
-Current status: completed. Admin-only routes now support multipart uploads, image metadata/primary updates, ordering, and image metadata deletion under `/api/v1/admin/products/{productId}/images...`. Upload validation covers authentication/authorization, missing products, JPEG/PNG type checks, per-image size, multipart request size, max image count, and success behavior.
-
-Suggested changes:
-
-- Add multipart upload handler.
-- Add delete image handler.
-- Add reorder image handler.
-- Add primary image handler.
-- Add tests for auth, validation, invalid MIME, max count, oversized files, and success.
-
-Suggested commit:
-
-```sh
-git add internal docs
-git commit -m "feat: add admin product image api"
-```
-
----
-
-### Phase 14: Add React Drag-and-Drop Image UI
-
-Goal: admin can manage product images from the browser.
-
-Current status: completed. The React admin product editor now includes a product image manager with drag-and-drop and file picker selection, selected-image previews, upload, validation messages, gallery display, primary-image controls, alt text editing, reordering, deletion, and max 10-image feedback.
-
-Suggested changes:
-
-- Add reusable `ImageUploader` component.
-- Drag-and-drop zone.
-- File input fallback.
-- Preview selected images before upload.
-- Show uploaded image gallery.
-- Delete/reorder/primary controls.
-- Clear errors for rejected file types/sizes.
-- Enforce max 10 images in UI.
-- Keep backend as final authority.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "feat: add react product image uploader"
-```
-
----
-
-### Phase 15: Use Galleries Across Storefront
-
-Goal: customer UI uses uploaded product images everywhere.
-
-Current status: completed. Product cards, the product detail page, cart lines, and the admin product table all use `primaryProductImageUrl` with `onError` fallback to the generic asset; admin-supplied alt text is propagated. The product detail page now renders an interactive `ProductGallery` that swaps the main image when a thumbnail is clicked or activated via keyboard, and gallery entries fall through `images` → `imageUrl` → generic SVG.
-
-Suggested changes:
-
-- Product cards use primary image.
-- Product page uses gallery.
-- Cart lines use primary image.
-- Admin product list uses primary image.
-- Fallback to `ImageURL` or generic asset when no uploaded image exists.
-
-Suggested commit:
-
-```sh
-git add frontend/src internal docs
-git commit -m "feat: display product image galleries"
-```
-
----
-
-### Phase 16: Remove Legacy Static Frontend
-
-Goal: remove old custom HTML/CSS/JS only after React fully replaces it.
-
-Current status: completed. The legacy `index.html`, `app.js`, and `styles.css` are gone, the seed product SVGs were moved into `frontend/public/assets/products/`, and `internal/frontend/frontend.go` no longer embeds anything — it serves `FRONTEND_DIST_DIR` and returns a small placeholder when the variable is unset. Frontend tests now use a temp dist directory plus `fstest.MapFS`.
-
-Requirements before deletion:
-
-- Login/register works in React.
-- Product listing works in React.
-- Product detail pages work in React.
-- Cart works in React.
-- Checkout works in React.
-- Orders/payment simulation work in React.
-- Admin products/users/orders work in React.
-- React build is served by Go.
-- Docker build works.
-- CI frontend checks pass.
-
-Suggested commit:
-
-```sh
-git rm -r internal/frontend/static
-git add internal/frontend Dockerfile docs
-git commit -m "chore: remove legacy static frontend"
-```
-
-If Go needs an embedded directory, replace legacy static files with copied/generated React dist handling rather than deleting the whole serving adapter.
-
----
-
-### Phase 17: Full E-Shop Layout Polish
-
-Goal: make the UI match a real shop.
-
-Current status: completed. Customer storefront polished — sticky header with scroll shadow, refined search, account chip, and cart badge with stock count; four-column footer; gradient hero with featured-product card and value-prop strip; sticky filter/sort bar with live result count; ProductCard with hover lift + image zoom; ProductPage with breadcrumbs, gallery, sticky right rail, trust badges, refined spec table, and a related-products strip beneath; cart/checkout/orders polished with sticky summaries, refined empty/error states, and `Skeleton` shimmer placeholders. Admin polished — shared `AdminLayout` with sidebar nav, dashboard with toned stat cards + pending-payments callout, refined product/orders/users tables with hover rows and consistent badge palette.
-
-Suggested changes:
-
-- Home hero.
-- Category/filter sidebar.
-- Sorting controls.
-- Better product cards.
-- Better product page spacing.
-- Cart and checkout polish.
-- Orders and account polish.
-- Admin dashboard polish.
-- Responsive review at mobile/tablet/desktop widths.
-- Better empty/loading/error states.
-- Consistent status colors.
-- Consistent buttons and forms.
-
-Suggested commit:
-
-```sh
-git add frontend/src
-git commit -m "refactor: polish react storefront experience"
-```
-
----
-
-### Phase 18: Documentation and Final Checks
-
-Goal: update docs and verify everything.
-
-Current status: completed. README, `docs/development.md`, `docs/deployment.md`, `docs/api-examples.md`, and `docs/openapi.yaml` document the completed React storefront, direct product slug routes, admin gallery upload/management APIs, upload storage environment variables, image validation behavior, Docker/Compose workflow, and the current uploaded-file cleanup limitation. Verification passed locally with `gofmt -l .`, `go test ./...`, `go vet ./...`, `docker compose config`, `npm run lint`, `npm run build`, and `docker build -t clicky-store:test .`.
-
-Suggested changes:
-
-- Update README current status.
-- Update `docs/development.md`.
-- Update `docs/deployment.md`.
-- Update `docs/openapi.yaml`.
-- Document frontend dev workflow.
-- Document React build workflow.
-- Document upload env vars and storage volume.
-- Document image validation rules.
-- Document product page behavior.
-- Update `AGENTS.md` progress if phases are completed.
-
-Suggested checks:
-
-```sh
-gofmt -w .
-go test ./...
-go vet ./...
-docker compose config
-docker build -t clicky-store:test .
-cd frontend && npm ci && npm run build
-```
-
-Suggested commit:
-
-```sh
-git add README.md docs .env.example compose.yaml Dockerfile AGENTS.md frontend
-git commit -m "docs: document react storefront and image uploads"
-```
-
----
-
-### Phase 19: Add Validated Demo Catalog Init
-
-Goal: seed realistic demo catalog data without scraping real stores.
-
-Current status: implemented. `init/init.json` contains 10 curated mouse products: 5 office/productivity and 5 gaming models, with Polish descriptions, PLN prices, current product fields, and relative image paths such as `img/logitech-mx-master-3s/1.jpg`. The Go initializer validates the full JSON file and every referenced image before seeding. If any product field or image is missing, invalid, oversized, not JPG/PNG, outside `init/img/{slug}/`, or not decodable as a real image, startup keeps the original four fallback products.
-
-Implemented scope:
-
-- Add `internal/initcatalog` for JSON decoding, full-product validation, relative path checks, image existence/type/header validation, and fallback-safe seeding.
-- Add `cmd/initcatalog` so the catalog can be checked manually with `go run ./cmd/initcatalog -path init/init.json`.
-- Run the initializer during server startup after upload storage is ready.
-- Copy validated local source images into normal runtime upload storage and persist gallery metadata through the existing product image store APIs.
-- Replace only the exact fallback catalog. If admins have already customized products, skip the demo seed instead of overwriting work.
-- Keep local demo photos under ignored `init/img/`; commit only the JSON contract and placeholders.
-- Mount `./init` into the Compose server container and copy `init/` into the production image.
-
-Manual image workflow:
-
-```text
-init/init.json
-init/img/{slug}/1.jpg
-init/img/{slug}/2.jpg
-```
-
-After downloading images, validate them with:
-
-```sh
-go run ./cmd/initcatalog -path init/init.json
-```
-
-Suggested commit:
-
-```sh
-git add AGENTS.md README.md docs .env.example .gitignore Dockerfile compose.yaml cmd internal init
-git commit -m "feat: add validated demo catalog init"
-```
+Phases 0–19 are **completed**. Their summaries are kept brief; expand only if reverting work or re-running them.
+
+| Phase | Title | Status |
+|------:|-------|--------|
+| 0  | Sanity check current repo                                  | ✅ done |
+| 1  | Rewrite AGENTS.md with React direction                     | ✅ done |
+| 2  | Add React app skeleton                                     | ✅ done |
+| 3  | Add typed API client                                       | ✅ done |
+| 4  | Rebuild auth + layout                                      | ✅ done |
+| 5  | Rebuild product listing                                    | ✅ done |
+| 6  | Add product slug routes                                    | ✅ done |
+| 7  | Build product detail page                                  | ✅ done |
+| 8  | Rebuild cart, checkout, orders                             | ✅ done |
+| 9  | Rebuild admin UI                                           | ✅ done |
+| 10 | Serve React build from Go                                  | ✅ done |
+| 11 | Product image persistence (memory + PostgreSQL)            | ✅ done |
+| 12 | Upload storage service                                     | ✅ done |
+| 13 | Admin image upload API                                     | ✅ done |
+| 14 | React drag-and-drop image uploader                         | ✅ done |
+| 15 | Use galleries across storefront                            | ✅ done |
+| 16 | Remove legacy static frontend                              | ✅ done |
+| 17 | E-shop layout polish                                       | ✅ done |
+| 18 | Documentation and final checks                             | ✅ done |
+| 19 | Validated demo catalog init (init.json + init/img)         | ✅ done |
+| **20** | **Remove travel category**                              | 🔵 active |
+| **21** | **UI redesign (modern, responsive, accessible)**        | 🔵 next  |
 
 ---
 
 ## Backend Testing Priorities
-
-Add or update tests for:
 
 - Product slug lookup.
 - Product image model validation.
@@ -1241,12 +996,13 @@ Add or update tests for:
 - Primary image behavior.
 - Product delete cascades image metadata.
 - Existing cart/order/payment/admin tests still pass.
+- Category validation rejects values outside `gaming|office`.
 
 ---
 
 ## Frontend Testing Priorities
 
-Once React exists, add at least lightweight checks.
+Once the redesign settles, add lightweight checks.
 
 Recommended minimum:
 
@@ -1267,27 +1023,27 @@ playwright
 High-value frontend test areas:
 
 - Auth state.
-- Product card rendering.
+- Product card rendering with all stock states.
 - Product detail route rendering.
 - Cart state/actions.
 - Admin image uploader validation.
 - API error rendering.
 - Protected/admin route behavior.
-
-Do not overbuild frontend tests before the UI stabilizes.
+- Button/Badge variants render with the right tokens (snapshot or jest-axe).
 
 ---
 
 ## Frontend Manual Test Checklist
 
-Before calling the React UI done, manually verify:
+Before calling the React UI done, manually verify at 360 / 768 / 1440 widths:
 
-- Store page loads on desktop and mobile widths.
+- Store page loads on every width with no horizontal scroll.
 - Product search/filter/sort works.
 - Product card links open dedicated product pages.
 - Direct reload of `/products/{slug}` works.
 - Product page image gallery works.
 - Add-to-cart works from product card and product page.
+- Mobile sticky bottom buy bar appears and dismisses correctly.
 - Cart quantity controls work.
 - Checkout creates pending order.
 - Payment simulation works.
@@ -1302,6 +1058,9 @@ Before calling the React UI done, manually verify:
 - Admin orders page works.
 - Admin users page works.
 - No user-controlled text is inserted unsafely.
+- Tab order is logical on every page; focus rings are visible.
+- No `travel` category appears anywhere in the UI.
+- Footer has no dead links.
 
 ---
 
@@ -1339,54 +1098,27 @@ A feature is done only when:
 - Tests are added or updated where practical.
 - React components are reused instead of duplicating page markup.
 - Frontend output safely renders user-controlled data.
-- Tailwind is used instead of large custom boilerplate CSS.
+- Tailwind tokens are used instead of ad-hoc colors.
 - Documentation is updated when setup/API/user-visible behavior changes.
 - `go test ./...` passes.
 - `go vet ./...` passes when available.
-- `npm run build` passes once React exists.
+- `npm run lint` passes.
+- `npm run build` passes.
 - Docker Compose config remains valid.
 - The app still starts with Docker Compose.
+- The change is verified at 360 px and 1440 px widths.
 
 ---
 
 ## Recommended Next Branch
 
-Use:
-
 ```sh
 git switch main
 git pull --ff-only origin main
-git switch -c feature/react-storefront
+git switch -c feature/ui-redesign
 ```
 
-Then start with the `AGENTS.md` update and continue through the phases above.
-
----
-
-## Recommended Immediate Commit Sequence
-
-Use this sequence to avoid one giant rewrite:
-
-```text
-1. docs: switch frontend roadmap to react
-2. feat: add react frontend skeleton
-3. feat: add typed frontend api client
-4. feat: rebuild auth flow in react
-5. feat: rebuild product listing in react
-6. feat: add product slug routes
-7. feat: build react product detail page
-8. feat: rebuild cart checkout and orders in react
-9. feat: rebuild admin dashboard in react
-10. chore: serve react frontend from go
-11. feat: persist product image galleries
-12. feat: add product image upload storage
-13. feat: add admin product image api
-14. feat: add react product image uploader
-15. feat: display product image galleries
-16. chore: remove legacy static frontend
-17. refactor: polish react storefront experience
-18. docs: document react storefront and image uploads
-```
+Land Phase 20 first as a small commit, then iterate Phase 21 sub-commits on the same branch.
 
 ---
 
@@ -1398,7 +1130,7 @@ Before final submission or presentation:
 - Server restart does not erase users, products, carts, orders, or product image metadata.
 - Uploaded image files persist through container restart when the upload volume is mounted.
 - Register/login works.
-- Customer can browse products.
+- Customer can browse products in two categories (gaming + office).
 - Customer can open dedicated product pages.
 - Customer can manage cart.
 - Customer can place an order.
@@ -1407,8 +1139,9 @@ Before final submission or presentation:
 - Admin can upload up to 10 JPG/PNG images per product.
 - Admin can manage orders.
 - Admin can manage users.
-- Responsive frontend works on mobile width.
-- UI looks like an actual e-shop.
+- UI is responsive at 360, 768, and 1440 px.
+- UI passes a Lighthouse a11y audit ≥ 95.
+- All footer links resolve to a real page.
 - Tests pass.
 - README and docs explain setup and usage.
 - Docker Compose starts the full system.

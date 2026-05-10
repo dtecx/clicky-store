@@ -35,16 +35,4 @@ export const demoProducts: DemoProduct[] = [
     stock: 'In stock',
     traits: ['Silent clicks', 'Wireless', 'Ergonomic'],
   },
-  {
-    category: 'Travel',
-    description:
-      'A compact rechargeable mouse with reliable tracking and a slim profile for commuting.',
-    dpi: '6K DPI',
-    imageUrl: '/assets/products/travelclick.svg',
-    name: 'TravelClick Mini',
-    price: '$39.00',
-    slug: 'travelclick-mini',
-    stock: 'Limited',
-    traits: ['Bluetooth', 'Portable', 'Rechargeable'],
-  },
 ]

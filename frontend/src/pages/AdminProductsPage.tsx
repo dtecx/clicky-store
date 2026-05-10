@@ -37,7 +37,6 @@ const categoryOptions = [
   { label: 'All categories', value: '' },
   { label: 'Gaming', value: 'gaming' },
   { label: 'Office', value: 'office' },
-  { label: 'Travel', value: 'travel' },
 ]
 
 const fieldClass =
