@@ -8,8 +8,8 @@
 
 @layer base {
   :root {
-    color: #12201d;
-    background: #f3f0e8;
+    color: #020617;
+    background: #fafaf9;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -22,7 +22,7 @@
 
   html {
     min-width: 320px;
-    background: #f3f0e8;
+    background: #fafaf9;
   }
 
   body {
@@ -41,5 +41,23 @@
   select,
   textarea {
     font: inherit;
+  }
+
+  /* Unified focus ring across the app. Components can override with their own
+     focus-visible styles when they need a different palette. */
+  :focus-visible {
+    outline: 2px solid #10b981;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

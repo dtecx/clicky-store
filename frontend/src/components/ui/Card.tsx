@@ -25,10 +25,10 @@ export function Card({
       className={cn(
         'rounded-2xl bg-white transition-shadow',
         flat
-          ? 'shadow-[0_1px_0_rgba(15,23,42,0.04)]'
-          : 'border border-stone-200/80 shadow-sm shadow-stone-400/10',
+          ? 'shadow-[0_1px_2px_rgba(15,23,42,0.04)]'
+          : 'border border-stone-200 shadow-sm shadow-stone-400/10',
         interactive
-          && 'cursor-pointer hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md hover:shadow-stone-400/15',
+          && 'cursor-pointer hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md hover:shadow-stone-400/15 transition-all',
         className,
       )}
       {...props}

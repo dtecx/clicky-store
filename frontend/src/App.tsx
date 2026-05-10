@@ -19,9 +19,9 @@ import { RegisterPage } from './pages/RegisterPage'
 
 function App() {
   return (
-    <div className="min-h-screen bg-stone-100 text-slate-950">
+    <div className="flex min-h-screen flex-col bg-stone-50 text-slate-950">
       <Header />
-      <main>
+      <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/products/:slug" element={<ProductPage />} />

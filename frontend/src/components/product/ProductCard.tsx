@@ -58,39 +58,41 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
   return (
     <article
       className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm shadow-stone-400/10 transition-all duration-200',
-        'hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md hover:shadow-stone-400/20',
+        'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition-all duration-200',
+        'hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-lg hover:shadow-stone-400/15',
       )}
     >
       <Link
         aria-label={`View ${product.name}`}
-        className="relative block overflow-hidden bg-gradient-to-br from-stone-50 via-white to-stone-100 p-5"
+        className="relative block overflow-hidden bg-stone-50"
         to={detailHref}
       >
-        <div className="absolute left-4 top-4 flex flex-col gap-1.5">
+        <div className="absolute left-3 top-3 z-10">
           <Badge variant={stock.variant}>{stock.label}</Badge>
         </div>
-        <img
-          alt={imageAlt}
-          className="mx-auto aspect-square h-44 w-full max-w-56 object-contain transition-transform duration-300 ease-out group-hover:scale-105"
-          loading="lazy"
-          onError={(event) => {
-            event.currentTarget.src = fallbackProductImageUrl
-          }}
-          src={imageUrl}
-        />
+        <div className="aspect-square w-full">
+          <img
+            alt={imageAlt}
+            className="h-full w-full object-contain p-6 transition-transform duration-300 ease-out group-hover:scale-105"
+            loading="lazy"
+            onError={(event) => {
+              event.currentTarget.src = fallbackProductImageUrl
+            }}
+            src={imageUrl}
+          />
+        </div>
       </Link>
-      <div className="flex flex-1 flex-col gap-3 px-5 pb-5 pt-4">
+      <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
             {product.category}
             {dpiLabel ? ` · ${dpiLabel}` : ''}
           </p>
           <Link
-            className="block truncate text-base font-bold text-slate-950 transition-colors group-hover:text-emerald-800"
+            className="block text-base font-semibold text-slate-900 transition-colors group-hover:text-emerald-700"
             to={detailHref}
           >
-            {product.name}
+            <span className="line-clamp-2">{product.name}</span>
           </Link>
         </div>
 
@@ -98,7 +100,7 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
           <div className="flex flex-wrap gap-1.5">
             {traits.map((trait) => (
               <span
-                className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600"
+                className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700"
                 key={trait}
               >
                 {trait}
@@ -107,33 +109,34 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
           </div>
         ) : null}
 
-        <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+        <div className="mt-auto flex flex-col gap-3 pt-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Price
             </p>
-            <p className="mt-0.5 text-xl font-bold text-slate-950">
+            <p className="mt-0.5 text-xl font-bold text-slate-900">
               {formatCents(product.priceCents, product.currency)}
             </p>
           </div>
           {isSoldOut ? (
             <Link
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-xs font-bold uppercase tracking-wide text-slate-700 transition-colors hover:bg-stone-50"
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-stone-50 sm:w-auto"
               to={detailHref}
             >
-              Notify
+              Notify me
               <ArrowRight aria-hidden="true" size={14} />
             </Link>
           ) : (
             <Button
               aria-label={`Add ${product.name} to cart`}
+              className="w-full sm:w-auto"
               disabled={isAdding}
               leftIcon={<ShoppingCart aria-hidden="true" size={16} />}
               onClick={handleAdd}
               size="sm"
               type="button"
             >
-              {isAdding ? 'Adding…' : 'Add'}
+              {isAdding ? 'Adding…' : 'Add to cart'}
             </Button>
           )}
         </div>

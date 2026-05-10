@@ -9,6 +9,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { listProducts } from '../api/products'
+import { Container } from '../components/layout/Container'
 import { ProductGrid } from '../components/product/ProductGrid'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -27,10 +28,10 @@ import {
   primaryProductImageUrl,
 } from '../utils/productImages'
 
-const categories: { description: string; label: string; value: string }[] = [
-  { description: 'Everything in stock', label: 'All', value: '' },
-  { description: 'High-DPI competitive picks', label: 'Gaming', value: 'gaming' },
-  { description: 'Quiet, ergonomic desk mice', label: 'Office', value: 'office' },
+const categories: { label: string; value: string }[] = [
+  { label: 'All', value: '' },
+  { label: 'Gaming', value: 'gaming' },
+  { label: 'Office', value: 'office' },
 ]
 
 const sortOptions = [
@@ -202,104 +203,110 @@ export function HomePage() {
       <Hero featuredProduct={featuredProduct} />
       <ValueProps />
 
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" id="catalog">
-        <CategoryRow
-          activeCategory={category}
-          onSelect={handleCategoryChange}
-        />
+      <section id="catalog">
+        <Container>
+          <CategoryRow
+            activeCategory={category}
+            onSelect={handleCategoryChange}
+          />
+        </Container>
 
-        <div className="sticky top-[68px] z-20 -mx-4 mt-2 border-y border-stone-200/80 bg-stone-100/85 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <form className="flex items-center gap-2" onSubmit={handleSearchSubmit}>
-              <label className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-slate-500 shadow-sm shadow-stone-400/10 focus-within:border-emerald-700 focus-within:ring-2 focus-within:ring-emerald-700/15 sm:w-80">
-                <Search aria-hidden="true" size={18} />
-                <span className="sr-only">Search products</span>
-                <input
-                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 outline-none placeholder:text-slate-400"
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  placeholder="Search by name"
-                  type="search"
-                  value={searchInput}
-                />
-              </label>
-              <button
-                className="hidden h-10 items-center justify-center rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm shadow-stone-400/10 transition-colors hover:bg-stone-50 sm:inline-flex"
-                type="submit"
+        <div className="sticky top-16 z-20 border-y border-stone-200 bg-white/90 backdrop-blur">
+          <Container className="py-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <form className="flex w-full items-center gap-2 md:max-w-md" onSubmit={handleSearchSubmit}>
+                <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 text-slate-500 transition-colors focus-within:border-emerald-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/20">
+                  <Search aria-hidden="true" size={18} />
+                  <span className="sr-only">Search products</span>
+                  <input
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder="Search by name"
+                    type="search"
+                    value={searchInput}
+                  />
+                </label>
+                <button
+                  className="hidden h-10 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-stone-50 sm:inline-flex"
+                  type="submit"
+                >
+                  Search
+                </button>
+              </form>
+              <div className="flex flex-wrap items-center justify-between gap-3 md:justify-end">
+                <p className="text-sm text-slate-600">
+                  <span className="font-bold text-slate-900">{sortedProducts.length}</span>{' '}
+                  {sortedProducts.length === 1 ? 'mouse' : 'mice'}
+                </p>
+                <label className="flex h-10 items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 text-sm font-semibold text-slate-700">
+                  <span className="text-slate-500">Sort</span>
+                  <select
+                    className="bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                    onChange={handleSortChange}
+                    value={sort}
+                  >
+                    {sortOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          </Container>
+        </div>
+
+        <Container>
+          <div className="py-8">
+            {cartNotice ? (
+              <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                {cartNotice}{' '}
+                <Link className="underline underline-offset-2" to="/cart">
+                  View cart
+                </Link>
+              </div>
+            ) : null}
+            {cartError ? (
+              <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {cartError}
+              </div>
+            ) : null}
+
+            {isLoading && products === null ? (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <ProductCardSkeleton key={index} />
+                ))}
+              </div>
+            ) : error ? (
+              <ErrorState message={error} title="We couldn't load products" />
+            ) : sortedProducts.length === 0 ? (
+              <EmptyState
+                action={
+                  <Button
+                    onClick={() => {
+                      setSearchInput('')
+                      updateSearchParams({ q: null, category: null })
+                    }}
+                    variant="secondary"
+                  >
+                    Clear filters
+                  </Button>
+                }
+                title="No matching mice"
               >
-                Search
-              </button>
-            </form>
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-sm text-slate-600">
-                <span className="font-semibold text-slate-900">{sortedProducts.length}</span>{' '}
-                {sortedProducts.length === 1 ? 'mouse' : 'mice'}
-              </p>
-              <label className="flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm shadow-stone-400/10">
-                <span className="text-slate-500">Sort</span>
-                <select
-                  className="bg-transparent text-sm font-semibold text-slate-700 outline-none"
-                  onChange={handleSortChange}
-                  value={sort}
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                Try clearing the search box or selecting a different category.
+              </EmptyState>
+            ) : (
+              <ProductGrid
+                onAddToCart={handleAddToCart}
+                pendingProductId={pendingProductId}
+                products={sortedProducts}
+              />
+            )}
           </div>
-        </div>
-
-        <div className="py-8">
-          {cartNotice ? (
-            <div className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-              {cartNotice}{' '}
-              <Link className="underline underline-offset-2" to="/cart">
-                View cart
-              </Link>
-            </div>
-          ) : null}
-          {cartError ? (
-            <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-              {cartError}
-            </div>
-          ) : null}
-
-          {isLoading && products === null ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <ProductCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : error ? (
-            <ErrorState message={error} title="We couldn't load products" />
-          ) : sortedProducts.length === 0 ? (
-            <EmptyState
-              action={
-                <Button
-                  onClick={() => {
-                    setSearchInput('')
-                    updateSearchParams({ q: null, category: null })
-                  }}
-                  variant="secondary"
-                >
-                  Clear filters
-                </Button>
-              }
-              title="No matching mice"
-            >
-              Try clearing the search box or selecting a different category.
-            </EmptyState>
-          ) : (
-            <ProductGrid
-              onAddToCart={handleAddToCart}
-              pendingProductId={pendingProductId}
-              products={sortedProducts}
-            />
-          )}
-        </div>
+        </Container>
       </section>
     </>
   )
@@ -312,75 +319,67 @@ function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
 
   return (
     <section className="relative isolate overflow-hidden bg-slate-950 text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.25),transparent_55%),radial-gradient(circle_at_80%_70%,rgba(56,189,248,0.18),transparent_50%)]" />
-      <div className="absolute inset-y-0 right-0 hidden w-1/2 lg:block">
-        {featuredImageUrl ? (
-          <img
-            alt=""
-            className="h-full w-full object-contain object-right opacity-70"
-            src={featuredImageUrl}
-          />
-        ) : null}
-      </div>
-      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <div className="max-w-2xl">
-          <Badge
-            className="border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
-            variant="success"
-          >
-            <Sparkles aria-hidden="true" size={13} />
-            New season · curated mice
-          </Badge>
-          <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            Click better.
-            <br />
-            <span className="bg-gradient-to-r from-emerald-300 to-sky-300 bg-clip-text text-transparent">
-              Work and play smoother.
-            </span>
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-stone-200 sm:text-lg">
-            Honest specs, real stock counts, and a single focused catalog of gaming and office
-            mice. Find the one that fits your hand and ship it the same day.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <LinkButton
-              rightIcon={<ArrowRight aria-hidden="true" size={18} />}
-              size="lg"
-              to="#catalog"
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(16,185,129,0.18),transparent_55%),radial-gradient(circle_at_85%_75%,rgba(56,189,248,0.12),transparent_55%)]" />
+      <Container className="relative py-12 sm:py-16 lg:py-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+          <div className="max-w-2xl">
+            <Badge
+              className="border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
+              variant="success"
             >
-              Shop the catalog
-            </LinkButton>
-            {featuredProduct ? (
+              <Sparkles aria-hidden="true" size={13} />
+              New season · curated mice
+            </Badge>
+            <h1 className="mt-5 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              Click better.
+              <br />
+              <span className="bg-gradient-to-r from-emerald-300 to-sky-300 bg-clip-text text-transparent">
+                Work and play smoother.
+              </span>
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-stone-100 sm:text-lg">
+              Honest specs, real stock counts, and a single focused catalog of gaming and office
+              mice. Find the one that fits your hand and ship it the same day.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
               <LinkButton
+                rightIcon={<ArrowRight aria-hidden="true" size={18} />}
                 size="lg"
-                to={`/products/${featuredProduct.slug}`}
-                variant="secondary"
+                to="#catalog"
               >
-                Featured: {featuredProduct.name}
+                Shop the catalog
               </LinkButton>
-            ) : null}
+              {featuredProduct ? (
+                <LinkButton
+                  className="border-white/30 bg-white/10 text-white hover:bg-white/20"
+                  size="lg"
+                  to={`/products/${featuredProduct.slug}`}
+                  variant="secondary"
+                >
+                  Featured: {featuredProduct.name}
+                </LinkButton>
+              ) : null}
+            </div>
           </div>
 
           {featuredProduct ? (
-            <div className="mt-10 hidden max-w-md gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur sm:flex">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-white/90 p-2">
+            <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur lg:block">
+              <div className="flex items-center justify-center rounded-xl bg-white/95 p-6">
                 <img
                   alt=""
-                  className="h-full w-full object-contain"
+                  className="h-56 w-full max-w-xs object-contain"
                   onError={(event) => {
                     event.currentTarget.src = fallbackProductImageUrl
                   }}
                   src={featuredImageUrl || fallbackProductImageUrl}
                 />
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="mt-5">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200">
                   Featured pick
                 </p>
-                <p className="mt-1 truncate text-base font-bold text-white">
-                  {featuredProduct.name}
-                </p>
-                <p className="mt-2 text-sm text-stone-200">
+                <p className="mt-1 text-lg font-bold text-white">{featuredProduct.name}</p>
+                <p className="mt-1 text-sm text-stone-200">
                   From{' '}
                   <span className="font-bold text-white">
                     {formatCents(featuredProduct.priceCents, featuredProduct.currency)}
@@ -390,7 +389,7 @@ function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
             </div>
           ) : null}
         </div>
-      </div>
+      </Container>
     </section>
   )
 }
@@ -398,22 +397,24 @@ function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
 function ValueProps() {
   return (
     <section className="border-b border-stone-200 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-6 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {valueProps.map((prop) => {
-          const Icon = prop.icon
-          return (
-            <div className="flex items-start gap-3" key={prop.title}>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
-                <Icon aria-hidden="true" size={18} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-950">{prop.title}</p>
-                <p className="mt-0.5 text-xs leading-5 text-slate-600">{prop.description}</p>
+      <Container className="py-6">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {valueProps.map((prop) => {
+            const Icon = prop.icon
+            return (
+              <div className="flex items-start gap-3" key={prop.title}>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                  <Icon aria-hidden="true" size={18} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-900">{prop.title}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-slate-600">{prop.description}</p>
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      </Container>
     </section>
   )
 }
@@ -429,49 +430,30 @@ function CategoryRow({
     <div className="py-8">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
             Browse the shop
           </p>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Find your fit
           </h2>
         </div>
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-5 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         {categories.map((entry) => {
           const isActive = entry.value === activeCategory
           return (
             <button
               className={cn(
-                'group relative flex flex-col items-start gap-1 rounded-2xl border px-4 py-4 text-left transition-all duration-150',
+                'inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition-colors',
                 isActive
-                  ? 'border-slate-950 bg-slate-950 text-white shadow-md shadow-slate-900/30'
-                  : 'border-stone-200 bg-white text-slate-700 hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md hover:shadow-stone-400/15',
+                  ? 'border-slate-900 bg-slate-900 text-white'
+                  : 'border-stone-200 bg-white text-slate-700 hover:border-stone-300 hover:bg-stone-50',
               )}
               key={entry.value || 'all'}
               onClick={() => onSelect(entry.value)}
               type="button"
             >
-              <span className="text-base font-bold">{entry.label}</span>
-              <span
-                className={cn(
-                  'text-xs leading-5',
-                  isActive ? 'text-stone-200' : 'text-slate-500',
-                )}
-              >
-                {entry.description}
-              </span>
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'absolute right-4 top-4 transition-transform',
-                  isActive
-                    ? 'translate-x-0 text-emerald-300'
-                    : 'translate-x-0 text-slate-400 group-hover:translate-x-0.5',
-                )}
-              >
-                <ArrowRight size={16} />
-              </span>
+              {entry.label}
             </button>
           )
         })}
