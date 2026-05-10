@@ -17,6 +17,7 @@ plan/
 *.pdf
 *.doc
 *.docx
+dokumentacja/
 
 # Build and test output
 bin/

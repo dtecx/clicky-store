@@ -3,7 +3,7 @@
     {
       "name": "Logitech MX Master 4",
       "slug": "logitech-mx-master-4",
-      "description": "Flagowa mysz biurowa premium do pracy kreatywnej, programowania i wielozadaniowości. Sensor 8000 DPI, ciche kliknięcia, haptyczny panel boczny i szybkie przewijanie MagSpeed pomagają wygodnie pracować na dużych monitorach i przełączać się między aplikacjami.",
+      "description": "A flagship premium office mouse for creative work, programming, and multitasking. The 8000 DPI sensor, quiet clicks, haptic side panel, and fast MagSpeed scrolling help you work comfortably on large monitors and switch efficiently between applications.",
       "category": "office",
       "priceCents": 54900,
       "currency": "PLN",
@@ -22,7 +22,7 @@
     {
       "name": "Logitech MX Master 3S",
       "slug": "logitech-mx-master-3s",
-      "description": "Popularna mysz biurowa dla osób pracujących z wieloma aplikacjami i komputerami. Ciche kliknięcia, rolka MagSpeed, ergonomiczny profil oraz sensor 8000 DPI sprawdzają się przy arkuszach, grafice, edycji dokumentów i codziennej produktywności.",
+      "description": "A popular office mouse for users who work with multiple applications and computers. Quiet clicks, the MagSpeed scroll wheel, an ergonomic shape, and an 8000 DPI sensor make it suitable for spreadsheets, graphics, document editing, and everyday productivity.",
       "category": "office",
       "priceCents": 46900,
       "currency": "PLN",
@@ -41,7 +41,7 @@
     {
       "name": "Logitech MX Anywhere 3S",
       "slug": "logitech-mx-anywhere-3s",
-      "description": "Kompaktowa mysz premium do pracy hybrydowej i podróży. Sensor 8000 DPI działa na wielu powierzchniach, a szybka rolka i ciche przyciski dobrze pasują do laptopa, małego biurka, kawiarni oraz mobilnego stanowiska pracy.",
+      "description": "A compact premium mouse for hybrid work and travel. The 8000 DPI sensor works on many surfaces, while the fast scroll wheel and quiet buttons make it a good match for laptops, small desks, cafés, and mobile workstations.",
       "category": "office",
       "priceCents": 39900,
       "currency": "PLN",
@@ -60,7 +60,7 @@
     {
       "name": "Logitech Lift Vertical",
       "slug": "logitech-lift-vertical",
-      "description": "Pionowa mysz ergonomiczna do długiej pracy przy komputerze. Ustawienie dłoni pod kątem 57 stopni pomaga odciążyć nadgarstek, a łączność Bluetooth lub Logi Bolt ułatwia utrzymanie porządku na stanowisku.",
+      "description": "A vertical ergonomic mouse for long hours of computer work. The 57-degree hand angle helps reduce wrist strain, while Bluetooth and Logi Bolt connectivity make it easy to keep your workspace clean and organized.",
       "category": "office",
       "priceCents": 31900,
       "currency": "PLN",
@@ -79,7 +79,7 @@
     {
       "name": "Logitech Signature M650",
       "slug": "logitech-signature-m650",
-      "description": "Uniwersalna mysz biurowa do codziennej produktywności. SmartWheel płynnie przełącza się między precyzyjnym i szybkim przewijaniem, a ciche kliknięcia dobrze pasują do open space, nauki i domowego biura.",
+      "description": "A universal office mouse for everyday productivity. SmartWheel automatically switches between precise and fast scrolling, while quiet clicks make it suitable for open-space offices, studying, and home office use.",
       "category": "office",
       "priceCents": 17900,
       "currency": "PLN",
@@ -98,7 +98,7 @@
     {
       "name": "Logitech G Pro X Superlight 2",
       "slug": "logitech-g-pro-x-superlight-2",
-      "description": "Bardzo lekka bezprzewodowa mysz esportowa dla graczy FPS. Sensor HERO 2 do 44000 DPI, szybkie raportowanie LIGHTSPEED i minimalistyczna forma pomagają utrzymać precyzję przy flickach, tracking'u i długich sesjach rankingowych.",
+      "description": "An extremely lightweight wireless esports mouse for FPS players. The HERO 2 sensor with up to 44000 DPI, fast LIGHTSPEED reporting, and minimalist shape help maintain precision during flicks, tracking, and long ranked sessions.",
       "category": "gaming",
       "priceCents": 64900,
       "currency": "PLN",
@@ -117,7 +117,7 @@
     {
       "name": "Razer Viper V4 Pro",
       "slug": "razer-viper-v4-pro",
-      "description": "Ultralekka symetryczna mysz bezprzewodowa dla wymagających graczy turniejowych. Sensor Focus Pro 45K, masa około 49 gramów i szybka łączność HyperSpeed tworzą zestaw nastawiony na FPS, battle royale i aim training.",
+      "description": "An ultralight symmetrical wireless mouse for demanding competitive players. The Focus Pro 45K sensor, weight of around 49 grams, and fast HyperSpeed connection create a setup focused on FPS games, battle royale titles, and aim training.",
       "category": "gaming",
       "priceCents": 74900,
       "currency": "PLN",
@@ -136,7 +136,7 @@
     {
       "name": "Razer DeathAdder V4 Pro",
       "slug": "razer-deathadder-v4-pro",
-      "description": "Ergonomiczna mysz esportowa o klasycznym profilu DeathAdder. Sensor Focus Pro 45K, niska masa i wygodne podparcie dłoni sprawiają, że dobrze pasuje do palm i claw gripu w szybkich grach FPS.",
+      "description": "An ergonomic esports mouse with the classic DeathAdder profile. The Focus Pro 45K sensor, low weight, and comfortable palm support make it a good fit for palm and claw grip in fast FPS games.",
       "category": "gaming",
       "priceCents": 69900,
       "currency": "PLN",
@@ -155,7 +155,7 @@
     {
       "name": "Logitech G502 X Plus",
       "slug": "logitech-g502-x-plus",
-      "description": "Bogato wyposażona mysz gamingowa dla graczy, którzy lubią dodatkowe przyciski, szybkie przewijanie i podświetlenie RGB. Sensor HERO 25K, LIGHTSPEED i programowalne sterowanie dobrze pasują do MMO, strategii i pracy po godzinach.",
+      "description": "A feature-rich gaming mouse for players who like extra buttons, fast scrolling, and RGB lighting. The HERO 25K sensor, LIGHTSPEED wireless technology, and programmable controls make it suitable for MMO games, strategy games, and work after hours.",
       "category": "gaming",
       "priceCents": 59900,
       "currency": "PLN",
@@ -174,7 +174,7 @@
     {
       "name": "Razer Basilisk V3 Pro 35K",
       "slug": "razer-basilisk-v3-pro-35k",
-      "description": "Zaawansowana ergonomiczna mysz gamingowa dla osób, które chcą dużo przycisków i rozbudowaną konfigurację. Sensor Focus Pro 35K, łączność HyperSpeed, Bluetooth i przewodowa oraz charakterystyczny profil Basilisk sprawdzają się w grach i pracy.",
+      "description": "An advanced ergonomic gaming mouse for users who want many buttons and deep customization. The Focus Pro 35K sensor, HyperSpeed wireless, Bluetooth, wired connectivity, and distinctive Basilisk shape make it suitable for both gaming and work.",
       "category": "gaming",
       "priceCents": 66900,
       "currency": "PLN",
