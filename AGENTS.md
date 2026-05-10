@@ -79,12 +79,16 @@ The production Docker image serves the React app through the Go server. Only the
 
 ## Active Workstream
 
-The next two phases are mandatory and should ship together as one cohesive update because they touch overlapping files:
+Phases 20 and 21 are complete on `main`. The catalog now has exactly two categories (`gaming`, `office`) and the customer + admin UI has been redesigned across two commits:
 
-1. **Phase 20 — Remove the "travel" category** (data, validation, UI, demo data, docs).
-2. **Phase 21 — UI redesign for accessibility, responsiveness, and modern look** (storefront and admin).
+- `feat: drop travel category, rewrite AGENTS.md with redesign plan` — Phase 20.
+- `refactor(frontend): redesign storefront for mobile fit, contrast, and modern look` + `refactor(frontend): finish phase 21 redesign — product page, cart/checkout/orders, auth, admin` — Phase 21 (sub-phases 21.1–21.18).
 
-Phase 20 is small but unblocks Phase 21 (no need to redesign filter chips or category cards that are about to disappear). Do Phase 20 first, ship it, then start Phase 21.
+Next candidate workstreams (optional, not started):
+
+- Remove the legacy `imageUrl` compatibility field once nothing on the wire reads it (see "Known Gaps and Technical Debt" item 1).
+- Define the uploaded-file cleanup policy on product/image deletion (item 3).
+- Expand product specs (sensor model, weight, switch type, polling rate, dimensions, accessories — item 4).
 
 ---
 
@@ -971,8 +975,8 @@ Phases 0–19 are **completed**. Their summaries are kept brief; expand only if 
 | 17 | E-shop layout polish                                       | ✅ done |
 | 18 | Documentation and final checks                             | ✅ done |
 | 19 | Validated demo catalog init (init.json + init/img)         | ✅ done |
-| **20** | **Remove travel category**                              | 🔵 active |
-| **21** | **UI redesign (modern, responsive, accessible)**        | 🔵 next  |
+| 20 | Remove travel category                                     | ✅ done |
+| 21 | UI redesign (modern, responsive, accessible)               | ✅ done |
 
 ---
 
