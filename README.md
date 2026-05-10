@@ -1,125 +1,113 @@
+<div align="center">
+
 # Clicky-Store
 
-Clicky-Store is a small e-commerce project for gaming and office mice. It is built as a client-server web store with a REST API, user accounts, product browsing, cart management, order placement, simulated payment handling, admin management, responsive UI, security basics, testing, and documentation.
+**A focused e-commerce sandbox for gaming and office mice — built with Go on the back, React on the front.**
 
-This repository is starting with the backend and container foundation using:
+[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 
-- Go for the HTTP API
-- Docker Compose for local services
-- React, Vite, TypeScript, and Tailwind CSS for the storefront and admin UI
-- PostgreSQL in Compose for durable persistence
+</div>
 
-## Current Status
+---
 
-Implemented features:
+Clicky-Store is an educational online shop. It carries two product categories — **gaming** and **office** — and ships with the full e-commerce loop: browse, search, view a dedicated product page, add to cart, place an order, simulate payment, and manage everything from an admin dashboard.
 
-- Public product listing, search/filtering, and product details by ID or slug
-- Customer registration and login
-- HMAC-signed bearer tokens
-- Basic login rate limiting
-- Authenticated profile endpoint
-- Authenticated cart operations
-- Authenticated order creation with pending simulated payment status
-- Authenticated payment simulation for pending orders
-- Admin product management
-- Admin JPEG/PNG product image upload, metadata editing, primary-image selection, reordering, and deletion
-- Admin order listing
-- Admin user listing, inspection, and role updates
-- React storefront for browsing, product galleries, auth, cart, checkout, orders, and admin screens
-- Polished responsive storefront and admin layout using Tailwind CSS
-- Health check endpoint
-- Multi-stage Dockerfile and `compose.yaml`
-- GitHub Actions CI for format checks, tests, vet, and Docker build
-- PostgreSQL persistence for users, products, product galleries, carts, and orders when `DATABASE_URL` is set
-- Local upload storage served under `/uploads`
-- Go production serving for the React build with SPA route fallback
-- Optional validated demo catalog seed from `init/init.json` and local JPG/PNG files under `init/img/`
+Backend is plain `net/http` Go with a hexagonal layout (domains / ports / adapters). Frontend is a Vite-built React SPA in TypeScript, styled with Tailwind 4 and served by the same Go binary in production. PostgreSQL handles persistence; an in-memory store is the dev-only fallback.
 
-The API uses PostgreSQL when `DATABASE_URL` is configured. If `DATABASE_URL` is empty, the server falls back to the in-memory store for lightweight local development and tests.
+---
 
-## Run With Docker Compose
+## Highlights
 
-Optional local configuration can start from:
+| Customer | Admin | Platform |
+| --- | --- | --- |
+| Browse, search, sort, filter | Product CRUD with sectioned form | PostgreSQL persistence |
+| Dedicated product pages by slug | JPEG/PNG image upload (drag-and-drop, max 10 / product) | In-memory fallback for tests |
+| Image gallery with thumbnails | Image reorder, primary, alt text, delete | HMAC-signed bearer tokens |
+| Quantity controls + sticky mobile buy bar | Order browsing, filtering, status badges | Bcrypt password hashing |
+| Cart, checkout, order placement | User browsing + role updates | Login rate limiting |
+| Simulated payment (success/failure) | Dashboard with revenue + low-stock alerts | Local upload storage with safe filename gen |
+| Auth + protected routes | Server-side category whitelist (`gaming` / `office`) | Multi-stage Docker build |
+
+---
+
+## Quick start (Docker Compose)
 
 ```sh
-cp .env.example .env
-```
-
-```sh
+git clone <your-fork-url> clicky-store
+cd clicky-store
+cp .env.example .env          # optional — defaults work for local dev
 docker compose up --build
 ```
 
-The API and React storefront listen on:
+The storefront and API both serve from one container at:
 
-```txt
+```
 http://localhost:8080
 ```
 
-Open the storefront at:
-
-```txt
-http://localhost:8080/
-```
-
-Health check:
+Health probe:
 
 ```sh
 curl http://localhost:8080/healthz
 ```
 
-## Local API Credentials
+Seeded admin account (development only):
 
-Seeded admin account:
-
-```txt
-email: admin@clicky.local
+```
+email:    admin@clicky.local
 password: admin12345
 ```
 
-Set a stronger local secret before serious testing:
+> **Heads up.** Outside `APP_ENV=development` the seeded admin is disabled and `AUTH_SECRET` must be set to a non-demo value. See [`docs/deployment.md`](docs/deployment.md).
+
+---
+
+## Local dev (without Docker)
+
+Three terminals — Postgres in Compose, the Go backend, and the Vite dev server with API proxy:
 
 ```sh
-AUTH_SECRET="replace-me" docker compose up --build
+# 1. Database
+docker compose up db
+
+# 2. Backend
+go run ./cmd/server
+
+# 3. Frontend
+cd frontend
+npm install
+npm run dev
 ```
 
-`DATABASE_URL` defaults to the PostgreSQL service in `compose.yaml`. Leave it empty only when you intentionally want the server to use the in-memory development store.
+The Vite dev server proxies `/api/v1`, `/uploads`, and `/healthz` to `localhost:8080`, so the SPA at `http://localhost:5173` talks to the running Go backend without CORS gymnastics.
 
-Development mode (`APP_ENV=development`) provides demo defaults for `AUTH_SECRET` and the seeded admin account. Outside development, set a non-demo `AUTH_SECRET`; admin seeding only runs when `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` are all configured.
+---
 
-Uploaded product files are stored outside the React build. Docker Compose mounts `${UPLOAD_DATA_PATH:-./data/uploads}` into `/app/data/uploads`, and the server publishes generated image URLs under `/uploads`. Uploads accept JPEG and PNG only, with default limits of 10 images per product, 4 MiB per image, and 48 MiB per multipart request.
+## Tech stack
 
-## Demo Catalog Init
-
-Phase 19 uses a curated JSON init file instead of a live scraper. `init/init.json` defines 10 demo mice with Polish descriptions, PLN prices, product specs, and relative image paths such as:
-
-```txt
-img/logitech-mx-master-3s/1.jpg
+```
+Backend     Go 1.25 · net/http · pgx · golang.org/x/crypto
+Frontend    React 19 · Vite 8 · TypeScript · Tailwind CSS 4 · React Router 7 · lucide-react
+Storage     PostgreSQL 16 (memory fallback)
+Auth        HMAC-signed bearer tokens · bcrypt password hashing
+DevOps      Docker · Docker Compose · multi-stage build · GitHub Actions CI
 ```
 
-Add local images under `init/img/{slug}/`. They must be JPG or PNG files, match the JSON paths, and decode as real images. The server validates the full catalog before seeding; if any required field or image is wrong, the original four fallback products remain in use.
+---
 
-Validate the catalog manually after adding images:
+## API surface
 
-```sh
-go run ./cmd/initcatalog -path init/init.json
+<details>
+<summary><strong>Public endpoints</strong></summary>
+
 ```
-
-Local files under `init/img/` are ignored by Git. Compose mounts `${INIT_DATA_PATH:-./init}` into `/app/init`, and the Docker image also copies the `init/` directory for production-style demos.
-
-## API Overview
-
-More detailed API and setup documentation is available in:
-
-```txt
-docs/openapi.yaml
-docs/api-examples.md
-docs/development.md
-docs/deployment.md
-```
-
-Public endpoints:
-
-```txt
 GET  /healthz
 GET  /api/v1/products
 GET  /api/v1/products/{productId}
@@ -128,9 +116,12 @@ POST /api/v1/auth/register
 POST /api/v1/auth/login
 ```
 
-Customer endpoints:
+</details>
 
-```txt
+<details>
+<summary><strong>Customer endpoints (Bearer token)</strong></summary>
+
+```
 GET    /api/v1/me
 GET    /api/v1/cart
 POST   /api/v1/cart/items
@@ -141,9 +132,12 @@ POST   /api/v1/orders
 POST   /api/v1/orders/{orderId}/payment/simulate
 ```
 
-Admin endpoints:
+</details>
 
-```txt
+<details>
+<summary><strong>Admin endpoints (admin role required)</strong></summary>
+
+```
 GET    /api/v1/admin/products
 POST   /api/v1/admin/products
 PATCH  /api/v1/admin/products/{productId}
@@ -158,87 +152,149 @@ GET    /api/v1/admin/users/{userId}
 PATCH  /api/v1/admin/users/{userId}
 ```
 
-Use the token from login/register as:
+</details>
 
-```txt
-Authorization: Bearer <token>
-```
+The OpenAPI spec lives in [`docs/openapi.yaml`](docs/openapi.yaml). Runnable curl recipes live in [`docs/api-examples.md`](docs/api-examples.md).
 
-## Example Flow
+---
 
-Register:
+## Example flow
 
 ```sh
-curl -X POST http://localhost:8080/api/v1/auth/register \
+# Register
+curl -sS -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","email":"test@example.com","password":"password123"}'
-```
 
-List products:
+# Browse
+curl -sS http://localhost:8080/api/v1/products | jq
 
-```sh
-curl http://localhost:8080/api/v1/products
-```
+# Direct product lookup by slug
+curl -sS http://localhost:8080/api/v1/products/slug/viper-x1-gaming-mouse | jq
 
-Get a product by slug:
-
-```sh
-curl http://localhost:8080/api/v1/products/slug/viper-x1-gaming-mouse
-```
-
-Add to cart:
-
-```sh
-curl -X POST http://localhost:8080/api/v1/cart/items \
+# Add to cart
+curl -sS -X POST http://localhost:8080/api/v1/cart/items \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"productId":"prod-gaming-viper","quantity":1}'
-```
 
-Create an order:
-
-```sh
-curl -X POST http://localhost:8080/api/v1/orders \
+# Place order
+curl -sS -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"paymentMethod":"simulation"}'
-```
 
-Simulate payment:
-
-```sh
-curl -X POST http://localhost:8080/api/v1/orders/<order-id>/payment/simulate \
+# Simulate payment success or failure
+curl -sS -X POST http://localhost:8080/api/v1/orders/<order-id>/payment/simulate \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
-  -d '{"result":"success"}'
+  -d '{"result":"success"}'   # or "failure"
 ```
 
-Use `"failure"` to mark the pending simulated payment as failed.
+---
 
-## Planned Next Steps
+## Project structure
 
-- Define an uploaded-image cleanup policy on product/image deletion
-- Expand mouse-specific product specs such as sensor, weight, switch type, polling rate, dimensions, and accessories
-- Add real demo photos under `init/img/` for the Phase 19 catalog
-
-## Project Structure
-
-```txt
-cmd/server/               Go HTTP server composition root
-cmd/initcatalog/          Manual validator for init/init.json and referenced images
-internal/adapters/db/     Current in-memory database adapter
-internal/adapters/db/postgres PostgreSQL adapter and embedded migrations
-internal/adapters/http/v1 REST API v1 handlers and request DTOs
-internal/adapters/uploads Local product image upload storage
-internal/core/domains/    Domain models and shared domain errors
-internal/core/ports/      Storage interfaces
-internal/frontend/        React build serving adapter (FRONTEND_DIST_DIR aware)
-internal/initcatalog/     Validated demo catalog loader and seeder
-internal/service/         Application use cases and auth helpers
-internal/web/             Shared HTTP JSON and middleware helpers
-init/                     Phase 19 demo catalog JSON and ignored image source folder
-frontend/                 React + Vite + TypeScript + Tailwind source app
-frontend/public/assets/products Seed product SVGs included in the Vite build
-compose.yaml              Local API and database services
-Dockerfile                Multi-stage React and Go production image
 ```
+clicky-store/
+├── cmd/
+│   ├── server/                  HTTP server composition root
+│   └── initcatalog/             Manual validator for init/init.json
+├── internal/
+│   ├── adapters/
+│   │   ├── db/                  In-memory store + contract tests
+│   │   ├── db/postgres/         PostgreSQL adapter + embedded migrations
+│   │   ├── http/v1/             REST API v1 handlers, requests, middleware
+│   │   └── uploads/             Local product image upload storage
+│   ├── core/
+│   │   ├── domains/             Domain models, validation, shared errors
+│   │   └── ports/               Storage interfaces
+│   ├── service/                 Application use cases + auth
+│   ├── frontend/                React build serving adapter
+│   ├── initcatalog/             Validated demo catalog loader
+│   ├── config/                  Environment loading + production secret guards
+│   └── web/                     Shared HTTP / JSON / middleware helpers
+├── frontend/
+│   ├── src/                     React + TS source (pages, components, state, API)
+│   └── public/assets/products/  Seed product SVGs shipped with the build
+├── init/                        Demo catalog JSON + ignored local image source folder
+├── docs/                        OpenAPI + dev/deploy/API docs
+├── compose.yaml                 Local API + PostgreSQL services
+├── Dockerfile                   Multi-stage React + Go production image
+└── AGENTS.md                    Contributor + AI-agent guidance + roadmap
+```
+
+---
+
+## Catalog model
+
+Two categories, server-side enforced:
+
+```
+gaming    High-DPI competitive picks
+office    Quiet, ergonomic desk mice
+```
+
+Demo catalog seeding is opt-in. Drop matching JPG/PNG files into `init/img/{slug}/` to match the entries in `init/init.json`, then start the server. The initializer validates every JSON field plus every referenced image (extension, MIME sniff, decoded headers, size). If anything fails validation, the original four fallback products remain.
+
+```sh
+# Validate the demo catalog locally
+go run ./cmd/initcatalog -path init/init.json
+```
+
+---
+
+## Roadmap
+
+| Phase | Title | Status |
+| ----: | ----- | :----: |
+| 0 | Sanity check current repo                                | Done |
+| 1 | Switch frontend roadmap to React                         | Done |
+| 2 | Add React app skeleton                                   | Done |
+| 3 | Typed API client                                         | Done |
+| 4 | Rebuild auth + layout                                    | Done |
+| 5 | Rebuild product listing                                  | Done |
+| 6 | Add product slug routes                                  | Done |
+| 7 | Build product detail page                                | Done |
+| 8 | Rebuild cart, checkout, orders                           | Done |
+| 9 | Rebuild admin UI                                         | Done |
+| 10 | Serve React build from Go                               | Done |
+| 11 | Product image persistence                               | Done |
+| 12 | Upload storage service                                  | Done |
+| 13 | Admin image upload API                                  | Done |
+| 14 | React drag-and-drop image uploader                      | Done |
+| 15 | Use galleries across storefront                         | Done |
+| 16 | Remove legacy static frontend                           | Done |
+| 17 | E-shop layout polish                                    | Done |
+| 18 | Documentation and final checks                          | Done |
+| 19 | Validated demo catalog init                             | Done |
+| 20 | Drop the travel category                                | Done |
+| 21 | UI redesign (modern, responsive, accessible)            | Done |
+
+Open candidates (none in flight):
+
+- Drop the legacy `imageUrl` field once nothing on the wire reads it.
+- Define an uploaded-file cleanup policy on product or image deletion.
+- Expand product specs (sensor model, weight, switch type, polling rate, dimensions, accessories).
+
+---
+
+## Documentation
+
+```
+docs/
+├── openapi.yaml         Machine-readable API spec
+├── api-examples.md      Curl recipes
+├── development.md       Local dev workflow + env vars
+└── deployment.md        Production deploy + secrets + upload storage
+```
+
+`AGENTS.md` is the source of truth for contributor and AI-agent rules — design tokens, do/don't lists, phase plans, commit conventions.
+
+---
+
+## Status
+
+Educational project. No license file is attached; treat the repository as "look, learn, fork — no production warranty." Security limitations are documented honestly in [`AGENTS.md`](AGENTS.md) and [`docs/deployment.md`](docs/deployment.md).
+
+CI runs `gofmt`, `go test`, `go vet`, the frontend lint + build, and a full Docker image build on every push to `main` and every pull request.
