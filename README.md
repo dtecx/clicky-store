@@ -244,41 +244,6 @@ go run ./cmd/initcatalog -path init/init.json
 
 ---
 
-## Roadmap
-
-| Phase | Title | Status |
-| ----: | ----- | :----: |
-| 0 | Sanity check current repo                                | Done |
-| 1 | Switch frontend roadmap to React                         | Done |
-| 2 | Add React app skeleton                                   | Done |
-| 3 | Typed API client                                         | Done |
-| 4 | Rebuild auth + layout                                    | Done |
-| 5 | Rebuild product listing                                  | Done |
-| 6 | Add product slug routes                                  | Done |
-| 7 | Build product detail page                                | Done |
-| 8 | Rebuild cart, checkout, orders                           | Done |
-| 9 | Rebuild admin UI                                         | Done |
-| 10 | Serve React build from Go                               | Done |
-| 11 | Product image persistence                               | Done |
-| 12 | Upload storage service                                  | Done |
-| 13 | Admin image upload API                                  | Done |
-| 14 | React drag-and-drop image uploader                      | Done |
-| 15 | Use galleries across storefront                         | Done |
-| 16 | Remove legacy static frontend                           | Done |
-| 17 | E-shop layout polish                                    | Done |
-| 18 | Documentation and final checks                          | Done |
-| 19 | Validated demo catalog init                             | Done |
-| 20 | Drop the travel category                                | Done |
-| 21 | UI redesign (modern, responsive, accessible)            | Done |
-
-Open candidates (none in flight):
-
-- Drop the legacy `imageUrl` field once nothing on the wire reads it.
-- Define an uploaded-file cleanup policy on product or image deletion.
-- Expand product specs (sensor model, weight, switch type, polling rate, dimensions, accessories).
-
----
-
 ## Documentation
 
 ```

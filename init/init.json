@@ -14,7 +14,7 @@
       "images": [
         {
           "path": "img/logitech-mx-master-4/1.jpg",
-          "altText": "Logitech MX Master 4 widok główny",
+          "altText": "Logitech MX Master 4 main view",
           "isPrimary": true
         }
       ]
@@ -33,7 +33,7 @@
       "images": [
         {
           "path": "img/logitech-mx-master-3s/1.jpg",
-          "altText": "Logitech MX Master 3S widok główny",
+          "altText": "Logitech MX Master 3S main view",
           "isPrimary": true
         }
       ]
@@ -52,7 +52,7 @@
       "images": [
         {
           "path": "img/logitech-mx-anywhere-3s/1.jpg",
-          "altText": "Logitech MX Anywhere 3S widok główny",
+          "altText": "Logitech MX Anywhere 3S main view",
           "isPrimary": true
         }
       ]
@@ -71,7 +71,7 @@
       "images": [
         {
           "path": "img/logitech-lift-vertical/1.jpg",
-          "altText": "Logitech Lift Vertical widok główny",
+          "altText": "Logitech Lift Vertical main view",
           "isPrimary": true
         }
       ]
@@ -90,7 +90,7 @@
       "images": [
         {
           "path": "img/logitech-signature-m650/1.jpg",
-          "altText": "Logitech Signature M650 widok główny",
+          "altText": "Logitech Signature M650 main view",
           "isPrimary": true
         }
       ]
@@ -109,7 +109,7 @@
       "images": [
         {
           "path": "img/logitech-g-pro-x-superlight-2/1.jpg",
-          "altText": "Logitech G Pro X Superlight 2 widok główny",
+          "altText": "Logitech G Pro X Superlight 2 main view",
           "isPrimary": true
         }
       ]
@@ -128,7 +128,7 @@
       "images": [
         {
           "path": "img/razer-viper-v4-pro/1.jpg",
-          "altText": "Razer Viper V4 Pro widok główny",
+          "altText": "Razer Viper V4 Pro main view",
           "isPrimary": true
         }
       ]
@@ -147,7 +147,7 @@
       "images": [
         {
           "path": "img/razer-deathadder-v4-pro/1.jpg",
-          "altText": "Razer DeathAdder V4 Pro widok główny",
+          "altText": "Razer DeathAdder V4 Pro main view",
           "isPrimary": true
         }
       ]
@@ -166,7 +166,7 @@
       "images": [
         {
           "path": "img/logitech-g502-x-plus/1.jpg",
-          "altText": "Logitech G502 X Plus widok główny",
+          "altText": "Logitech G502 X Plus main view",
           "isPrimary": true
         }
       ]
@@ -185,7 +185,7 @@
       "images": [
         {
           "path": "img/razer-basilisk-v3-pro-35k/1.jpg",
-          "altText": "Razer Basilisk V3 Pro 35K widok główny",
+          "altText": "Razer Basilisk V3 Pro 35K main view",
           "isPrimary": true
         }
       ]
