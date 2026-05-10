@@ -214,15 +214,14 @@ export function AdminOrdersPage() {
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50/60 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-stone-200 bg-stone-50 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-3">Order</th>
-                  <th className="px-5 py-3">Customer</th>
-                  <th className="px-5 py-3">Items</th>
-                  <th className="px-5 py-3">Payment</th>
-                  <th className="px-5 py-3">Total</th>
-                  <th className="px-5 py-3">Created</th>
+                  <th className="px-4 py-3">Order</th>
+                  <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Payment</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Total</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Created</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
@@ -234,34 +233,34 @@ export function AdminOrdersPage() {
 
                   return (
                     <tr
-                      className="transition-colors hover:bg-stone-50/60"
+                      className="transition-colors hover:bg-stone-50"
                       key={order.id}
                     >
-                      <td className="px-5 py-3">
-                        <p className="font-bold text-slate-950">{order.id}</p>
+                      <td className="px-4 py-3">
+                        <p className="truncate font-semibold text-slate-900">{order.id}</p>
+                        <p
+                          className="mt-0.5 max-w-xs truncate text-xs text-slate-500"
+                          title={itemSummary}
+                        >
+                          {itemSummary}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="max-w-40 truncate text-slate-700">{order.userId}</p>
                         <p className="mt-0.5 text-xs capitalize text-slate-500">
                           {order.status.replace('_', ' ')}
                         </p>
                       </td>
-                      <td className="px-5 py-3">
-                        <p className="max-w-40 truncate text-slate-700">{order.userId}</p>
-                      </td>
-                      <td className="px-5 py-3">
-                        <p className="max-w-sm truncate text-slate-700">{itemSummary}</p>
-                      </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <Badge variant={details.variant}>
                           <span className="inline-flex">{details.icon}</span>
                           {details.label}
                         </Badge>
-                        <p className="mt-1 text-xs capitalize text-slate-500">
-                          {order.paymentMethod}
-                        </p>
                       </td>
-                      <td className="px-5 py-3 font-bold text-slate-950">
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">
                         {formatCents(order.totalCents, order.currency)}
                       </td>
-                      <td className="px-5 py-3 text-slate-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                         {formatDateTime(order.createdAt)}
                       </td>
                     </tr>

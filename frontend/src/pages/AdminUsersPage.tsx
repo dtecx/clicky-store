@@ -192,13 +192,13 @@ export function AdminUsersPage() {
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50/60 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-stone-200 bg-stone-50 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-3">User</th>
-                  <th className="px-5 py-3">Role</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Created</th>
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Role</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Created</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
@@ -209,14 +209,14 @@ export function AdminUsersPage() {
 
                   return (
                     <tr
-                      className="transition-colors hover:bg-stone-50/60"
+                      className="transition-colors hover:bg-stone-50"
                       key={user.id}
                     >
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-3">
+                      <td className="px-4 py-3">
+                        <div className="flex min-w-0 items-center gap-3">
                           <div
                             className={cn(
-                              'flex h-10 w-10 items-center justify-center rounded-xl ring-1',
+                              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1',
                               isAdmin
                                 ? 'bg-sky-50 text-sky-700 ring-sky-100'
                                 : 'bg-emerald-50 text-emerald-700 ring-emerald-100',
@@ -230,7 +230,7 @@ export function AdminUsersPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="truncate font-bold text-slate-950">
+                              <p className="truncate font-semibold text-slate-900">
                                 {user.name}
                               </p>
                               {isCurrentUser ? <Badge variant="accent">You</Badge> : null}
@@ -239,7 +239,7 @@ export function AdminUsersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <select
                           className={fieldClass}
                           disabled={isPending || isCurrentUser}
@@ -257,12 +257,12 @@ export function AdminUsersPage() {
                           <option value="admin">Admin</option>
                         </select>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <Badge variant={isPending ? 'warning' : 'success'}>
                           {isPending ? 'Updating…' : 'Active'}
                         </Badge>
                       </td>
-                      <td className="px-5 py-3 text-slate-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                         {formatDateTime(user.createdAt)}
                       </td>
                     </tr>

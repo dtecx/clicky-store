@@ -227,11 +227,11 @@ export function AdminDashboardPage() {
               interactive={Boolean(stat.href)}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
                     {stat.label}
                   </p>
-                  <p className="mt-2 truncate text-3xl font-bold text-slate-950">
+                  <p className="mt-2 break-words text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
                     {stat.value}
                   </p>
                   <p className="mt-2 text-xs text-slate-500">{stat.caption}</p>

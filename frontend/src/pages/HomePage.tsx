@@ -11,7 +11,6 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { listProducts } from '../api/products'
 import { Container } from '../components/layout/Container'
 import { ProductGrid } from '../components/product/ProductGrid'
-import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
@@ -317,19 +316,26 @@ function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
     ? primaryProductImageUrl(featuredProduct, '')
     : ''
 
+  function handleShopCatalog(event: React.MouseEvent<HTMLAnchorElement>) {
+    const target = document.getElementById('catalog')
+    if (target) {
+      event.preventDefault()
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <section className="relative isolate overflow-hidden bg-slate-950 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(16,185,129,0.18),transparent_55%),radial-gradient(circle_at_85%_75%,rgba(56,189,248,0.12),transparent_55%)]" />
       <Container className="relative py-12 sm:py-16 lg:py-20">
         <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
           <div className="max-w-2xl">
-            <Badge
-              className="border-emerald-400/30 bg-emerald-400/15 text-emerald-100"
-              variant="success"
-            >
-              <Sparkles aria-hidden="true" size={13} />
+            {/* Solid white-on-slate chip — the previous emerald-100 over a
+                15% emerald wash failed contrast on the dark hero. */}
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+              <Sparkles aria-hidden="true" className="text-emerald-300" size={14} />
               New season · curated mice
-            </Badge>
+            </span>
             <h1 className="mt-5 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
               Click better.
               <br />
@@ -342,13 +348,17 @@ function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
               mice. Find the one that fits your hand and ship it the same day.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <LinkButton
-                rightIcon={<ArrowRight aria-hidden="true" size={18} />}
-                size="lg"
-                to="#catalog"
+              {/* Plain <a href="#catalog"> with smooth-scroll handler. The
+                  react-router Link wrapper used to swallow the hash without
+                  scrolling. */}
+              <a
+                className="inline-flex h-12 max-w-full items-center justify-center gap-2 rounded-lg border border-emerald-600 bg-emerald-600 px-5 text-base font-semibold text-white shadow-sm shadow-emerald-900/15 transition-colors hover:border-emerald-700 hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                href="#catalog"
+                onClick={handleShopCatalog}
               >
                 Shop the catalog
-              </LinkButton>
+                <ArrowRight aria-hidden="true" size={18} />
+              </a>
               {featuredProduct ? (
                 <LinkButton
                   className="border-white/30 bg-white/10 text-white hover:bg-white/20"
@@ -363,11 +373,11 @@ function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
           </div>
 
           {featuredProduct ? (
-            <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur lg:block">
-              <div className="flex items-center justify-center rounded-xl bg-white/95 p-6">
+            <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur lg:block">
+              <div className="flex aspect-square items-center justify-center rounded-xl bg-white p-8">
                 <img
                   alt=""
-                  className="h-56 w-full max-w-xs object-contain"
+                  className="max-h-full max-w-full object-contain"
                   onError={(event) => {
                     event.currentTarget.src = fallbackProductImageUrl
                   }}
@@ -375,7 +385,7 @@ function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
                 />
               </div>
               <div className="mt-5">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">
                   Featured pick
                 </p>
                 <p className="mt-1 text-lg font-bold text-white">{featuredProduct.name}</p>

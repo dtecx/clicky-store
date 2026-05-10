@@ -660,15 +660,13 @@ export function AdminProductsPage() {
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="border-b border-stone-200 bg-stone-50/60 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-stone-200 bg-stone-50 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-3">Product</th>
-                  <th className="px-5 py-3">Category</th>
-                  <th className="px-5 py-3">Price</th>
-                  <th className="px-5 py-3">DPI</th>
-                  <th className="px-5 py-3">Stock</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">Product</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Price</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Stock</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
@@ -678,70 +676,64 @@ export function AdminProductsPage() {
 
                   return (
                     <tr
-                      className="transition-colors hover:bg-stone-50/60"
+                      className="transition-colors hover:bg-stone-50"
                       key={product.id}
                     >
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-3">
+                      <td className="px-4 py-3">
+                        <div className="flex min-w-0 items-center gap-3">
                           <img
                             alt=""
-                            className="h-12 w-12 rounded-xl bg-gradient-to-br from-stone-50 via-white to-stone-100 object-contain p-1.5 shadow-sm shadow-stone-400/10"
+                            className="h-12 w-12 shrink-0 rounded-xl bg-stone-50 object-contain p-1.5"
                             onError={(event) => {
                               event.currentTarget.src = fallbackProductImageUrl
                             }}
                             src={imageUrl}
                           />
                           <div className="min-w-0">
-                            <p className="truncate font-bold text-slate-950">
+                            <p className="truncate font-semibold text-slate-900">
                               {product.name}
                             </p>
-                            <p className="mt-0.5 truncate text-xs text-slate-500">
-                              {product.slug}
+                            <p className="mt-0.5 truncate text-xs capitalize text-slate-500">
+                              {product.category} · {product.dpi.toLocaleString()} DPI
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 capitalize text-slate-700">
-                        {product.category}
-                      </td>
-                      <td className="px-5 py-3 font-bold text-slate-950">
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">
                         {formatCents(product.priceCents, product.currency)}
                       </td>
-                      <td className="px-5 py-3 text-slate-700">
-                        {product.dpi.toLocaleString()}
-                      </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3">
                         <Badge variant={stock.variant}>{stock.label}</Badge>
                       </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="inline-flex gap-2">
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        <div className="inline-flex gap-1">
                           <LinkButton
                             aria-label={`View ${product.name}`}
-                            leftIcon={<ExternalLink aria-hidden="true" size={16} />}
+                            className="!px-2"
                             size="sm"
                             to={`/products/${product.slug}`}
                             variant="ghost"
                           >
-                            View
+                            <ExternalLink aria-hidden="true" size={16} />
                           </LinkButton>
                           <Button
                             aria-label={`Edit ${product.name}`}
-                            leftIcon={<Edit3 aria-hidden="true" size={16} />}
+                            className="!px-2"
                             onClick={() => startEdit(product)}
                             size="sm"
                             variant="secondary"
                           >
-                            Edit
+                            <Edit3 aria-hidden="true" size={16} />
                           </Button>
                           <Button
                             aria-label={`Delete ${product.name}`}
+                            className="!px-2"
                             disabled={deletingProductId === product.id}
-                            leftIcon={<Trash2 aria-hidden="true" size={16} />}
                             onClick={() => void handleDelete(product)}
                             size="sm"
                             variant="danger"
                           >
-                            {deletingProductId === product.id ? 'Deleting…' : 'Delete'}
+                            <Trash2 aria-hidden="true" size={16} />
                           </Button>
                         </div>
                       </td>
