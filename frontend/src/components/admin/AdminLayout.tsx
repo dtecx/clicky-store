@@ -27,8 +27,8 @@ const navItems: { end?: boolean; icon: LucideIcon; label: string; to: string }[]
  */
 export function AdminLayout() {
   return (
-    <div className="mx-auto grid min-h-[calc(100vh-9rem)] max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:px-8">
-      <aside className="lg:sticky lg:top-32 lg:self-start">
+    <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:px-8">
+      <aside className="lg:sticky lg:top-20 lg:self-start">
         <nav
           aria-label="Admin sections"
           className="rounded-2xl border border-stone-200/80 bg-white p-3 shadow-sm shadow-stone-400/10"

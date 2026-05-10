@@ -110,7 +110,7 @@ export function CartPage() {
             Keep shopping
           </LinkButton>
         </div>
-        <aside className="lg:sticky lg:top-32">
+        <aside className="lg:sticky lg:top-20">
           <CartSummary
             currency={cart.currency}
             itemCount={itemCount}

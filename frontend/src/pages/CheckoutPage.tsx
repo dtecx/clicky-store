@@ -149,7 +149,7 @@ export function CheckoutPage() {
             </p>
           </Card>
         </form>
-        <aside className="lg:sticky lg:top-32">
+        <aside className="lg:sticky lg:top-20">
           <CheckoutSummary cart={cart} />
         </aside>
       </div>

@@ -152,7 +152,7 @@ export function OrdersPage() {
             <Card
               className={
                 isHighlighted
-                  ? 'border-emerald-400 ring-2 ring-emerald-200'
+                  ? 'border-emerald-400 ring-2 ring-emerald-200/70'
                   : ''
               }
               key={order.id}
@@ -203,26 +203,32 @@ export function OrdersPage() {
               </ul>
 
               {isPending ? (
-                <div className="flex flex-wrap gap-3 border-t border-stone-200 bg-amber-50/40 px-5 py-4">
-                  <p className="w-full text-sm font-semibold text-amber-900">
-                    Simulated payment is still pending — confirm or fail it below.
-                  </p>
-                  <Button
-                    disabled={Boolean(pendingAction)}
-                    leftIcon={<CheckCircle2 aria-hidden="true" size={17} />}
-                    onClick={() => void handlePayment(order.id, 'success')}
-                    variant="primary"
-                  >
-                    {successPending ? 'Confirming…' : 'Confirm payment'}
-                  </Button>
-                  <Button
-                    disabled={Boolean(pendingAction)}
-                    leftIcon={<XCircle aria-hidden="true" size={17} />}
-                    onClick={() => void handlePayment(order.id, 'failure')}
-                    variant="secondary"
-                  >
-                    {failurePending ? 'Failing…' : 'Fail payment'}
-                  </Button>
+                <div className="border-t border-stone-200 bg-amber-50/60 px-5 py-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-amber-900">
+                      Simulated payment pending — confirm or fail it below.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        disabled={Boolean(pendingAction)}
+                        leftIcon={<CheckCircle2 aria-hidden="true" size={16} />}
+                        onClick={() => void handlePayment(order.id, 'success')}
+                        size="sm"
+                        variant="primary"
+                      >
+                        {successPending ? 'Confirming…' : 'Confirm'}
+                      </Button>
+                      <Button
+                        disabled={Boolean(pendingAction)}
+                        leftIcon={<XCircle aria-hidden="true" size={16} />}
+                        onClick={() => void handlePayment(order.id, 'failure')}
+                        size="sm"
+                        variant="secondary"
+                      >
+                        {failurePending ? 'Failing…' : 'Fail'}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </Card>

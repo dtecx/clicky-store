@@ -21,7 +21,12 @@ export function LoadingState({
   }
 
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-stone-200/70 bg-white/60 px-6 py-12 text-sm font-medium text-slate-600">
+    <div
+      aria-busy="true"
+      aria-live="polite"
+      className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white px-6 py-12 text-sm font-medium text-slate-600"
+      role="status"
+    >
       <Spinner large />
       <span>{label}</span>
     </div>
@@ -34,8 +39,8 @@ function Spinner({ large = false }: { large?: boolean }) {
       aria-hidden="true"
       className={
         large
-          ? 'h-7 w-7 animate-spin rounded-full border-[3px] border-stone-200 border-t-emerald-700'
-          : 'h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-emerald-700'
+          ? 'h-7 w-7 animate-spin rounded-full border-[3px] border-stone-200 border-t-emerald-600'
+          : 'h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-emerald-600'
       }
     />
   )

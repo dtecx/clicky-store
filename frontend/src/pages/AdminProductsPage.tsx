@@ -532,12 +532,14 @@ export function AdminProductsPage() {
               </label>
               <label className="space-y-2">
                 <span className={labelClass}>Category</span>
-                <input
+                <select
                   className={fieldClass}
                   onChange={(event) => updateForm('category', event.target.value)}
-                  placeholder="gaming"
                   value={editor.form.category}
-                />
+                >
+                  <option value="gaming">Gaming</option>
+                  <option value="office">Office</option>
+                </select>
               </label>
               <label className="space-y-2">
                 <span className={labelClass}>Image URL</span>
